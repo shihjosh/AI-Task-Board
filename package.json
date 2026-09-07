@@ -10,7 +10,8 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "start": "node server/index.mjs"
+    "start": "node server/index.mjs",
+    "db:seed": "node server/seed.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
