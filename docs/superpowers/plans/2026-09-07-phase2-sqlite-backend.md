@@ -348,7 +348,7 @@ git commit -m "feat: add Express API server with task CRUD endpoints"
 - 消費：`server/taskRepository.mjs` 的 `createTask`，資料形狀取自 `src/data/mockTasks.ts`（因 `server/` 在純 Node 環境執行，非 Vite/TS toolchain，此處重新以純 JS literal 撰寫）
 - 產出：冪等（idempotent）seed（若 `tasks` 資料表已有資料則跳過寫入）
 
-- [ ] **Step 1：撰寫 `server/seed.mjs`**
+- [x] **Step 1：撰寫 `server/seed.mjs`**
 
 ```javascript
 import { listTasks, createTask } from './taskRepository.mjs'
@@ -378,13 +378,13 @@ function seed() {
 seed()
 ```
 
-- [ ] **Step 2：在 `package.json` 加入 `db:seed` script**
+- [x] **Step 2：在 `package.json` 加入 `db:seed` script**
 
 ```json
 "db:seed": "node server/seed.mjs"
 ```
 
-- [ ] **Step 3：執行並驗證**
+- [x] **Step 3：執行並驗證**
 
 執行：`rm -f .data/taskboard.sqlite* && npm run db:seed`
 預期：`Seeded 8 tasks.`
@@ -395,7 +395,7 @@ seed()
 執行：`node -e "import('./server/taskRepository.mjs').then(r => console.log(r.listTasks().length))"`
 預期：`8`
 
-- [ ] **Step 4：Commit**
+- [x] **Step 4：Commit**
 
 ```bash
 git add server/seed.mjs package.json
