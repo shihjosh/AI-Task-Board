@@ -580,7 +580,7 @@ git commit -m "feat: propagate onTaskClick through BoardColumn/SortableTaskCard/
 - 消費：`src/components/TaskDrawer.tsx`（Task 2）、`Toolbar` 的 `onAddTask`（Task 3）、`BoardColumn` 的 `onTaskClick`（Task 4）
 - 產出：`App.tsx` 管理 `isDrawerOpen`、`drawerMode`、`editingTask` 三個狀態，控制 `TaskDrawer` 的顯示與行為
 
-- [ ] **Step 1：修改 `src/App.tsx`**
+- [x] **Step 1：修改 `src/App.tsx`**
 
 在既有的 import 區塊新增：
 
@@ -662,17 +662,17 @@ import TaskDrawer from './components/TaskDrawer'
 ```
 改為上面那段，`<TaskDrawer />` 插入在 `</main>` 之後、最外層 `</div>` 之前）
 
-- [ ] **Step 2：用 `tsc` 驗證**
+- [x] **Step 2：用 `tsc` 驗證**
 
 執行：`npx tsc -b`
 預期：無錯誤
 
-- [ ] **Step 3：`npm run build` 驗證**
+- [x] **Step 3：`npm run build` 驗證**
 
 執行：`npm run build`
 預期：build 成功，無錯誤
 
-- [ ] **Step 4：Commit**
+- [x] **Step 4：Commit**
 
 ```bash
 git add src/App.tsx
