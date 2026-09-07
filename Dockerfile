@@ -18,11 +18,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=8088
 
-RUN apk add --no-cache python3 make g++
-
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
-
+COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY server ./server
 
