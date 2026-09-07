@@ -1,58 +1,58 @@
-# Phase 2: SQLite Backend + Task CRUD API Implementation Plan
+# Phase 2：SQLite 後端 + Task CRUD API 實作計畫
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **給 agent 執行者：** 必要子技能：使用 superpowers:subagent-driven-development（推薦）或 superpowers:executing-plans 逐一 Task 執行本計畫。步驟採用 checkbox（`- [ ]`）語法追蹤進度。
 
-**Goal:** Add a single Node.js/Express server that serves the built React SPA and exposes a `/api/tasks` REST CRUD backed by SQLite (better-sqlite3), replacing the current hardcoded `mockTasks.ts` data source, while keeping local dev with Vite HMR working via a proxy.
+**目標：** 新增一個單一的 Node.js/Express server，同時 serve build 好的 React SPA，並提供以 SQLite（better-sqlite3）為後端的 `/api/tasks` REST CRUD，取代目前寫死的 `mockTasks.ts` 資料來源，同時保留本機開發時 Vite HMR 透過 proxy 正常運作。
 
-**Architecture:** One Express server (`server/index.mjs`) owns two responsibilities: serving `dist/` static files in production, and exposing `/api/tasks` REST endpoints backed by a `better-sqlite3` database at `.data/taskboard.sqlite`. In dev, Vite (port 8088) proxies `/api` to the Express server (port 3001) so HMR keeps working. The frontend replaces its `mockTasks` import with a small `src/lib/api.ts` client and loads/persists tasks through it.
+**架構：** 一個 Express server（`server/index.mjs`）負責兩件事：正式環境 serve `dist/` 靜態檔案，以及提供以 `better-sqlite3` 資料庫（`.data/taskboard.sqlite`）為後端的 `/api/tasks` REST 端點。開發模式下，Vite（8088 port）會將 `/api` proxy 到 Express（3001 port），維持 HMR 正常運作。前端則以一個小型 `src/lib/api.ts` client 取代原本的 `mockTasks` import，透過它載入/儲存任務。
 
-**Tech Stack:** Node.js, Express, better-sqlite3, nanoid (id generation), Vite dev proxy, existing React/TS/Tailwind/dnd-kit frontend.
+**技術棧：** Node.js、Express、better-sqlite3、nanoid（產生 id）、Vite dev proxy，以及既有的 React/TS/Tailwind/dnd-kit 前端。
 
-## Global Constraints
+## 全域限制（Global Constraints）
 
-- SQLite database file lives at `.data/taskboard.sqlite` (gitignored, Docker volume-mounted for persistence).
-- Single Node server in production/Docker — no nginx, no separate API container.
-- Dev mode keeps Vite HMR: Vite dev server on port 8088 proxies `/api/*` to Express on port 3001.
-- API contract is exactly: `GET /api/tasks`, `POST /api/tasks`, `PATCH /api/tasks/:id`, `DELETE /api/tasks/:id`.
-- `tasks` table columns: `id, title, priority, tags (json text), assignees (json text), progress, comment_count, has_unread, column_id, created_at, updated_at`.
-- Existing frontend types (`src/types/task.ts`) and component props must not change shape — only the data source changes (API instead of mock array).
+- SQLite 資料庫檔案位於 `.data/taskboard.sqlite`（已加入 .gitignore，Docker 用 volume 掛載以持久化）。
+- 正式環境／Docker 只用單一 Node server —— 不使用 nginx，也不拆成獨立的 API container。
+- 開發模式維持 Vite HMR：Vite dev server（8088 port）將 `/api/*` proxy 到 Express（3001 port）。
+- API 規格明確為：`GET /api/tasks`、`POST /api/tasks`、`PATCH /api/tasks/:id`、`DELETE /api/tasks/:id`。
+- `tasks` 資料表欄位：`id, title, priority, tags (json text), assignees (json text), progress, comment_count, has_unread, column_id, created_at, updated_at`。
+- 既有前端型別（`src/types/task.ts`）與元件 props 的形狀不可變動 —— 只改變資料來源（從 API 取代 mock 陣列）。
 
 ---
 
-### Task 1: Backend dependencies and project layout
+### Task 1：後端依賴套件與專案結構
 
-**Files:**
-- Modify: `package.json` (add deps, add `dev:server` / `dev:client` / `dev` scripts)
-- Create: `server/db.mjs`
-- Create: `.data/.gitkeep`
-- Modify: `.gitignore` (ignore `.data/*.sqlite`)
+**檔案：**
+- 修改：`package.json`（新增依賴、新增 `dev:server` / `dev:client` / `dev` scripts）
+- 新增：`server/db.mjs`
+- 新增：`.data/.gitkeep`
+- 修改：`.gitignore`（忽略 `.data/*.sqlite`）
 
-**Interfaces:**
-- Produces: `server/db.mjs` exports `getDb()` returning a singleton `better-sqlite3` `Database` instance with the `tasks` table created if missing (schema per Global Constraints).
+**介面：**
+- 產出：`server/db.mjs` 匯出 `getDb()`，回傳一個單例（singleton）的 `better-sqlite3` `Database` 實例，若 `tasks` 資料表不存在會自動建立（欄位定義依全域限制）。
 
-- [ ] **Step 1: Install backend dependencies**
+- [ ] **Step 1：安裝後端依賴套件**
 
 ```bash
 npm install express better-sqlite3 nanoid
 npm install -D concurrently
 ```
 
-- [ ] **Step 2: Verify install**
+- [ ] **Step 2：驗證安裝**
 
-Run: `node -e "require('better-sqlite3'); console.log('ok')"`
-Expected: prints `ok` (confirms native binding built successfully on this platform)
+執行：`node -e "require('better-sqlite3'); console.log('ok')"`
+預期：印出 `ok`（確認 native binding 在此平台編譯成功）
 
-- [ ] **Step 3: Create `.data/.gitkeep` and update `.gitignore`**
+- [ ] **Step 3：建立 `.data/.gitkeep` 並更新 `.gitignore`**
 
-`.data/.gitkeep` — empty file, just to keep the directory tracked in git.
+`.data/.gitkeep` —— 空檔案，僅用來讓此目錄被 git 追蹤。
 
-Add to `.gitignore`:
+在 `.gitignore` 加入：
 ```
 .data/*.sqlite
 .data/*.sqlite-journal
 ```
 
-- [ ] **Step 4: Write `server/db.mjs`**
+- [ ] **Step 4：撰寫 `server/db.mjs`**
 
 ```javascript
 import Database from 'better-sqlite3'
@@ -93,12 +93,12 @@ export function getDb() {
 }
 ```
 
-- [ ] **Step 5: Verify table creation**
+- [ ] **Step 5：驗證資料表建立**
 
-Run: `node -e "import('./server/db.mjs').then(m => { m.getDb(); console.log('table ready') })"`
-Expected: prints `table ready`, and `.data/taskboard.sqlite` file exists (`ls .data/`)
+執行：`node -e "import('./server/db.mjs').then(m => { m.getDb(); console.log('table ready') })"`
+預期：印出 `table ready`，且 `.data/taskboard.sqlite` 檔案存在（用 `ls .data/` 確認）
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 6：Commit**
 
 ```bash
 git add package.json package-lock.json .gitignore server/db.mjs .data/.gitkeep
@@ -107,21 +107,21 @@ git commit -m "feat: add SQLite dependency and db module for Phase 2 backend"
 
 ---
 
-### Task 2: Task repository (data access layer)
+### Task 2：Task Repository（資料存取層）
 
-**Files:**
-- Create: `server/taskRepository.mjs`
+**檔案：**
+- 新增：`server/taskRepository.mjs`
 
-**Interfaces:**
-- Consumes: `getDb()` from `server/db.mjs` (Task 1)
-- Produces:
+**介面：**
+- 消費：`server/db.mjs`（Task 1）的 `getDb()`
+- 產出：
   - `listTasks(): TaskRow[]`
-  - `createTask(input): TaskRow` — input: `{ title, priority, tags, assignees, progress, columnId }`
-  - `updateTask(id, patch): TaskRow | null` — patch: partial fields, any subset
+  - `createTask(input): TaskRow` —— input：`{ title, priority, tags, assignees, progress, columnId }`
+  - `updateTask(id, patch): TaskRow | null` —— patch：任意欄位子集
   - `deleteTask(id): boolean`
-  - `TaskRow` shape (JS object, JSON-serializable): `{ id, title, priority, tags: array, assignees: array, progress: number|null, commentCount, hasUnread: boolean, columnId, createdAt, updatedAt }`
+  - `TaskRow` 形狀（JS 物件，可 JSON 序列化）：`{ id, title, priority, tags: array, assignees: array, progress: number|null, commentCount, hasUnread: boolean, columnId, createdAt, updatedAt }`
 
-- [ ] **Step 1: Write `server/taskRepository.mjs`**
+- [ ] **Step 1：撰寫 `server/taskRepository.mjs`**
 
 ```javascript
 import { randomUUID } from 'node:crypto'
@@ -207,9 +207,9 @@ export function deleteTask(id) {
 }
 ```
 
-- [ ] **Step 2: Verify with a manual smoke script**
+- [ ] **Step 2：用手動 smoke script 驗證**
 
-Run:
+執行：
 ```bash
 node -e "
 import('./server/taskRepository.mjs').then(repo => {
@@ -222,9 +222,9 @@ import('./server/taskRepository.mjs').then(repo => {
 })
 "
 ```
-Expected: created task printed, appears in list, update reflects new title, delete returns `true`, task absent from final list.
+預期：印出建立的任務、出現在列表中、更新後標題正確、刪除回傳 `true`、最終列表中不再有該任務。
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 3：Commit**
 
 ```bash
 git add server/taskRepository.mjs
@@ -233,21 +233,21 @@ git commit -m "feat: add task repository data access layer"
 
 ---
 
-### Task 3: Express API server
+### Task 3：Express API Server
 
-**Files:**
-- Create: `server/index.mjs`
-- Modify: `package.json` (scripts: `dev:server`, `start`)
+**檔案：**
+- 新增：`server/index.mjs`
+- 修改：`package.json`（scripts：`dev:server`、`start`）
 
-**Interfaces:**
-- Consumes: `listTasks`, `createTask`, `updateTask`, `deleteTask` from `server/taskRepository.mjs` (Task 2)
-- Produces: HTTP server listening on `process.env.PORT ?? 3001` (or `8088` when `SERVE_STATIC=true`, see Task 8) exposing:
+**介面：**
+- 消費：`server/taskRepository.mjs`（Task 2）的 `listTasks`、`createTask`、`updateTask`、`deleteTask`
+- 產出：HTTP server 監聽 `process.env.PORT ?? 3001`（當 `SERVE_STATIC=true` 時為 `8088`，見 Task 8），提供：
   - `GET /api/tasks` → `200 { tasks: TaskRow[] }`
-  - `POST /api/tasks` → `201 { task: TaskRow }` (body: `{ title, priority, tags?, assignees?, progress?, columnId }`; `400` if `title`/`priority`/`columnId` missing)
-  - `PATCH /api/tasks/:id` → `200 { task: TaskRow }`; `404 { error: 'not_found' }` if id missing
-  - `DELETE /api/tasks/:id` → `204` empty body; `404 { error: 'not_found' }` if id missing
+  - `POST /api/tasks` → `201 { task: TaskRow }`（body：`{ title, priority, tags?, assignees?, progress?, columnId }`；若缺少 `title`/`priority`/`columnId` 則 `400`）
+  - `PATCH /api/tasks/:id` → `200 { task: TaskRow }`；找不到 id 則 `404 { error: 'not_found' }`
+  - `DELETE /api/tasks/:id` → `204` 空 body；找不到 id 則 `404 { error: 'not_found' }`
 
-- [ ] **Step 1: Write `server/index.mjs`**
+- [ ] **Step 1：撰寫 `server/index.mjs`**
 
 ```javascript
 import express from 'express'
@@ -287,49 +287,49 @@ app.listen(port, () => {
 })
 ```
 
-- [ ] **Step 2: Add `dev:server` and `start` scripts to `package.json`**
+- [ ] **Step 2：在 `package.json` 加入 `dev:server` 與 `start` scripts**
 
 ```json
 "dev:server": "node --watch server/index.mjs",
 "start": "node server/index.mjs"
 ```
 
-- [ ] **Step 3: Run server and verify with curl**
+- [ ] **Step 3：啟動 server 並用 curl 驗證**
 
-Run (in background): `PORT=3001 node server/index.mjs`
+執行（背景）：`PORT=3001 node server/index.mjs`
 
-Then in another terminal:
+接著在另一個 terminal：
 ```bash
 curl -s -X POST http://localhost:3001/api/tasks \
   -H 'Content-Type: application/json' \
   -d '{"title":"Test task","priority":"high","columnId":"todo"}'
 ```
-Expected: `201` with JSON body containing `task.id`, `task.title == "Test task"`.
+預期：`201`，JSON body 包含 `task.id`、`task.title == "Test task"`。
 
 ```bash
 curl -s http://localhost:3001/api/tasks
 ```
-Expected: `200` with `{"tasks":[{...the created task...}]}`.
+預期：`200`，`{"tasks":[{...剛建立的任務...}]}`。
 
 ```bash
-curl -s -X PATCH http://localhost:3001/api/tasks/<id-from-above> \
+curl -s -X PATCH http://localhost:3001/api/tasks/<上面的 id> \
   -H 'Content-Type: application/json' -d '{"columnId":"in_progress"}'
 ```
-Expected: `200`, `task.columnId == "in_progress"`.
+預期：`200`，`task.columnId == "in_progress"`。
 
 ```bash
-curl -s -o /dev/null -w "%{http_code}\n" -X DELETE http://localhost:3001/api/tasks/<id-from-above>
+curl -s -o /dev/null -w "%{http_code}\n" -X DELETE http://localhost:3001/api/tasks/<上面的 id>
 ```
-Expected: `204`.
+預期：`204`。
 
 ```bash
 curl -s -o /dev/null -w "%{http_code}\n" -X DELETE http://localhost:3001/api/tasks/does-not-exist
 ```
-Expected: `404`.
+預期：`404`。
 
-Stop the server afterward.
+驗證完成後記得停掉 server。
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 4：Commit**
 
 ```bash
 git add server/index.mjs package.json
@@ -338,17 +338,17 @@ git commit -m "feat: add Express API server with task CRUD endpoints"
 
 ---
 
-### Task 4: Seed script to migrate mock data into SQLite
+### Task 4：把 mock 資料遷移到 SQLite 的 Seed Script
 
-**Files:**
-- Create: `server/seed.mjs`
-- Modify: `package.json` (script: `db:seed`)
+**檔案：**
+- 新增：`server/seed.mjs`
+- 修改：`package.json`（script：`db:seed`）
 
-**Interfaces:**
-- Consumes: `createTask` from `server/taskRepository.mjs`, task/column data shape from `src/data/mockTasks.ts` (re-authored as plain JS literal here since `server/` runs under plain Node, not the Vite/TS toolchain)
-- Produces: idempotent seed (skips insert if the `tasks` table is already non-empty)
+**介面：**
+- 消費：`server/taskRepository.mjs` 的 `createTask`，資料形狀取自 `src/data/mockTasks.ts`（因 `server/` 在純 Node 環境執行，非 Vite/TS toolchain，此處重新以純 JS literal 撰寫）
+- 產出：冪等（idempotent）seed（若 `tasks` 資料表已有資料則跳過寫入）
 
-- [ ] **Step 1: Write `server/seed.mjs`**
+- [ ] **Step 1：撰寫 `server/seed.mjs`**
 
 ```javascript
 import { listTasks, createTask } from './taskRepository.mjs'
@@ -378,24 +378,24 @@ function seed() {
 seed()
 ```
 
-- [ ] **Step 2: Add `db:seed` script to `package.json`**
+- [ ] **Step 2：在 `package.json` 加入 `db:seed` script**
 
 ```json
 "db:seed": "node server/seed.mjs"
 ```
 
-- [ ] **Step 3: Run and verify**
+- [ ] **Step 3：執行並驗證**
 
-Run: `rm -f .data/taskboard.sqlite* && npm run db:seed`
-Expected: `Seeded 8 tasks.`
+執行：`rm -f .data/taskboard.sqlite* && npm run db:seed`
+預期：`Seeded 8 tasks.`
 
-Run again: `npm run db:seed`
-Expected: `Tasks table already has data, skipping seed.` (idempotency check)
+再執行一次：`npm run db:seed`
+預期：`Tasks table already has data, skipping seed.`（冪等性檢查）
 
-Run: `node -e "import('./server/taskRepository.mjs').then(r => console.log(r.listTasks().length))"`
-Expected: `8`
+執行：`node -e "import('./server/taskRepository.mjs').then(r => console.log(r.listTasks().length))"`
+預期：`8`
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 4：Commit**
 
 ```bash
 git add server/seed.mjs package.json
@@ -404,20 +404,20 @@ git commit -m "feat: add idempotent seed script migrating mock tasks into SQLite
 
 ---
 
-### Task 5: Frontend API client
+### Task 5：前端 API Client
 
-**Files:**
-- Create: `src/lib/api.ts`
+**檔案：**
+- 新增：`src/lib/api.ts`
 
-**Interfaces:**
-- Consumes: `Task` type from `src/types/task.ts`
-- Produces:
+**介面：**
+- 消費：`src/types/task.ts` 的 `Task` 型別
+- 產出：
   - `fetchTasks(): Promise<Task[]>`
   - `createTaskApi(input: Omit<Task, 'id'>): Promise<Task>`
   - `updateTaskApi(id: string, patch: Partial<Task>): Promise<Task>`
   - `deleteTaskApi(id: string): Promise<void>`
 
-- [ ] **Step 1: Write `src/lib/api.ts`**
+- [ ] **Step 1：撰寫 `src/lib/api.ts`**
 
 ```typescript
 import type { Task } from '../types/task'
@@ -465,12 +465,12 @@ export async function deleteTaskApi(id: string): Promise<void> {
 }
 ```
 
-- [ ] **Step 2: Verify with `tsc`**
+- [ ] **Step 2：用 `tsc` 驗證**
 
-Run: `npx tsc --noEmit`
-Expected: no errors related to `src/lib/api.ts`
+執行：`npx tsc --noEmit`
+預期：無與 `src/lib/api.ts` 相關的錯誤
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 3：Commit**
 
 ```bash
 git add src/lib/api.ts
@@ -479,15 +479,15 @@ git commit -m "feat: add frontend API client for task CRUD"
 
 ---
 
-### Task 6: Vite dev proxy configuration
+### Task 6：Vite Dev Proxy 設定
 
-**Files:**
-- Modify: `vite.config.ts`
+**檔案：**
+- 修改：`vite.config.ts`
 
-**Interfaces:**
-- No new exports; adjusts dev server behavior only.
+**介面：**
+- 無新匯出；僅調整 dev server 行為。
 
-- [ ] **Step 1: Add proxy config to `vite.config.ts`**
+- [ ] **Step 1：在 `vite.config.ts` 加入 proxy 設定**
 
 ```typescript
 import react from '@vitejs/plugin-react'
@@ -511,19 +511,19 @@ export default defineConfig({
 })
 ```
 
-- [ ] **Step 2: Verify proxy works end-to-end**
+- [ ] **Step 2：驗證 proxy 端到端運作**
 
-Run backend in one terminal: `npm run db:seed && npm run dev:server`
-Run frontend in another: `npm run dev`
+在一個 terminal 啟動後端：`npm run db:seed && npm run dev:server`
+在另一個 terminal 啟動前端：`npm run dev`
 
 ```bash
 curl -s http://localhost:8088/api/tasks
 ```
-Expected: `200` with the 8 seeded tasks (proxied through Vite to Express).
+預期：`200`，回傳 8 筆種子任務（透過 Vite proxy 到 Express）。
 
-Stop both processes afterward.
+驗證完成後記得停掉兩個 process。
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 3：Commit**
 
 ```bash
 git add vite.config.ts
@@ -532,20 +532,20 @@ git commit -m "feat: proxy /api requests from Vite dev server to Express backend
 
 ---
 
-### Task 7: Wire App.tsx to the API instead of mock data
+### Task 7：讓 App.tsx 改接 API 而非 mock 資料
 
-**Files:**
-- Modify: `src/App.tsx`
-- Modify: `src/components/BoardColumn.tsx` (only if drop-column callback signature needs adjusting — see Step 1 note)
-- Delete: `src/data/mockTasks.ts` import usage (file itself can stay for `columns` export, see Step 1)
+**檔案：**
+- 修改：`src/App.tsx`
+- 修改：`src/components/BoardColumn.tsx`（僅在放置欄位的 callback 簽名需要調整時 —— 見 Step 1 備註）
+- 刪除：`src/data/mockTasks.ts` 的使用（檔案本身可保留 `columns` 匯出，見 Step 1）
 
-**Interfaces:**
-- Consumes: `fetchTasks`, `updateTaskApi` from `src/lib/api.ts` (Task 5)
-- Produces: `App.tsx` loads tasks from the API on mount, shows a loading state, and calls `updateTaskApi` when a drag-and-drop changes a task's `columnId` (optimistic UI update, API call fire-and-forget with console.error on failure — no rollback UI in this POC phase)
+**介面：**
+- 消費：`src/lib/api.ts`（Task 5）的 `fetchTasks`、`updateTaskApi`
+- 產出：`App.tsx` 在 mount 時從 API 載入任務、顯示載入狀態，並在拖拉改變任務 `columnId` 時呼叫 `updateTaskApi`（樂觀 UI 更新，API 呼叫為 fire-and-forget，失敗時 console.error —— 此 POC 階段不做 rollback UI）
 
-- [ ] **Step 1: Split `mockTasks.ts` — keep `columns`, drop the `mockTasks` array export**
+- [ ] **Step 1：拆分 `mockTasks.ts` —— 保留 `columns`，移除 `mockTasks` 陣列匯出**
 
-`src/data/mockTasks.ts` currently exports both `columns` (static column definitions, still needed) and `mockTasks` (the array to remove). Rename the file to `src/data/columns.ts` keeping only the `columns` export, and delete the `mockTasks` array entirely.
+`src/data/mockTasks.ts` 目前同時匯出 `columns`（靜態欄位定義，仍需要）與 `mockTasks`（要移除的陣列）。將檔案重新命名為 `src/data/columns.ts`，只保留 `columns` 匯出，並完全刪除 `mockTasks` 陣列。
 
 ```typescript
 // src/data/columns.ts
@@ -558,9 +558,9 @@ export const columns: Column[] = [
 ]
 ```
 
-Delete `src/data/mockTasks.ts`.
+刪除 `src/data/mockTasks.ts`。
 
-- [ ] **Step 2: Update `src/App.tsx` to load from API and persist column moves**
+- [ ] **Step 2：更新 `src/App.tsx`，改從 API 載入並持久化欄位移動**
 
 ```typescript
 import { useEffect, useMemo, useState } from 'react'
@@ -689,17 +689,17 @@ export default function App() {
 }
 ```
 
-- [ ] **Step 3: Verify with `tsc` and manual browser check**
+- [ ] **Step 3：用 `tsc` 與手動瀏覽器檢查驗證**
 
-Run: `npx tsc --noEmit`
-Expected: no errors.
+執行：`npx tsc --noEmit`
+預期：無錯誤。
 
-Run backend + frontend dev servers (as in Task 6, Step 2), open `http://localhost:8088` in a browser (or `curl -s http://localhost:8088/ | head -5` to confirm HTML loads).
-Manually drag a card between columns in the browser; refresh the page; confirm the card stayed in the new column (proves persistence round-trip).
+啟動前後端 dev server（如 Task 6 Step 2），瀏覽器打開 `http://localhost:8088`（或 `curl -s http://localhost:8088/ | head -5` 確認 HTML 有載入）。
+在瀏覽器中手動把一張卡片拖到另一個欄位；重新整理頁面；確認卡片仍停留在新欄位（證明持久化的往返流程正確）。
 
-Stop both dev servers afterward.
+驗證完成後記得停掉兩個 dev server。
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 4：Commit**
 
 ```bash
 git add src/App.tsx src/data/columns.ts
@@ -709,20 +709,20 @@ git commit -m "feat: load tasks from API and persist column moves on drag-and-dr
 
 ---
 
-### Task 8: Single-container Docker setup (Node serves API + static files)
+### Task 8：單一 Container Docker 設定（Node 同時 serve API + 靜態檔）
 
-**Files:**
-- Modify: `Dockerfile`
-- Modify: `docker-compose.yml`
-- Modify: `server/index.mjs` (serve static files when `dist/` exists)
-- Remove: `nginx.conf` (no longer used)
+**檔案：**
+- 修改：`Dockerfile`
+- 修改：`docker-compose.yml`
+- 修改：`server/index.mjs`（當 `dist/` 存在時 serve 靜態檔）
+- 移除：`nginx.conf`（不再使用）
 
-**Interfaces:**
-- Modifies `server/index.mjs`'s existing Express app to also serve `dist/` as static root and fall back to `dist/index.html` for non-API routes (SPA routing), listening on `process.env.PORT ?? 3001` — Docker will set `PORT=8088`.
+**介面：**
+- 修改既有 `server/index.mjs` 的 Express app，讓它同時 serve `dist/` 作為靜態根目錄，並對非 API 路由 fallback 到 `dist/index.html`（SPA 路由），監聽 `process.env.PORT ?? 3001`（Docker 會設定 `PORT=8088`）。
 
-- [ ] **Step 1: Update `server/index.mjs` to serve static frontend files**
+- [ ] **Step 1：更新 `server/index.mjs` 以 serve 靜態前端檔案**
 
-Add near the top (after `app.use(express.json())`) and at the bottom (after the API routes, before `app.listen`):
+在頂部（`app.use(express.json())` 之後）與底部（API 路由之後、`app.listen` 之前）加入：
 
 ```javascript
 import path from 'node:path'
@@ -740,9 +740,9 @@ if (fs.existsSync(distDir)) {
 }
 ```
 
-(Place the `import` lines with the other imports at the top of the file, and the `if (fs.existsSync(distDir))` block after all `/api/*` route definitions but before `app.listen(...)`.)
+（將 `import` 那幾行放到檔案頂部與其他 import 一起；`if (fs.existsSync(distDir))` 區塊放在所有 `/api/*` 路由定義之後、`app.listen(...)` 之前。）
 
-- [ ] **Step 2: Rewrite `Dockerfile` for single-container build**
+- [ ] **Step 2：改寫 `Dockerfile` 為單一 container 建置**
 
 ```dockerfile
 # ---- Build stage ----
@@ -775,7 +775,7 @@ VOLUME ["/app/.data"]
 CMD ["node", "server/index.mjs"]
 ```
 
-- [ ] **Step 3: Rewrite `docker-compose.yml` for single service**
+- [ ] **Step 3：改寫 `docker-compose.yml` 為單一 service**
 
 ```yaml
 services:
@@ -795,15 +795,15 @@ volumes:
   taskboard-data:
 ```
 
-- [ ] **Step 4: Remove obsolete `nginx.conf`**
+- [ ] **Step 4：移除已不需要的 `nginx.conf`**
 
 ```bash
 git rm nginx.conf
 ```
 
-- [ ] **Step 5: Update `.dockerignore`**
+- [ ] **Step 5：更新 `.dockerignore`**
 
-Ensure `.data` is excluded from the build context (it's runtime state, not build input):
+確保 `.data` 從 build context 排除（它是執行期狀態，不是建置輸入）：
 
 ```
 node_modules
@@ -816,7 +816,7 @@ docs
 .data
 ```
 
-- [ ] **Step 6: Build and verify the container end-to-end**
+- [ ] **Step 6：建置並端到端驗證 container**
 
 ```bash
 docker build -t ai-task-board:latest .
@@ -828,13 +828,13 @@ curl -s -X POST http://localhost:8088/api/tasks -H 'Content-Type: application/js
   -d '{"title":"Docker smoke test","priority":"low","columnId":"todo"}'
 curl -s http://localhost:8088/api/tasks
 ```
-Expected: `HTML:200`; first `/api/tasks` call returns `{"tasks":[]}` (fresh DB, no seed run in container); POST returns `201` with the new task; second `/api/tasks` call shows the new task persisted.
+預期：`HTML:200`；第一次 `/api/tasks` 呼叫回傳 `{"tasks":[]}`（全新資料庫，container 內未執行 seed）；POST 回傳 `201` 與新任務；第二次 `/api/tasks` 呼叫顯示新任務已持久化。
 
 ```bash
 docker rm -f ai-task-board-test
 ```
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 7：Commit**
 
 ```bash
 git add Dockerfile docker-compose.yml server/index.mjs .dockerignore
@@ -845,21 +845,21 @@ git push origin main
 
 ---
 
-### Task 9: Update README and spec cross-references
+### Task 9：更新 README 與 spec 交叉引用
 
-**Files:**
-- Modify: `README.md`
+**檔案：**
+- 修改：`README.md`
 
-**Interfaces:** None (documentation only).
+**介面：** 無（純文件更新）。
 
-- [ ] **Step 1: Update `README.md`**
+- [ ] **Step 1：更新 `README.md`**
 
-- Change Phase 2 status from "🚧 設計完成，開發中" to "✅ 完成"
-- Update "開發" section: add concrete commands for running both dev servers (`npm run db:seed`, `npm run dev:server`, `npm run dev` in separate terminals)
-- Update "Docker" section: remove references to nginx, note the `.data` volume persists SQLite data across container restarts
-- Update "專案結構" tree to include `server/` directory (`server/index.mjs`, `server/db.mjs`, `server/taskRepository.mjs`, `server/seed.mjs`) and `src/lib/api.ts`, and remove `nginx.conf`
+- 將 Phase 2 狀態從「🚧 設計完成，開發中」改為「✅ 完成」
+- 更新「開發」章節：加入同時啟動兩個 dev server 的具體指令（在不同 terminal 分別執行 `npm run db:seed`、`npm run dev:server`、`npm run dev`）
+- 更新「Docker」章節：移除 nginx 相關描述，說明 `.data` volume 讓 SQLite 資料在 container 重啟後仍然保留
+- 更新「專案結構」樹狀圖，加入 `server/` 目錄（`server/index.mjs`、`server/db.mjs`、`server/taskRepository.mjs`、`server/seed.mjs`）與 `src/lib/api.ts`，並移除 `nginx.conf`
 
-- [ ] **Step 2: Commit and push**
+- [ ] **Step 2：Commit 並 push**
 
 ```bash
 git add README.md
