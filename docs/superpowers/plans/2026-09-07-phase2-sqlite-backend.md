@@ -868,3 +868,22 @@ git add README.md
 git commit -m "docs: update README for Phase 2 completion (SQLite backend + API)"
 git push origin main
 ```
+
+---
+
+## 最終 Whole-Branch Review 與修正
+
+全部 9 個 Task 完成後，依 subagent-driven-development 流程對整個分支（`e70b979..74e821b`，21 commits）進行最終審查，發現：
+
+- **Important #1（blocking）**：`POST /api/tasks` 缺乏 `priority`/`columnId` 值域驗證，非法值會寫入 DB 並導致前端 `tasksByColumn` map 對 `undefined` 呼叫 `.push()` 而執行期崩潰
+- **Important #2**：`PATCH /api/tasks/:id` 同樣缺乏值域驗證
+- **Minor（一併處理）**：缺乏 Express 全域錯誤處理 middleware
+
+修正（commit `8a978bf`）：
+- 新增 `validateTaskFields()` 共用驗證函式，POST/PATCH 皆驗證 `priority ∈ {high, medium, low}`、`columnId ∈ {todo, in_progress, review}`
+- 新增 `pickFields()` 白名單機制，防止 mass-assignment（客戶端無法覆蓋 `id` 等伺服器產生欄位）
+- 新增全域 Express error-handling middleware，統一回傳乾淨 500（不洩漏 stack trace）
+
+Scoped re-review 確認全部 ADDRESSED，無新增 Critical/Important 問題，**最終判定：Approved**。
+
+分支已可合併回 `main`。

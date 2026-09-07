@@ -43,6 +43,13 @@ PATCH  /api/tasks/:id       更新任務（含拖拉換欄位時更新 columnId�
 DELETE /api/tasks/:id       刪除任務
 ```
 
+**驗證規則：**
+- `priority` 僅接受 `high` / `medium` / `low`，其他值回 `400`
+- `columnId` 僅接受 `todo` / `in_progress` / `review`，其他值回 `400`
+- `POST`/`PATCH` 皆採白名單方式只接受既定欄位（`title, priority, tags, assignees, progress, commentCount, hasUnread, columnId`），多餘欄位（如客戶端夾帶的 `id`）會被忽略，不會覆蓋伺服器產生的值
+- 找不到指定 `id` 的 `PATCH`/`DELETE` 回 `404`
+- 未預期的伺服器錯誤統一回 `500`（不含 stack trace，詳細錯誤僅記錄於伺服器端 console）
+
 ## 開發
 
 ```bash
@@ -68,6 +75,8 @@ npm run dev
 ```bash
 docker compose up -d --build
 ```
+
+服務啟動後可於 `http://localhost:8088` 存取（前端頁面與 `/api/*` 皆由同一個 port 提供）。
 
 - 單一 Node service（`taskboard`），同時提供靜態檔與 API
 - 掛載 named volume `taskboard-data:/app/.data`，讓 SQLite 資料庫檔案（`.data/taskboard.sqlite`）在 container 重啟 / 重建後仍然保留
