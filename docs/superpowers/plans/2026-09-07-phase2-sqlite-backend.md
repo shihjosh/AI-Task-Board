@@ -543,7 +543,7 @@ git commit -m "feat: proxy /api requests from Vite dev server to Express backend
 - 消費：`src/lib/api.ts`（Task 5）的 `fetchTasks`、`updateTaskApi`
 - 產出：`App.tsx` 在 mount 時從 API 載入任務、顯示載入狀態，並在拖拉改變任務 `columnId` 時呼叫 `updateTaskApi`（樂觀 UI 更新，API 呼叫為 fire-and-forget，失敗時 console.error —— 此 POC 階段不做 rollback UI）
 
-- [ ] **Step 1：拆分 `mockTasks.ts` —— 保留 `columns`，移除 `mockTasks` 陣列匯出**
+- [x] **Step 1：拆分 `mockTasks.ts` —— 保留 `columns`，移除 `mockTasks` 陣列匯出**
 
 `src/data/mockTasks.ts` 目前同時匯出 `columns`（靜態欄位定義，仍需要）與 `mockTasks`（要移除的陣列）。將檔案重新命名為 `src/data/columns.ts`，只保留 `columns` 匯出，並完全刪除 `mockTasks` 陣列。
 
@@ -560,7 +560,7 @@ export const columns: Column[] = [
 
 刪除 `src/data/mockTasks.ts`。
 
-- [ ] **Step 2：更新 `src/App.tsx`，改從 API 載入並持久化欄位移動**
+- [x] **Step 2：更新 `src/App.tsx`，改從 API 載入並持久化欄位移動**
 
 ```typescript
 import { useEffect, useMemo, useState } from 'react'
@@ -689,7 +689,7 @@ export default function App() {
 }
 ```
 
-- [ ] **Step 3：用 `tsc` 與手動瀏覽器檢查驗證**
+- [x] **Step 3：用 `tsc` 與手動瀏覽器檢查驗證**
 
 執行：`npx tsc --noEmit`
 預期：無錯誤。
@@ -699,7 +699,7 @@ export default function App() {
 
 驗證完成後記得停掉兩個 dev server。
 
-- [ ] **Step 4：Commit**
+- [x] **Step 4：Commit**
 
 ```bash
 git add src/App.tsx src/data/columns.ts
