@@ -34,7 +34,7 @@
   - `TAG_OPTIONS: { type: TagType; label: string }[]`（4 筆固定選項）
   - `ASSIGNEE_OPTIONS: Assignee[]`（3 筆固定選項，型別來自 `src/types/task.ts`）
 
-- [ ] **Step 1：撰寫 `src/data/options.ts`**
+- [x] **Step 1：撰寫 `src/data/options.ts`**
 
 ```typescript
 import type { Assignee, Tag, TagType } from '../types/task'
@@ -67,12 +67,12 @@ export const COLUMN_OPTIONS: { value: 'todo' | 'in_progress' | 'review'; label: 
 
 （`TagType` 目前未被此檔案直接使用作為獨立型別標註，若 `tsc` 提示未使用的 import，移除 `TagType` import 即可，只留 `Assignee`、`Tag`。）
 
-- [ ] **Step 2：用 `tsc` 驗證**
+- [x] **Step 2：用 `tsc` 驗證**
 
 執行：`npx tsc --noEmit`
 預期：無錯誤（若有「未使用的 import」錯誤，依照上一步的備註移除多餘 import）
 
-- [ ] **Step 3：Commit**
+- [x] **Step 3：Commit**
 
 ```bash
 git add src/data/options.ts
