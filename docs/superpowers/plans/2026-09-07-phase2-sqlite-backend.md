@@ -854,14 +854,14 @@ git push origin main
 
 **介面：** 無（純文件更新）。
 
-- [ ] **Step 1：更新 `README.md`**
+- [x] **Step 1：更新 `README.md`**
 
 - 將 Phase 2 狀態從「🚧 設計完成，開發中」改為「✅ 完成」
 - 更新「開發」章節：加入同時啟動兩個 dev server 的具體指令（在不同 terminal 分別執行 `npm run db:seed`、`npm run dev:server`、`npm run dev`）
 - 更新「Docker」章節：移除 nginx 相關描述，說明 `.data` volume 讓 SQLite 資料在 container 重啟後仍然保留
 - 更新「專案結構」樹狀圖，加入 `server/` 目錄（`server/index.mjs`、`server/db.mjs`、`server/taskRepository.mjs`、`server/seed.mjs`）與 `src/lib/api.ts`，並移除 `nginx.conf`
 
-- [ ] **Step 2：Commit 並 push**
+- [x] **Step 2：Commit 並 push**
 
 ```bash
 git add README.md
