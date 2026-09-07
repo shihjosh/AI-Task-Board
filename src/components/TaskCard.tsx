@@ -31,12 +31,14 @@ interface TaskCardProps {
   task: Task
   dragHandleProps?: Record<string, unknown>
   isDragging?: boolean
+  onClick?: () => void
 }
 
-export default function TaskCard({ task, dragHandleProps, isDragging }: TaskCardProps) {
+export default function TaskCard({ task, dragHandleProps, isDragging, onClick }: TaskCardProps) {
   return (
     <div
       {...dragHandleProps}
+      onClick={onClick}
       className={`group relative rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition hover:shadow-md cursor-grab active:cursor-grabbing ${
         isDragging ? 'opacity-50' : ''
       }`}
