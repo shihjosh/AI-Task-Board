@@ -66,7 +66,8 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
   function buildPayload() {
     const tags = TAG_OPTIONS.filter((t) => form.tagTypes.includes(t.type))
     const assignees = ASSIGNEE_OPTIONS.filter((a) => form.assigneeIds.includes(a.id))
-    const progress = form.progress.trim() === '' ? undefined : Number(form.progress)
+    const progress =
+      form.progress.trim() === '' ? undefined : Math.min(100, Math.max(0, Number(form.progress)))
     return {
       title: form.title.trim(),
       priority: form.priority,

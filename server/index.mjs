@@ -37,6 +37,12 @@ function validateTaskFields(body) {
   if (body.columnId !== undefined && !VALID_COLUMN_IDS.includes(body.columnId)) {
     return `columnId must be one of: ${VALID_COLUMN_IDS.join(', ')}`
   }
+  if (
+    body.progress !== undefined &&
+    (typeof body.progress !== 'number' || body.progress < 0 || body.progress > 100)
+  ) {
+    return 'progress must be a number between 0 and 100'
+  }
   return null
 }
 
