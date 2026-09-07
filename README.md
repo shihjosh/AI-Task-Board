@@ -81,6 +81,16 @@ docker compose up -d --build
 - 單一 Node service（`taskboard`），同時提供靜態檔與 API
 - 掛載 named volume `taskboard-data:/app/.data`，讓 SQLite 資料庫檔案（`.data/taskboard.sqlite`）在 container 重啟 / 重建後仍然保留
 
+**首次啟動後灌入種子資料：**
+
+```bash
+docker compose exec taskboard node server/seed.mjs
+```
+
+> 注意：`npm run db:seed`（見上方「開發」章節）只適用於本機開發模式，因為它寫入的是主機上的 `.data/taskboard.sqlite`。Docker 模式下資料庫檔案在 container 內的 volume 裡，必須用 `docker compose exec` 讓 seed script 在容器內執行才能寫入同一份資料庫。
+>
+> 此指令是冪等的：已有資料時重跑會印出 `Tasks table already has data, skipping seed.`，不會重複灌入。
+
 ## 專案結構
 
 ```
