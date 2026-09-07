@@ -720,7 +720,7 @@ git commit -m "feat: load tasks from API and persist column moves on drag-and-dr
 **介面：**
 - 修改既有 `server/index.mjs` 的 Express app，讓它同時 serve `dist/` 作為靜態根目錄，並對非 API 路由 fallback 到 `dist/index.html`（SPA 路由），監聽 `process.env.PORT ?? 3001`（Docker 會設定 `PORT=8088`）。
 
-- [ ] **Step 1：更新 `server/index.mjs` 以 serve 靜態前端檔案**
+- [x] **Step 1：更新 `server/index.mjs` 以 serve 靜態前端檔案**
 
 在頂部（`app.use(express.json())` 之後）與底部（API 路由之後、`app.listen` 之前）加入：
 
@@ -742,7 +742,9 @@ if (fs.existsSync(distDir)) {
 
 （將 `import` 那幾行放到檔案頂部與其他 import 一起；`if (fs.existsSync(distDir))` 區塊放在所有 `/api/*` 路由定義之後、`app.listen(...)` 之前。）
 
-- [ ] **Step 2：改寫 `Dockerfile` 為單一 container 建置**
+- [x] **Step 2：改寫 `Dockerfile` 為單一 container 建置**
+
+> 實作備註：production stage 最終改為 `COPY --from=build /app/node_modules ./node_modules`（而非重跑 `npm ci --omit=dev`），並在 build stage `npm run build` 之後加入 `npm prune --omit=dev`，避免編譯工具鏈與 devDependencies 殘留於 production image（經 fix round 1、2 修正並通過 re-review，image 由 877MB 降至 336MB）。
 
 ```dockerfile
 # ---- Build stage ----
@@ -775,7 +777,7 @@ VOLUME ["/app/.data"]
 CMD ["node", "server/index.mjs"]
 ```
 
-- [ ] **Step 3：改寫 `docker-compose.yml` 為單一 service**
+- [x] **Step 3：改寫 `docker-compose.yml` 為單一 service**
 
 ```yaml
 services:
@@ -795,13 +797,13 @@ volumes:
   taskboard-data:
 ```
 
-- [ ] **Step 4：移除已不需要的 `nginx.conf`**
+- [x] **Step 4：移除已不需要的 `nginx.conf`**
 
 ```bash
 git rm nginx.conf
 ```
 
-- [ ] **Step 5：更新 `.dockerignore`**
+- [x] **Step 5：更新 `.dockerignore`**
 
 確保 `.data` 從 build context 排除（它是執行期狀態，不是建置輸入）：
 
@@ -816,7 +818,7 @@ docs
 .data
 ```
 
-- [ ] **Step 6：建置並端到端驗證 container**
+- [x] **Step 6：建置並端到端驗證 container**
 
 ```bash
 docker build -t ai-task-board:latest .
@@ -834,7 +836,7 @@ curl -s http://localhost:8088/api/tasks
 docker rm -f ai-task-board-test
 ```
 
-- [ ] **Step 7：Commit**
+- [x] **Step 7：Commit**
 
 ```bash
 git add Dockerfile docker-compose.yml server/index.mjs .dockerignore
