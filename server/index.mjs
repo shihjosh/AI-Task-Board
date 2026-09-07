@@ -1,5 +1,11 @@
 import express from 'express'
+import path from 'node:path'
+import fs from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { listTasks, createTask, updateTask, deleteTask } from './taskRepository.mjs'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const distDir = path.join(__dirname, '..', 'dist')
 
 const app = express()
 app.use(express.json())
@@ -28,6 +34,13 @@ app.delete('/api/tasks/:id', (req, res) => {
   if (!ok) return res.status(404).json({ error: 'not_found' })
   res.status(204).end()
 })
+
+if (fs.existsSync(distDir)) {
+  app.use(express.static(distDir))
+  app.get(/^\/(?!api).*/, (req, res) => {
+    res.sendFile(path.join(distDir, 'index.html'))
+  })
+}
 
 const port = process.env.PORT ?? 3001
 app.listen(port, () => {

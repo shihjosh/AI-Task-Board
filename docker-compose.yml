@@ -7,4 +7,9 @@ services:
     container_name: ai-task-board
     ports:
       - "8088:8088"
+    volumes:
+      - taskboard-data:/app/.data
     restart: unless-stopped
+
+volumes:
+  taskboard-data:
