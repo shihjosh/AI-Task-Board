@@ -764,7 +764,7 @@ curl -s -o /dev/null -w "%{http_code}\n" -X DELETE http://localhost:8088/api/tas
 
 **介面：** 無（純文件更新）。
 
-- [ ] **Step 1：更新 `README.md`**
+- [x] **Step 1：更新 `README.md`**
 
 在「看板設計」章節之後（或適當位置）新增一小節說明新增/編輯功能：
 
@@ -776,7 +776,7 @@ curl -s -o /dev/null -w "%{http_code}\n" -X DELETE http://localhost:8088/api/tas
 - 標籤與負責人皆為固定選單（不開放自由輸入新增選項）
 ```
 
-- [ ] **Step 2：Commit 並 push**
+- [x] **Step 2：Commit 並 push**
 
 ```bash
 git add README.md
