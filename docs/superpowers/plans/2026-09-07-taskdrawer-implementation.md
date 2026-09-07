@@ -444,7 +444,7 @@ git commit -m "feat: add onAddTask prop to Toolbar for opening TaskDrawer"
 - `SortableTaskCard` Props 新增：`onTaskClick?: (task: Task) => void`
 - `BoardColumn` Props 新增：`onTaskClick?: (task: Task) => void`
 
-- [ ] **Step 1：修改 `src/components/TaskCard.tsx`**
+- [x] **Step 1：修改 `src/components/TaskCard.tsx`**
 
 修改 `TaskCardProps` 介面與元件簽名：
 
@@ -473,7 +473,7 @@ export default function TaskCard({ task, dragHandleProps, isDragging, onClick }:
 
 （因為 dnd-kit 的 `activationConstraint: { distance: 5 }` 已經確保「單純點擊」不會觸發拖拉手勢，`onClick` 只有在滑鼠沒有移動超過 5px 時才會被觸發，兩者可以正常共存，不需要額外的事件阻擋邏輯）
 
-- [ ] **Step 2：修改 `src/components/SortableTaskCard.tsx`**
+- [x] **Step 2：修改 `src/components/SortableTaskCard.tsx`**
 
 ```typescript
 import { useSortable } from '@dnd-kit/sortable'
@@ -510,7 +510,7 @@ export default function SortableTaskCard({ task, onTaskClick }: SortableTaskCard
 }
 ```
 
-- [ ] **Step 3：修改 `src/components/BoardColumn.tsx`**
+- [x] **Step 3：修改 `src/components/BoardColumn.tsx`**
 
 ```typescript
 import { useDroppable } from '@dnd-kit/core'
@@ -557,12 +557,12 @@ export default function BoardColumn({ column, tasks, onTaskClick }: BoardColumnP
 }
 ```
 
-- [ ] **Step 4：用 `tsc` 驗證**
+- [x] **Step 4：用 `tsc` 驗證**
 
 執行：`npx tsc -b`
 預期：會出現 `App.tsx` 呼叫 `<BoardColumn />` 未傳入 `onTaskClick` 的情況——因為 `onTaskClick` 是 optional prop（`?:`），這不會是型別錯誤，只會在執行期沒有點擊反應，屬預期中，留到 Task 5 補上呼叫端。確認沒有其他型別錯誤。
 
-- [ ] **Step 5：Commit**
+- [x] **Step 5：Commit**
 
 ```bash
 git add src/components/TaskCard.tsx src/components/SortableTaskCard.tsx src/components/BoardColumn.tsx
