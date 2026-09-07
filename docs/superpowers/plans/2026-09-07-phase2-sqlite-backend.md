@@ -247,7 +247,7 @@ git commit -m "feat: add task repository data access layer"
   - `PATCH /api/tasks/:id` → `200 { task: TaskRow }`；找不到 id 則 `404 { error: 'not_found' }`
   - `DELETE /api/tasks/:id` → `204` 空 body；找不到 id 則 `404 { error: 'not_found' }`
 
-- [ ] **Step 1：撰寫 `server/index.mjs`**
+- [x] **Step 1：撰寫 `server/index.mjs`**
 
 ```javascript
 import express from 'express'
@@ -287,14 +287,14 @@ app.listen(port, () => {
 })
 ```
 
-- [ ] **Step 2：在 `package.json` 加入 `dev:server` 與 `start` scripts**
+- [x] **Step 2：在 `package.json` 加入 `dev:server` 與 `start` scripts**
 
 ```json
 "dev:server": "node --watch server/index.mjs",
 "start": "node server/index.mjs"
 ```
 
-- [ ] **Step 3：啟動 server 並用 curl 驗證**
+- [x] **Step 3：啟動 server 並用 curl 驗證**
 
 執行（背景）：`PORT=3001 node server/index.mjs`
 
@@ -329,7 +329,7 @@ curl -s -o /dev/null -w "%{http_code}\n" -X DELETE http://localhost:3001/api/tas
 
 驗證完成後記得停掉 server。
 
-- [ ] **Step 4：Commit**
+- [x] **Step 4：Commit**
 
 ```bash
 git add server/index.mjs package.json
