@@ -103,7 +103,7 @@ git commit -m "feat: add fixed option lists for tags/assignees/priority/column"
   ```
 - 元件內部用 `useState` 管理表單欄位（title, priority, columnId, tags 選取狀態, assignees 選取狀態, progress），`useEffect` 在 `initialTask`/`isOpen` 改變時重置表單。
 
-- [ ] **Step 1：撰寫 `src/components/TaskDrawer.tsx`**
+- [x] **Step 1：撰寫 `src/components/TaskDrawer.tsx`**
 
 ```typescript
 import { useEffect, useState } from 'react'
@@ -366,12 +366,12 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
 }
 ```
 
-- [ ] **Step 2：用 `tsc` 驗證**
+- [x] **Step 2：用 `tsc` 驗證**
 
 執行：`npx tsc --noEmit`
 預期：無錯誤
 
-- [ ] **Step 3：Commit**
+- [x] **Step 3：Commit**
 
 ```bash
 git add src/components/TaskDrawer.tsx
