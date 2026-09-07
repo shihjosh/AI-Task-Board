@@ -1,0 +1,93 @@
+import type { Column, Task } from '../types/task'
+
+export const columns: Column[] = [
+  { id: 'todo', title: '等待認領', colorClass: 'bg-slate-100 text-slate-600 border-slate-200' },
+  { id: 'in_progress', title: '處理中', colorClass: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  { id: 'review', title: '等你確認', colorClass: 'bg-sky-50 text-sky-700 border-sky-200' },
+]
+
+export const mockTasks: Task[] = [
+  {
+    id: 'LOCAL-5',
+    title: '議題中如果圖片太小，應該以實際尺寸顯示',
+    priority: 'high',
+    tags: [{ type: 'issue', label: 'Issue' }],
+    assignees: [{ id: 'u1', name: 'Josh', avatarColor: 'bg-purple-500', initials: 'JS' }],
+    commentCount: 1,
+    columnId: 'todo',
+  },
+  {
+    id: 'LOCAL-8',
+    title: '看板卡片支援多標籤篩選',
+    priority: 'medium',
+    tags: [{ type: 'github', label: 'GitHub' }],
+    assignees: [{ id: 'u2', name: 'Amy', avatarColor: 'bg-orange-500', initials: 'AM' }],
+    commentCount: 0,
+    columnId: 'todo',
+  },
+  {
+    id: 'LOCAL-12',
+    title: '雲端登入與多人即時協作',
+    priority: 'high',
+    tags: [{ type: 'pr', label: 'PR #40' }],
+    assignees: [
+      { id: 'u1', name: 'Josh', avatarColor: 'bg-purple-500', initials: 'JS' },
+      { id: 'u3', name: 'Ken', avatarColor: 'bg-blue-500', initials: 'KN' },
+    ],
+    progress: 65,
+    commentCount: 3,
+    columnId: 'in_progress',
+  },
+  {
+    id: 'LOCAL-15',
+    title: '暗色主題與 PR #40 收斂',
+    priority: 'medium',
+    tags: [{ type: 'pr', label: 'PR #40' }],
+    assignees: [{ id: 'u3', name: 'Ken', avatarColor: 'bg-blue-500', initials: 'KN' }],
+    progress: 30,
+    commentCount: 2,
+    columnId: 'in_progress',
+  },
+  {
+    id: 'LOCAL-18',
+    title: '任務詳情頁 Markdown 渲染優化',
+    priority: 'low',
+    tags: [{ type: 'issue', label: 'Issue' }],
+    assignees: [{ id: 'u2', name: 'Amy', avatarColor: 'bg-orange-500', initials: 'AM' }],
+    progress: 80,
+    commentCount: 0,
+    columnId: 'in_progress',
+  },
+  {
+    id: 'LOCAL-21',
+    title: '拖拉排序在行動裝置上偶爾失效',
+    priority: 'high',
+    tags: [{ type: 'bug', label: 'BUG' }],
+    assignees: [{ id: 'u1', name: 'Josh', avatarColor: 'bg-purple-500', initials: 'JS' }],
+    commentCount: 5,
+    hasUnread: true,
+    columnId: 'review',
+  },
+  {
+    id: 'LOCAL-24',
+    title: '看板欄位標題可自訂顏色',
+    priority: 'medium',
+    tags: [{ type: 'github', label: 'GitHub' }],
+    assignees: [
+      { id: 'u2', name: 'Amy', avatarColor: 'bg-orange-500', initials: 'AM' },
+      { id: 'u3', name: 'Ken', avatarColor: 'bg-blue-500', initials: 'KN' },
+    ],
+    commentCount: 2,
+    hasUnread: true,
+    columnId: 'review',
+  },
+  {
+    id: 'LOCAL-27',
+    title: '匯出看板資料為 CSV',
+    priority: 'low',
+    tags: [{ type: 'issue', label: 'Issue' }],
+    assignees: [{ id: 'u1', name: 'Josh', avatarColor: 'bg-purple-500', initials: 'JS' }],
+    commentCount: 0,
+    columnId: 'review',
+  },
+]

@@ -1,0 +1,10 @@
+services:
+  taskboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ai-task-board:latest
+    container_name: ai-task-board
+    ports:
+      - "8088:8088"
+    restart: unless-stopped
