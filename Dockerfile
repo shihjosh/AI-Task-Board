@@ -10,6 +10,7 @@ RUN npm ci
 
 COPY . .
 RUN npm run build
+RUN npm prune --omit=dev
 
 # ---- Production stage ----
 FROM node:22-alpine AS production
