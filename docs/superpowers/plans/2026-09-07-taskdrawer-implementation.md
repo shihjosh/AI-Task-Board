@@ -22,6 +22,8 @@
 - 編輯模式下的刪除需要 `window.confirm()` 二次確認
 - 既有元件的既有 props 與行為不可破壞（拖拉換欄位功能必須維持正常）
 
+> **注意（Task 3 執行中發現）：** 根目錄 `tsconfig.json` 是 solution-style project references，直接執行裸的 `npx tsc --noEmit` 會 exit 0、看不到任何型別錯誤（不會實際檢查 `src/` 底下的檔案）。後續所有 Task 的型別驗證步驟，請改用 `npx tsc -b` 才能看到真實的編譯錯誤。
+
 ---
 
 ### Task 1：固定選單常數與型別擴充
@@ -388,7 +390,7 @@ git commit -m "feat: add TaskDrawer component for create/edit task form"
 **介面：**
 - Props 新增：`onAddTask: () => void`
 
-- [ ] **Step 1：修改 `src/components/Toolbar.tsx`**
+- [x] **Step 1：修改 `src/components/Toolbar.tsx`**
 
 在檔案開頭的 import 之後，修改元件簽名與按鈕：
 
@@ -416,12 +418,12 @@ export default function Toolbar({ onAddTask }: ToolbarProps) {
 
 （僅新增 `onClick={onAddTask}`，其餘 className 與內容不變）
 
-- [ ] **Step 2：用 `tsc` 驗證**
+- [x] **Step 2：用 `tsc` 驗證**
 
-執行：`npx tsc --noEmit`
+執行：`npx tsc -b`
 預期：會出現 `App.tsx` 呼叫 `<Toolbar />` 缺少必要 prop `onAddTask` 的錯誤——這是預期的，因為 Task 5 才會修改 `App.tsx` 補上這個 prop。此步驟先確認 `Toolbar.tsx` 本身語法正確、型別定義正確即可，`App.tsx` 的錯誤留到 Task 5 解決。
 
-- [ ] **Step 3：Commit**
+- [x] **Step 3：Commit**
 
 ```bash
 git add src/components/Toolbar.tsx
@@ -557,7 +559,7 @@ export default function BoardColumn({ column, tasks, onTaskClick }: BoardColumnP
 
 - [ ] **Step 4：用 `tsc` 驗證**
 
-執行：`npx tsc --noEmit`
+執行：`npx tsc -b`
 預期：會出現 `App.tsx` 呼叫 `<BoardColumn />` 未傳入 `onTaskClick` 的情況——因為 `onTaskClick` 是 optional prop（`?:`），這不會是型別錯誤，只會在執行期沒有點擊反應，屬預期中，留到 Task 5 補上呼叫端。確認沒有其他型別錯誤。
 
 - [ ] **Step 5：Commit**
@@ -662,7 +664,7 @@ import TaskDrawer from './components/TaskDrawer'
 
 - [ ] **Step 2：用 `tsc` 驗證**
 
-執行：`npx tsc --noEmit`
+執行：`npx tsc -b`
 預期：無錯誤
 
 - [ ] **Step 3：`npm run build` 驗證**
