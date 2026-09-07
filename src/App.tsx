@@ -13,6 +13,7 @@ import { arrayMove } from '@dnd-kit/sortable'
 import Toolbar from './components/Toolbar'
 import BoardColumn from './components/BoardColumn'
 import TaskCard from './components/TaskCard'
+import TaskDrawer from './components/TaskDrawer'
 import { columns } from './data/columns'
 import { fetchTasks, updateTaskApi } from './lib/api'
 import type { ColumnId, Task } from './types/task'
@@ -22,6 +23,31 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [activeTask, setActiveTask] = useState<Task | null>(null)
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [drawerMode, setDrawerMode] = useState<'create' | 'edit'>('create')
+  const [editingTask, setEditingTask] = useState<Task | null>(null)
+
+  function openCreateDrawer() {
+    setDrawerMode('create')
+    setEditingTask(null)
+    setIsDrawerOpen(true)
+  }
+
+  function openEditDrawer(task: Task) {
+    setDrawerMode('edit')
+    setEditingTask(task)
+    setIsDrawerOpen(true)
+  }
+
+  function closeDrawer() {
+    setIsDrawerOpen(false)
+  }
+
+  function reloadTasks() {
+    fetchTasks()
+      .then(setTasks)
+      .catch((err) => setLoadError(err.message))
+  }
 
   useEffect(() => {
     fetchTasks()
@@ -103,7 +129,7 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
-      <Toolbar />
+      <Toolbar onAddTask={openCreateDrawer} />
       <main className="flex-1 overflow-x-auto bg-slate-50 px-6 py-5">
         <DndContext
           sensors={sensors}
@@ -113,12 +139,24 @@ export default function App() {
         >
           <div className="flex gap-4">
             {columns.map((column) => (
-              <BoardColumn key={column.id} column={column} tasks={tasksByColumn[column.id]} />
+              <BoardColumn
+                key={column.id}
+                column={column}
+                tasks={tasksByColumn[column.id]}
+                onTaskClick={openEditDrawer}
+              />
             ))}
           </div>
           <DragOverlay>{activeTask ? <TaskCard task={activeTask} /> : null}</DragOverlay>
         </DndContext>
       </main>
+      <TaskDrawer
+        isOpen={isDrawerOpen}
+        mode={drawerMode}
+        initialTask={editingTask ?? undefined}
+        onClose={closeDrawer}
+        onSaved={reloadTasks}
+      />
     </div>
   )
 }
