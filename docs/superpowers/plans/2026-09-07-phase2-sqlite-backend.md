@@ -30,19 +30,19 @@
 **介面：**
 - 產出：`server/db.mjs` 匯出 `getDb()`，回傳一個單例（singleton）的 `better-sqlite3` `Database` 實例，若 `tasks` 資料表不存在會自動建立（欄位定義依全域限制）。
 
-- [ ] **Step 1：安裝後端依賴套件**
+- [x] **Step 1：安裝後端依賴套件**
 
 ```bash
 npm install express better-sqlite3 nanoid
 npm install -D concurrently
 ```
 
-- [ ] **Step 2：驗證安裝**
+- [x] **Step 2：驗證安裝**
 
 執行：`node -e "require('better-sqlite3'); console.log('ok')"`
 預期：印出 `ok`（確認 native binding 在此平台編譯成功）
 
-- [ ] **Step 3：建立 `.data/.gitkeep` 並更新 `.gitignore`**
+- [x] **Step 3：建立 `.data/.gitkeep` 並更新 `.gitignore`**
 
 `.data/.gitkeep` —— 空檔案，僅用來讓此目錄被 git 追蹤。
 
@@ -52,7 +52,7 @@ npm install -D concurrently
 .data/*.sqlite-journal
 ```
 
-- [ ] **Step 4：撰寫 `server/db.mjs`**
+- [x] **Step 4：撰寫 `server/db.mjs`**
 
 ```javascript
 import Database from 'better-sqlite3'
@@ -93,12 +93,12 @@ export function getDb() {
 }
 ```
 
-- [ ] **Step 5：驗證資料表建立**
+- [x] **Step 5：驗證資料表建立**
 
 執行：`node -e "import('./server/db.mjs').then(m => { m.getDb(); console.log('table ready') })"`
 預期：印出 `table ready`，且 `.data/taskboard.sqlite` 檔案存在（用 `ls .data/` 確認）
 
-- [ ] **Step 6：Commit**
+- [x] **Step 6：Commit**
 
 ```bash
 git add package.json package-lock.json .gitignore server/db.mjs .data/.gitkeep
