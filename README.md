@@ -5,7 +5,7 @@
 ## 目前進度
 
 - ✅ **Phase 1**：純前端、無後端的靜態看板 UI（React + Vite + Tailwind + dnd-kit），使用 mock 資料
-- 🚧 **Phase 2**（設計完成，開發中）：任務 CRUD + SQLite 後端持久化，讓資料不再因重新整理而消失
+- ✅ **Phase 2**：任務 CRUD + SQLite 後端持久化，資料不再因重新整理而消失
 - ⏳ Phase 3：任務詳情（Markdown 描述、留言系統）
 - ⏳ Phase 4：多視圖（列表 / 甘特圖）、標籤篩選、搜尋
 - ⏳ Phase 5（可選）：即時多人同步（SSE/WebSocket）
@@ -45,16 +45,23 @@ DELETE /api/tasks/:id       刪除任務
 
 ## 開發
 
-**Phase 1（目前，純前端）**
 ```bash
 npm install
+
+# 首次啟動前，先建立 SQLite 資料庫並灌入種子資料
+npm run db:seed
+
+# 同時啟動前端（Vite dev server）與後端（Node API server）
 npm run dev
 ```
 
-**Phase 2 起（前後端）**
-- 開發模式：Vite dev server（前端 HMR，port 8088）+ 獨立 Node API server（port 3001），
-  Vite proxy `/api` 轉發到後端
-- 正式 / Docker 模式：單一 Node server 監聽 8088，同時 serve 靜態檔與 API
+`npm run dev` 底層透過 `concurrently` 同時執行：
+- `npm run dev:client`：Vite dev server，前端 HMR
+- `npm run dev:server`：`node --watch server/index.mjs`，Node API server，並隨檔案變更自動重啟
+
+也可以分別在不同 terminal 手動執行 `npm run dev:server` 與 `npm run dev:client`（即 `npm run dev` 的展開版本）。
+
+前端會透過 Vite proxy 將 `/api` 請求轉發到後端；正式環境（`npm run start` 或 Docker）則是單一 Node server 同時 serve 靜態檔與 API。
 
 ## Docker
 
@@ -62,8 +69,8 @@ npm run dev
 docker compose up -d --build
 ```
 
-- Phase 1：nginx 提供靜態檔案服務
-- Phase 2 起：改為單一 Node service，同時提供靜態檔與 API，並掛載 `.data/` volume 以持久化 SQLite 資料庫
+- 單一 Node service（`taskboard`），同時提供靜態檔與 API
+- 掛載 named volume `taskboard-data:/app/.data`，讓 SQLite 資料庫檔案（`.data/taskboard.sqlite`）在 container 重啟 / 重建後仍然保留
 
 ## 專案結構
 
@@ -74,9 +81,16 @@ AI-Task-Board/
 │   └── superpowers/
 │       └── specs/
 │           └── 2026-09-07-phase2-sqlite-backend-design.md
+├── server/
+│   ├── index.mjs
+│   ├── db.mjs
+│   ├── taskRepository.mjs
+│   └── seed.mjs
 ├── src/
 │   ├── components/
 │   ├── data/
+│   ├── lib/
+│   │   └── api.ts
 │   ├── types/
 │   ├── App.tsx
 │   └── main.tsx
