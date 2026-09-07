@@ -121,7 +121,7 @@ git commit -m "feat: add SQLite dependency and db module for Phase 2 backend"
   - `deleteTask(id): boolean`
   - `TaskRow` 形狀（JS 物件，可 JSON 序列化）：`{ id, title, priority, tags: array, assignees: array, progress: number|null, commentCount, hasUnread: boolean, columnId, createdAt, updatedAt }`
 
-- [ ] **Step 1：撰寫 `server/taskRepository.mjs`**
+- [x] **Step 1：撰寫 `server/taskRepository.mjs`**
 
 ```javascript
 import { randomUUID } from 'node:crypto'
@@ -207,7 +207,7 @@ export function deleteTask(id) {
 }
 ```
 
-- [ ] **Step 2：用手動 smoke script 驗證**
+- [x] **Step 2：用手動 smoke script 驗證**
 
 執行：
 ```bash
@@ -224,7 +224,7 @@ import('./server/taskRepository.mjs').then(repo => {
 ```
 預期：印出建立的任務、出現在列表中、更新後標題正確、刪除回傳 `true`、最終列表中不再有該任務。
 
-- [ ] **Step 3：Commit**
+- [x] **Step 3：Commit**
 
 ```bash
 git add server/taskRepository.mjs
