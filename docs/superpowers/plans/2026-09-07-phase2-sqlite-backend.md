@@ -417,7 +417,7 @@ git commit -m "feat: add idempotent seed script migrating mock tasks into SQLite
   - `updateTaskApi(id: string, patch: Partial<Task>): Promise<Task>`
   - `deleteTaskApi(id: string): Promise<void>`
 
-- [ ] **Step 1：撰寫 `src/lib/api.ts`**
+- [x] **Step 1：撰寫 `src/lib/api.ts`**
 
 ```typescript
 import type { Task } from '../types/task'
@@ -465,12 +465,12 @@ export async function deleteTaskApi(id: string): Promise<void> {
 }
 ```
 
-- [ ] **Step 2：用 `tsc` 驗證**
+- [x] **Step 2：用 `tsc` 驗證**
 
 執行：`npx tsc --noEmit`
 預期：無與 `src/lib/api.ts` 相關的錯誤
 
-- [ ] **Step 3：Commit**
+- [x] **Step 3：Commit**
 
 ```bash
 git add src/lib/api.ts
