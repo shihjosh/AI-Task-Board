@@ -783,3 +783,20 @@ git add README.md
 git commit -m "docs: document add/edit task UI in README"
 git push origin <當前分支>
 ```
+
+---
+
+## 最終 Whole-Branch Review 與修正
+
+全部 7 個 Task 完成後，依 subagent-driven-development 流程對整個分支（`0257671..da36bbe`，13 commits）進行最終審查，發現：
+
+- **Important（blocking）**：`progress` 欄位前後端皆無 0-100 邊界驗證。用 curl 直接呼叫 `POST /api/tasks` 送 `progress:9999` 或 `progress:-50` 會被接受並寫入 DB，導致 `TaskCard.tsx` 的進度條渲染出現撐爆版面或負寬度的視覺異常
+- 其餘架構、介面一致性、表單驗證、click/drag 事件共存機制、安全性（無 XSS 風險）、程式碼重複/命名/dead code 檢查皆通過
+
+修正（commit `9f1c52b`）：
+- 前端 `TaskDrawer.tsx` 的 `buildPayload()` 對 `progress` 加上 `Math.min(100, Math.max(0, Number(...)))` clamp（空字串仍回傳 `undefined`）
+- 後端 `server/index.mjs` 的 `validateTaskFields()` 新增檢查：`progress` 若提供必須是 `0`-`100` 之間的數字，否則回 `400`
+
+Scoped re-review 確認 ADDRESSED，無新增 Critical/Important 問題，**最終判定：Approved**。
+
+分支已可合併回 `main`。

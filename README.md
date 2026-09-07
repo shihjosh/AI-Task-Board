@@ -52,6 +52,7 @@ DELETE /api/tasks/:id       刪除任務
 **驗證規則：**
 - `priority` 僅接受 `high` / `medium` / `low`，其他值回 `400`
 - `columnId` 僅接受 `todo` / `in_progress` / `review`，其他值回 `400`
+- `progress` 若提供，必須是 `0` 到 `100` 之間的數字，其他值回 `400`
 - `POST`/`PATCH` 皆採白名單方式只接受既定欄位（`title, priority, tags, assignees, progress, commentCount, hasUnread, columnId`），多餘欄位（如客戶端夾帶的 `id`）會被忽略，不會覆蓋伺服器產生的值
 - 找不到指定 `id` 的 `PATCH`/`DELETE` 回 `404`
 - 未預期的伺服器錯誤統一回 `500`（不含 stack trace，詳細錯誤僅記錄於伺服器端 console）
