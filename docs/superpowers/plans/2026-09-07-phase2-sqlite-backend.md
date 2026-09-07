@@ -487,7 +487,7 @@ git commit -m "feat: add frontend API client for task CRUD"
 **介面：**
 - 無新匯出；僅調整 dev server 行為。
 
-- [ ] **Step 1：在 `vite.config.ts` 加入 proxy 設定**
+- [x] **Step 1：在 `vite.config.ts` 加入 proxy 設定**
 
 ```typescript
 import react from '@vitejs/plugin-react'
@@ -511,7 +511,7 @@ export default defineConfig({
 })
 ```
 
-- [ ] **Step 2：驗證 proxy 端到端運作**
+- [x] **Step 2：驗證 proxy 端到端運作**
 
 在一個 terminal 啟動後端：`npm run db:seed && npm run dev:server`
 在另一個 terminal 啟動前端：`npm run dev`
@@ -523,7 +523,7 @@ curl -s http://localhost:8088/api/tasks
 
 驗證完成後記得停掉兩個 process。
 
-- [ ] **Step 3：Commit**
+- [x] **Step 3：Commit**
 
 ```bash
 git add vite.config.ts
