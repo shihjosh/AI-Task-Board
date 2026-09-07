@@ -687,7 +687,7 @@ git commit -m "feat: integrate TaskDrawer into App for create/edit task flow"
 
 **介面：** 無。
 
-- [ ] **Step 1：啟動開發環境**
+- [x] **Step 1：啟動開發環境**
 
 ```bash
 npm run db:seed
@@ -696,7 +696,7 @@ npm run dev
 
 （`npm run dev` 會同時啟動 Vite 前端與 Express 後端）
 
-- [ ] **Step 2：用 curl 驗證新增流程對應的 API 呼叫正確**
+- [x] **Step 2：用 curl 驗證新增流程對應的 API 呼叫正確**
 
 由於此環境可能無法操作圖形瀏覽器，改用 curl 直接驗證 `TaskDrawer` 送出時會呼叫的 API 端點行為（等同於驗證「若使用者填完表單按下建立/儲存/刪除，後端會如何回應」）：
 
@@ -727,7 +727,17 @@ curl -s -o /dev/null -w "%{http_code}\n" -X DELETE http://localhost:8088/api/tas
 ```
 預期：`204`
 
-- [ ] **Step 3：若環境支援瀏覽器操作，做一次真實互動驗證**
+- [x] **Step 3：若環境支援瀏覽器操作，做一次真實互動驗證**
+
+> **實際執行結果（2026-09-07）：** 環境支援瀏覽器操作，已完整執行：
+> 1. 點擊「新增任務」→ Drawer 正確從右側滑出，含標題/優先級/欄位/標籤/負責人/進度全部欄位
+> 2. 填寫標題「瀏覽器測試任務」、勾選 Issue 標籤與 Josh 負責人 → 點擊「建立」→ Drawer 關閉，新任務正確出現在「等待認領」欄位，標籤與負責人顯示正確
+> 3. 點擊該任務卡片 → Drawer 以編輯模式開啟，標題/優先級/欄位/已勾選的標籤與負責人全部正確帶入
+> 4. 修改標題為「瀏覽器測試任務（已編輯）」→ 點擊「儲存」→ 卡片標題即時更新
+> 5. 再次點擊卡片 → 點擊「刪除」→ 觸發瀏覽器原生 `window.confirm()` 對話框（自動化工具無法程式化點擊原生 dialog 按鈕，但對話框確實跳出且阻塞了後續 JS 執行，證明二次確認機制正確運作；用 curl 確認在對話框跳出期間 DELETE 並未被呼叫，資料未被誤刪）
+> 6. 改用 curl 執行對應的 DELETE 請求（模擬使用者按下確認），驗證回傳 `204`，任務從列表消失，回到 8 筆種子資料
+>
+> 測試資料已於驗證後清理乾淨，`GET /api/tasks` 確認剩 8 筆（種子資料原始數量）。
 
 若可以使用瀏覽器工具（如 browser_navigate 等），實際打開 `http://localhost:8088`（或 dev 模式的對應 port），執行：
 1. 點擊「新增任務」→ 確認 Drawer 從右側滑出
@@ -739,7 +749,7 @@ curl -s -o /dev/null -w "%{http_code}\n" -X DELETE http://localhost:8088/api/tas
 
 若環境不支援瀏覽器操作，Step 2 的 curl 驗證已足以證明 API 串接邏輯正確，可在報告中註明此限制。
 
-- [ ] **Step 4：停止 dev server，清理測試資料**
+- [x] **Step 4：停止 dev server，清理測試資料**
 
 停掉 `npm run dev`（兩個 process）。若 Step 2/3 有殘留測試任務未清乾淨，用 DELETE API 或直接檢查 `docker exec`/本機 SQLite 清除，確保不留測試髒資料在種子資料集中。
 
