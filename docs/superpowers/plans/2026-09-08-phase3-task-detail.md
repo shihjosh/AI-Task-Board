@@ -807,6 +807,25 @@ git push origin feature/phase3-task-detail
 
 ---
 
+## 最終 Whole-Branch Review 與修正
+
+全部 9 個 Task 完成後，依 subagent-driven-development 流程對整個分支（`91296a0..1239239`，17 commits）進行最終審查，發現：
+
+- **Important（blocking）**：`description`/留言 `content` 缺乏伺服器端長度限制。實測送出 500KB 的 description payload 會觸發 Express 內建 `PayloadTooLargeError`（因 body 超過預設 100KB 限制），但被通用 error middleware 吞成 `{"error":"internal_server_error"}`、狀態碼 500，前端使用者只會看到「儲存失敗」，無法得知真正原因
+- 其餘架構、介面一致性、Markdown 渲染安全性（無 XSS，未安裝 rehype-raw）、SQLite migration 邊界情況（新舊資料庫皆正確處理、CASCADE 實測生效）、CommentList 按鈕 `type="button"`（5 個全數核對）、SQL injection 防護（prepared statement）、程式碼重複/命名/dead code 檢查皆通過
+
+修正（commit `074f5d2`）：
+- `express.json({ limit: '1mb' })` 明確設定 body size 上限（原本用 Express 預設 ~100KB）
+- 通用 error middleware 新增對 `PayloadTooLargeError`（`err.type === 'entity.too.large' || err.status === 413`）的專屬處理，回傳乾淨的 `413 { error: 'request body too large' }`，不再落入 500 handler
+- `validateTaskFields()` 新增應用層長度驗證：`title` ≤ 500 字元、`description` ≤ 50000 字元
+- 留言 POST/PATCH 路由新增 `content` ≤ 5000 字元驗證
+
+Scoped re-review 確認 ADDRESSED，無新增 Critical/Important 問題，**最終判定：Approved**。
+
+分支已可合併回 `main`。
+
+---
+
 ## 完成後流程
 
 全部 9 個 Task 完成並逐一 review 通過後，比照 Phase 2 / TaskDrawer 的流程，進行一次 **whole-branch review**（審查整個 `feature/phase3-task-detail` 分支的全部 commit），特別留意：
