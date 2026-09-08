@@ -479,7 +479,7 @@ interface CommentListProps {
 export default function CommentList({ taskId }: CommentListProps)
 ```
 
-- [ ] **Step 1：撰寫 `src/components/CommentList.tsx`**
+- [x] **Step 1：撰寫 `src/components/CommentList.tsx`**
 
 ```tsx
 import { useEffect, useState } from 'react'
@@ -675,7 +675,7 @@ export default function CommentList({ taskId }: CommentListProps) {
 }
 ```
 
-- [ ] **Step 2：修改 `src/components/TaskDrawer.tsx` 掛載 `CommentList`**
+- [x] **Step 2：修改 `src/components/TaskDrawer.tsx` 掛載 `CommentList`**
 
 在描述編輯區塊之後、按鈕列之前，加入：
 
@@ -687,17 +687,17 @@ export default function CommentList({ taskId }: CommentListProps) {
 
 > **注意（重要的按鈕型別陷阱）：** `TaskDrawer` 的 `<form onSubmit={handleSubmit}>` 包裹整個表單，`CommentList` 內的「送出」「儲存」「取消」等按鈕**必須明確加上 `type="button"`**（範例程式碼已加），否則會被瀏覽器當成表單的 submit 按鈕，點擊留言的按鈕會意外觸發外層 `TaskDrawer` 的 `handleSubmit`（等於誤送出/誤儲存整個任務表單）。實作與 review 時務必逐一確認 `CommentList.tsx` 裡沒有任何按鈕缺少 `type="button"`。
 
-- [ ] **Step 3：用 `tsc` 驗證**
+- [x] **Step 3：用 `tsc` 驗證**
 
 執行：`npx tsc -b`
 預期：無錯誤
 
-- [ ] **Step 4：`npm run build` 驗證**
+- [x] **Step 4：`npm run build` 驗證**
 
 執行：`npm run build`
 預期：build 成功
 
-- [ ] **Step 5：Commit**
+- [x] **Step 5：Commit**
 
 ```bash
 git add src/components/CommentList.tsx src/components/TaskDrawer.tsx
