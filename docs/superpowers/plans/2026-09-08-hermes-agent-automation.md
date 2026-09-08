@@ -410,7 +410,7 @@ git commit -m "feat: trigger Hermes automation on columnId transition to in_prog
 **介面：**
 - 依賴：`Task.targetPath`（Task 1）、`Task.automationStatus`（Task 1，僅唯讀顯示）。
 
-- [ ] **Step 1：在表單狀態中加入 `targetPath`**
+- [x] **Step 1：在表單狀態中加入 `targetPath`**
 
 在 `emptyFormState`（`src/components/TaskDrawer.tsx:18-26`）中加入：
 
@@ -430,7 +430,7 @@ git commit -m "feat: trigger Hermes automation on columnId transition to in_prog
       targetPath: form.targetPath.trim(),
 ```
 
-- [ ] **Step 2：在表單 JSX 中加入輸入欄位**
+- [x] **Step 2：在表單 JSX 中加入輸入欄位**
 
 在「進度」`<label>` 之後（第 230 行之後、描述 `<div>` 之前）插入以下區塊：
 
@@ -457,11 +457,11 @@ git commit -m "feat: trigger Hermes automation on columnId transition to in_prog
         </label>
 ```
 
-- [ ] **Step 3：在瀏覽器手動驗證**
+- [x] **Step 3：在瀏覽器手動驗證**
 
 啟動 `npm run dev`，打開 app，點擊「新增任務」，填入標題與 `targetPath` 值後儲存，再重新打開該卡片確認 `targetPath` 有正確回顯（成功持久化並在編輯時預先帶入）。
 
-- [ ] **Step 4：Commit**
+- [x] **Step 4：Commit**
 
 ```bash
 git add src/components/TaskDrawer.tsx
