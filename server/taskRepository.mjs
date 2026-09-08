@@ -5,6 +5,7 @@ function rowToTask(row) {
   return {
     id: row.id,
     title: row.title,
+    description: row.description,
     priority: row.priority,
     tags: JSON.parse(row.tags),
     assignees: JSON.parse(row.assignees),
@@ -29,11 +30,12 @@ export function createTask(input) {
   const id = input.id ?? randomUUID()
 
   db.prepare(
-    `INSERT INTO tasks (id, title, priority, tags, assignees, progress, comment_count, has_unread, column_id, created_at, updated_at)
-     VALUES (@id, @title, @priority, @tags, @assignees, @progress, @commentCount, @hasUnread, @columnId, @createdAt, @updatedAt)`,
+    `INSERT INTO tasks (id, title, description, priority, tags, assignees, progress, comment_count, has_unread, column_id, created_at, updated_at)
+     VALUES (@id, @title, @description, @priority, @tags, @assignees, @progress, @commentCount, @hasUnread, @columnId, @createdAt, @updatedAt)`,
   ).run({
     id,
     title: input.title,
+    description: input.description ?? '',
     priority: input.priority,
     tags: JSON.stringify(input.tags ?? []),
     assignees: JSON.stringify(input.assignees ?? []),
@@ -55,6 +57,7 @@ export function updateTask(id, patch) {
 
   const merged = {
     title: patch.title ?? existing.title,
+    description: patch.description ?? existing.description,
     priority: patch.priority ?? existing.priority,
     tags: patch.tags ? JSON.stringify(patch.tags) : existing.tags,
     assignees: patch.assignees ? JSON.stringify(patch.assignees) : existing.assignees,
@@ -66,7 +69,7 @@ export function updateTask(id, patch) {
   }
 
   db.prepare(
-    `UPDATE tasks SET title=@title, priority=@priority, tags=@tags, assignees=@assignees,
+    `UPDATE tasks SET title=@title, description=@description, priority=@priority, tags=@tags, assignees=@assignees,
      progress=@progress, comment_count=@commentCount, has_unread=@hasUnread,
      column_id=@columnId, updated_at=@updatedAt WHERE id=@id`,
   ).run({ ...merged, id })
