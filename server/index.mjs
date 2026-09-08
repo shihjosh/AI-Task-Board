@@ -45,11 +45,23 @@ function validateTaskFields(body) {
   ) {
     return 'progress must be a number between 0 and 100'
   }
+  if (body.title !== undefined && typeof body.title === 'string' && body.title.length > 500) {
+    return 'title must be 500 characters or fewer'
+  }
+  if (
+    body.description !== undefined &&
+    typeof body.description === 'string' &&
+    body.description.length > 50000
+  ) {
+    return 'description must be 50000 characters or fewer'
+  }
   return null
 }
 
+const MAX_COMMENT_LENGTH = 5000
+
 const app = express()
-app.use(express.json())
+app.use(express.json({ limit: '1mb' }))
 
 app.get('/api/tasks', (req, res) => {
   res.json({ tasks: listTasks() })
@@ -93,6 +105,11 @@ app.post('/api/tasks/:taskId/comments', (req, res) => {
   if (!content) {
     return res.status(400).json({ error: 'content is required' })
   }
+  if (content.length > MAX_COMMENT_LENGTH) {
+    return res
+      .status(400)
+      .json({ error: `content must be ${MAX_COMMENT_LENGTH} characters or fewer` })
+  }
   const comment = createComment(req.params.taskId, content)
   res.status(201).json({ comment })
 })
@@ -101,6 +118,11 @@ app.patch('/api/comments/:id', (req, res) => {
   const content = (req.body?.content ?? '').trim()
   if (!content) {
     return res.status(400).json({ error: 'content is required' })
+  }
+  if (content.length > MAX_COMMENT_LENGTH) {
+    return res
+      .status(400)
+      .json({ error: `content must be ${MAX_COMMENT_LENGTH} characters or fewer` })
   }
   const comment = updateComment(req.params.id, content)
   if (!comment) return res.status(404).json({ error: 'not_found' })
@@ -121,6 +143,9 @@ if (fs.existsSync(distDir)) {
 }
 
 app.use((err, req, res, next) => {
+  if (err && (err.type === 'entity.too.large' || err.status === 413)) {
+    return res.status(413).json({ error: 'request body too large' })
+  }
   console.error('Unhandled error in API request:', err)
   res.status(500).json({ error: 'internal_server_error' })
 })
