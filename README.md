@@ -6,7 +6,7 @@
 
 - ✅ **Phase 1**：純前端、無後端的靜態看板 UI（React + Vite + Tailwind + dnd-kit），使用 mock 資料
 - ✅ **Phase 2**：任務 CRUD + SQLite 後端持久化，資料不再因重新整理而消失
-- ⏳ Phase 3：任務詳情（Markdown 描述、留言系統）
+- ✅ Phase 3：任務詳情（Markdown 描述、留言系統）
 - ⏳ Phase 4：多視圖（列表 / 甘特圖）、標籤篩選、搜尋
 - ⏳ Phase 5（可選）：即時多人同步（SSE/WebSocket）
 
@@ -20,6 +20,7 @@
 - Tailwind CSS
 - @dnd-kit/core（拖拉互動）
 - lucide-react（圖示）
+- react-markdown + remark-gfm（Markdown 描述渲染）
 
 **後端（Phase 2 起）**
 - Node.js + Express（提供 `/api/*` REST 端點，並直接 serve 前端靜態檔，單一 server 不需要額外 nginx）
@@ -40,6 +41,12 @@
 - 點擊任一任務卡片，開啟同一個表單進行編輯，可修改欄位或刪除該任務（刪除前會有確認提示）
 - 標籤與負責人皆為固定選單（不開放自由輸入新增選項）
 
+## 任務詳情
+
+- 編輯任務時，Drawer 會顯示「描述」欄位，支援 Markdown 語法（標題、清單、表格、程式碼區塊等），採左右雙欄即時預覽
+- 編輯任務時，Drawer 下方會顯示「留言」區塊，可新增/編輯/刪除留言（刪除前會有確認提示），留言固定顯示作者為「Josh」
+- 新增任務（尚未建立）時不會顯示留言區塊，需先建立任務後才能留言
+
 ## API（Phase 2 起）
 
 ```
@@ -47,6 +54,10 @@ GET    /api/tasks           取得所有任務
 POST   /api/tasks           新增任務
 PATCH  /api/tasks/:id       更新任務（含拖拉換欄位時更新 columnId）
 DELETE /api/tasks/:id       刪除任務
+GET    /api/tasks/:taskId/comments   取得指定任務的所有留言
+POST   /api/tasks/:taskId/comments   新增留言
+PATCH  /api/comments/:id             編輯留言
+DELETE /api/comments/:id             刪除留言
 ```
 
 **驗證規則：**
