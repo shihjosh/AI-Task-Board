@@ -70,7 +70,7 @@ git commit -m "feat: add react-markdown/remark-gfm deps and Comment/description 
 
 **背景：** `server/db.mjs` 目前用 `CREATE TABLE IF NOT EXISTS`，這只在資料庫檔案第一次建立時有效。若使用者本機已經有舊版 `.data/taskboard.sqlite`（不含 `description` 欄位），單純加 `CREATE TABLE IF NOT EXISTS` 不會補上新欄位，需要額外檢查並執行 `ALTER TABLE`。
 
-- [ ] **Step 1：修改 `server/db.mjs`**
+- [x] **Step 1：修改 `server/db.mjs`**
 
 在 `getDb()` 函式內，`CREATE TABLE IF NOT EXISTS tasks` 之後，新增欄位存在性檢查與 migration：
 
@@ -113,7 +113,9 @@ db.exec(`
 db.pragma('foreign_keys = ON')
 ```
 
-- [ ] **Step 2：驗證 migration 對新舊資料庫都正確**
+- [x] **Step 2：驗證 migration 對新舊資料庫都正確**
+
+> **實際執行結果：** 用專案現有的 `.data/taskboard.sqlite`（8 筆任務，Phase 2 時代建立、無 description 欄位）實測升級：升級前確認無 `description` 欄位、無 `comments` 表；執行 migration 後確認兩者皆正確建立，任務筆數維持 8 筆無遺失；重跑一次確認冪等（不會重複 ALTER 或報錯）。額外由 reviewer 獨立實測 FK CASCADE：插入一筆 comment 關聯到某 task，刪除該 task 後確認 comment 被自動清除，證實 `ON DELETE CASCADE` 實際生效。
 
 執行以下手動驗證（在乾淨環境測試，之後清除測試檔案，不留在 repo）：
 
@@ -136,7 +138,7 @@ sqlite3 .data/taskboard.sqlite "SELECT name FROM sqlite_master WHERE type='table
 
 預期：兩個「確認」訊息都印出，且既有任務資料完全沒有遺失（`sqlite3 .data/taskboard.sqlite "SELECT COUNT(*) FROM tasks;"` 應與 migration 前相同）。
 
-- [ ] **Step 3：Commit**
+- [x] **Step 3：Commit**
 
 ```bash
 git add server/db.mjs
