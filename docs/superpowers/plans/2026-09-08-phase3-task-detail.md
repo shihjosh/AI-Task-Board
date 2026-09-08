@@ -36,7 +36,7 @@ export interface Comment {
 }
 ```
 
-- [ ] **Step 1：安裝套件**
+- [x] **Step 1：安裝套件**
 
 ```bash
 npm install react-markdown remark-gfm
@@ -44,16 +44,16 @@ npm install react-markdown remark-gfm
 
 預期：`package.json` 的 `dependencies` 新增這兩個套件，無需 `--legacy-peer-deps` 等特殊參數（React 19 相容）。
 
-- [ ] **Step 2：修改 `src/types/task.ts`**
+- [x] **Step 2：修改 `src/types/task.ts`**
 
 在 `Task` interface 新增 `description?: string`，並新增 `Comment` interface（如上）。
 
-- [ ] **Step 3：用 `tsc` 驗證**
+- [x] **Step 3：用 `tsc` 驗證**
 
 執行：`npx tsc -b`
 預期：無錯誤（此步驟只新增型別欄位，不影響既有用法，因為都是 optional）
 
-- [ ] **Step 4：Commit**
+- [x] **Step 4：Commit**
 
 ```bash
 git add package.json package-lock.json src/types/task.ts
