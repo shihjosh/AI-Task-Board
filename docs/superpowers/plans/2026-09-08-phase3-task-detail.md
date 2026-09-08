@@ -160,11 +160,11 @@ export function updateComment(id, content) // 找不到回 null
 export function deleteComment(id) // 回傳 boolean
 ```
 
-- [ ] **Step 1：修改 `server/taskRepository.mjs`**
+- [x] **Step 1：修改 `server/taskRepository.mjs`**
 
 在 `rowToTask` 新增 `description: row.description`；在 `createTask` 的 INSERT 語句與參數新增 `description`；在 `updateTask` 的 `merged` 物件與 UPDATE 語句新增 `description: patch.description ?? existing.description`。
 
-- [ ] **Step 2：新增 `server/commentRepository.mjs`**
+- [x] **Step 2：新增 `server/commentRepository.mjs`**
 
 ```js
 import { randomUUID } from 'node:crypto'
@@ -215,11 +215,11 @@ export function deleteComment(id) {
 }
 ```
 
-- [ ] **Step 3：驗證**
+- [x] **Step 3：驗證**
 
 執行 `node -e "import('./server/taskRepository.mjs').then(() => console.log('OK'))"` 與 `node -e "import('./server/commentRepository.mjs').then(() => console.log('OK'))"` 確認語法正確、無 import 錯誤。
 
-- [ ] **Step 4：Commit**
+- [x] **Step 4：Commit**
 
 ```bash
 git add server/taskRepository.mjs server/commentRepository.mjs
