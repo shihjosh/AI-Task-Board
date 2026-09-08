@@ -321,7 +321,7 @@ git commit -m "feat: add automationRunner with spawn, timeout, and concurrency q
 **介面：**
 - 依賴：Task 2 `server/automationRunner.mjs` 的 `triggerAutomation(task)`。
 
-- [ ] **Step 1：記錄更新前的 `columnId`，並在更新後呼叫 `triggerAutomation`**
+- [x] **Step 1：記錄更新前的 `columnId`，並在更新後呼叫 `triggerAutomation`**
 
 將既有的 handler 內容替換為：
 
@@ -352,7 +352,7 @@ import { triggerAutomation } from './automationRunner.mjs'
 
 注意：`res.json({ task })` 是在呼叫 `triggerAutomation` **之前**送出的——這正是滿足 spec 要求「觸發後應立即回應 PATCH 請求」的做法；`triggerAutomation` 本身看似同步，但只負責 spawn 後立即返回，並不會等待程序執行完成。
 
-- [ ] **Step 2：手動驗證——拖到 in_progress 會觸發自動執行**
+- [x] **Step 2：手動驗證——拖到 in_progress 會觸發自動執行**
 
 ```bash
 npm run dev:server &
@@ -374,7 +374,7 @@ print([t for t in tasks if t['id'] == '$TASK_ID'][0])
 
 預期結果：PATCH 回應立即回傳，任務顯示 `columnId: in_progress`（尚未變成 `review`）；稍後再 GET 一次會看到 `automationStatus: running`（若 Hermes 呼叫很快結束，也可能已經是 `done`/`failed`）。驗證完畢用 `curl -X DELETE http://localhost:3001/api/tasks/$TASK_ID` 清理。
 
-- [ ] **Step 3：手動驗證——重複觸發防護**
+- [x] **Step 3：手動驗證——重複觸發防護**
 
 ```bash
 TASK_ID=$(curl -s -X POST http://localhost:3001/api/tasks \
@@ -393,7 +393,7 @@ print([t for t in tasks if t['id'] == '$TASK_ID'][0]['automationStatus'])
 
 預期結果：`automationStatus` 維持 `running`，且沒有第二個 `hermes` 程序被啟動（用 `ps aux | grep 'hermes chat'` 檢查這張卡片只有一筆）——因為 `triggerAutomation` 會檢查 `task.automationStatus === 'running'` 並在第二次 PATCH 時提早返回。驗證完畢請清理測試卡片。
 
-- [ ] **Step 4：Commit**
+- [x] **Step 4：Commit**
 
 ```bash
 git add server/index.mjs
