@@ -48,7 +48,7 @@ ALTER TABLE tasks ADD COLUMN automation_status TEXT NOT NULL DEFAULT 'idle';
 **介面：**
 - 產出：`Task.targetPath: string`（永遠存在，預設 `''`）、`Task.automationStatus: 'idle' | 'running' | 'done' | 'failed'`（永遠存在，預設 `'idle'`）——後續所有任務都會用這兩個確切的欄位名稱讀寫。
 
-- [ ] **Step 1：在 `server/db.mjs` 加入 migration**
+- [x] **Step 1：在 `server/db.mjs` 加入 migration**
 
 在既有的 `description` migration 區塊之後（第 40 行之後、`comments` 資料表建立之前）加入：
 
@@ -64,7 +64,7 @@ ALTER TABLE tasks ADD COLUMN automation_status TEXT NOT NULL DEFAULT 'idle';
   }
 ```
 
-- [ ] **Step 2：對全新 DB 驗證 migration**
+- [x] **Step 2：對全新 DB 驗證 migration**
 
 ```bash
 rm -f .data/taskboard.sqlite .data/taskboard.sqlite-wal .data/taskboard.sqlite-shm
@@ -74,7 +74,7 @@ sqlite3 .data/taskboard.sqlite "PRAGMA table_info(tasks)"
 
 預期結果：`PRAGMA table_info` 輸出中出現 `target_path` 與 `automation_status` 欄位且預設值正確，`node` 印出 `ok` 且無任何錯誤。
 
-- [ ] **Step 3：對既有已種子的 DB 驗證 migration（確認無資料遺失）**
+- [x] **Step 3：對既有已種子的 DB 驗證 migration（確認無資料遺失）**
 
 ```bash
 cp .data/taskboard.sqlite /tmp/taskboard.sqlite.pre-migration.bak
@@ -87,7 +87,7 @@ sqlite3 .data/taskboard.sqlite "PRAGMA table_info(tasks)"
 
 預期結果：前後列數完全相同，所有既有列都出現新欄位且為預設值。
 
-- [ ] **Step 4：更新 `server/taskRepository.mjs`**
+- [x] **Step 4：更新 `server/taskRepository.mjs`**
 
 在 `rowToTask` 中，於 `columnId: row.column_id,` 之後加入：
 
@@ -112,7 +112,7 @@ sqlite3 .data/taskboard.sqlite "PRAGMA table_info(tasks)"
 
 並在 `UPDATE tasks SET ...` 的 SQL 字串中加入 `target_path=@targetPath, automation_status=@automationStatus,`。
 
-- [ ] **Step 5：更新 `src/types/task.ts`**
+- [x] **Step 5：更新 `src/types/task.ts`**
 
 在 `Task` interface 中，於 `columnId: ColumnId` 之後加入：
 
@@ -121,11 +121,11 @@ sqlite3 .data/taskboard.sqlite "PRAGMA table_info(tasks)"
   automationStatus: 'idle' | 'running' | 'done' | 'failed'
 ```
 
-- [ ] **Step 6：在 `server/index.mjs` 的 `CREATABLE_FIELDS` 加入 `targetPath` 與 `automationStatus`**
+- [x] **Step 6：在 `server/index.mjs` 的 `CREATABLE_FIELDS` 加入 `targetPath` 與 `automationStatus`**
 
 在 `CREATABLE_FIELDS` 陣列（`server/index.mjs:13-23`）中加入 `'targetPath'` 與 `'automationStatus'`，讓 PATCH/POST handler 透過 `pickFields` 正確傳遞這兩個欄位。
 
-- [ ] **Step 7：以 curl 手動驗證**
+- [x] **Step 7：以 curl 手動驗證**
 
 ```bash
 npm run dev:server &
@@ -137,7 +137,7 @@ curl -s -X POST http://localhost:3001/api/tasks \
 
 預期結果：回應 JSON 包含 `"targetPath": "/tmp"` 與 `"automationStatus": "idle"`。驗證完畢後用 `curl -X DELETE http://localhost:3001/api/tasks/<id>` 刪除測試卡片。
 
-- [ ] **Step 8：Commit**
+- [x] **Step 8：Commit**
 
 ```bash
 git add server/db.mjs server/taskRepository.mjs server/index.mjs src/types/task.ts
