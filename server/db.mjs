@@ -32,5 +32,26 @@ export function getDb() {
     )
   `)
 
+  // Migration：舊資料庫檔案可能沒有 description 欄位，用 PRAGMA 檢查後補上
+  const taskColumns = db.prepare('PRAGMA table_info(tasks)').all()
+  const hasDescription = taskColumns.some((col) => col.name === 'description')
+  if (!hasDescription) {
+    db.exec(`ALTER TABLE tasks ADD COLUMN description TEXT NOT NULL DEFAULT ''`)
+  }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS comments (
+      id TEXT PRIMARY KEY,
+      task_id TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+    )
+  `)
+
+  // SQLite 預設不強制外鍵約束，需要每個連線手動開啟才會啟用 CASCADE
+  db.pragma('foreign_keys = ON')
+
   return db
 }

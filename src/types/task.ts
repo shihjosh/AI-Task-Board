@@ -26,6 +26,15 @@ export interface Task {
   commentCount: number
   hasUnread?: boolean
   columnId: ColumnId
+  description?: string // Markdown 原始文字，可為空字串或 undefined
+}
+
+export interface Comment {
+  id: string
+  taskId: string
+  content: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface Column {

@@ -36,7 +36,7 @@ export interface Comment {
 }
 ```
 
-- [ ] **Step 1：安裝套件**
+- [x] **Step 1：安裝套件**
 
 ```bash
 npm install react-markdown remark-gfm
@@ -44,16 +44,16 @@ npm install react-markdown remark-gfm
 
 預期：`package.json` 的 `dependencies` 新增這兩個套件，無需 `--legacy-peer-deps` 等特殊參數（React 19 相容）。
 
-- [ ] **Step 2：修改 `src/types/task.ts`**
+- [x] **Step 2：修改 `src/types/task.ts`**
 
 在 `Task` interface 新增 `description?: string`，並新增 `Comment` interface（如上）。
 
-- [ ] **Step 3：用 `tsc` 驗證**
+- [x] **Step 3：用 `tsc` 驗證**
 
 執行：`npx tsc -b`
 預期：無錯誤（此步驟只新增型別欄位，不影響既有用法，因為都是 optional）
 
-- [ ] **Step 4：Commit**
+- [x] **Step 4：Commit**
 
 ```bash
 git add package.json package-lock.json src/types/task.ts
@@ -70,7 +70,7 @@ git commit -m "feat: add react-markdown/remark-gfm deps and Comment/description 
 
 **背景：** `server/db.mjs` 目前用 `CREATE TABLE IF NOT EXISTS`，這只在資料庫檔案第一次建立時有效。若使用者本機已經有舊版 `.data/taskboard.sqlite`（不含 `description` 欄位），單純加 `CREATE TABLE IF NOT EXISTS` 不會補上新欄位，需要額外檢查並執行 `ALTER TABLE`。
 
-- [ ] **Step 1：修改 `server/db.mjs`**
+- [x] **Step 1：修改 `server/db.mjs`**
 
 在 `getDb()` 函式內，`CREATE TABLE IF NOT EXISTS tasks` 之後，新增欄位存在性檢查與 migration：
 
@@ -113,7 +113,9 @@ db.exec(`
 db.pragma('foreign_keys = ON')
 ```
 
-- [ ] **Step 2：驗證 migration 對新舊資料庫都正確**
+- [x] **Step 2：驗證 migration 對新舊資料庫都正確**
+
+> **實際執行結果：** 用專案現有的 `.data/taskboard.sqlite`（8 筆任務，Phase 2 時代建立、無 description 欄位）實測升級：升級前確認無 `description` 欄位、無 `comments` 表；執行 migration 後確認兩者皆正確建立，任務筆數維持 8 筆無遺失；重跑一次確認冪等（不會重複 ALTER 或報錯）。額外由 reviewer 獨立實測 FK CASCADE：插入一筆 comment 關聯到某 task，刪除該 task 後確認 comment 被自動清除，證實 `ON DELETE CASCADE` 實際生效。
 
 執行以下手動驗證（在乾淨環境測試，之後清除測試檔案，不留在 repo）：
 
@@ -136,7 +138,7 @@ sqlite3 .data/taskboard.sqlite "SELECT name FROM sqlite_master WHERE type='table
 
 預期：兩個「確認」訊息都印出，且既有任務資料完全沒有遺失（`sqlite3 .data/taskboard.sqlite "SELECT COUNT(*) FROM tasks;"` 應與 migration 前相同）。
 
-- [ ] **Step 3：Commit**
+- [x] **Step 3：Commit**
 
 ```bash
 git add server/db.mjs
@@ -158,11 +160,11 @@ export function updateComment(id, content) // 找不到回 null
 export function deleteComment(id) // 回傳 boolean
 ```
 
-- [ ] **Step 1：修改 `server/taskRepository.mjs`**
+- [x] **Step 1：修改 `server/taskRepository.mjs`**
 
 在 `rowToTask` 新增 `description: row.description`；在 `createTask` 的 INSERT 語句與參數新增 `description`；在 `updateTask` 的 `merged` 物件與 UPDATE 語句新增 `description: patch.description ?? existing.description`。
 
-- [ ] **Step 2：新增 `server/commentRepository.mjs`**
+- [x] **Step 2：新增 `server/commentRepository.mjs`**
 
 ```js
 import { randomUUID } from 'node:crypto'
@@ -213,11 +215,11 @@ export function deleteComment(id) {
 }
 ```
 
-- [ ] **Step 3：驗證**
+- [x] **Step 3：驗證**
 
 執行 `node -e "import('./server/taskRepository.mjs').then(() => console.log('OK'))"` 與 `node -e "import('./server/commentRepository.mjs').then(() => console.log('OK'))"` 確認語法正確、無 import 錯誤。
 
-- [ ] **Step 4：Commit**
+- [x] **Step 4：Commit**
 
 ```bash
 git add server/taskRepository.mjs server/commentRepository.mjs
@@ -238,7 +240,7 @@ PATCH  /api/comments/:id                 編輯留言（body: { content }）
 DELETE /api/comments/:id                 刪除留言
 ```
 
-- [ ] **Step 1：修改 `server/index.mjs`**
+- [x] **Step 1：修改 `server/index.mjs`**
 
 1. Import 新增：`import { listComments, createComment, updateComment, deleteComment } from './commentRepository.mjs'`
 2. `CREATABLE_FIELDS` 陣列加入 `'description'`
@@ -277,12 +279,12 @@ app.delete('/api/comments/:id', (req, res) => {
 
 > 注意：這些新路由要放在既有的 `app.use((err, req, res, next) => {...})` 錯誤處理 middleware **之前**，比照既有路由的擺放順序。
 
-- [ ] **Step 2：用 `tsc` 驗證**
+- [x] **Step 2：用 `tsc` 驗證**
 
 執行：`npx tsc -b`
 預期：無錯誤（`server/*.mjs` 是純 JS，不受影響；此步驟主要確認前端型別沒有因為改動被波及，因為目前還沒有前端改動，理論上無變化）
 
-- [ ] **Step 3：啟動 server 並用 curl 驗證**
+- [x] **Step 3：啟動 server 並用 curl 驗證**
 
 ```bash
 npm run db:seed  # 若尚未 seed
@@ -326,7 +328,7 @@ kill %1
 
 預期：POST/PATCH/DELETE 皆回應正確狀態碼，空白內容回 400，任務刪除後其留言透過 CASCADE 一併清除（若 CASCADE 未生效，改為在 `deleteTask` 中手動加一行 `db.prepare('DELETE FROM comments WHERE task_id = ?').run(id)` 作為保險機制）。
 
-- [ ] **Step 4：Commit**
+- [x] **Step 4：Commit**
 
 ```bash
 git add server/index.mjs
@@ -347,7 +349,7 @@ export async function updateCommentApi(id: string, content: string): Promise<Com
 export async function deleteCommentApi(id: string): Promise<void>
 ```
 
-- [ ] **Step 1：撰寫 `src/lib/commentsApi.ts`**
+- [x] **Step 1：撰寫 `src/lib/commentsApi.ts`**
 
 ```ts
 import type { Comment } from '../types/task'
@@ -393,12 +395,12 @@ export async function deleteCommentApi(id: string): Promise<void> {
 }
 ```
 
-- [ ] **Step 2：用 `tsc` 驗證**
+- [x] **Step 2：用 `tsc` 驗證**
 
 執行：`npx tsc -b`
 預期：無錯誤
 
-- [ ] **Step 3：Commit**
+- [x] **Step 3：Commit**
 
 ```bash
 git add src/lib/commentsApi.ts
@@ -413,7 +415,7 @@ git commit -m "feat: add frontend API client for comments"
 
 **介面：** `TaskDrawer` 的 `TaskDrawerProps` 不變；內部 `form` state 新增 `description: string`。
 
-- [ ] **Step 1：修改 `src/components/TaskDrawer.tsx`**
+- [x] **Step 1：修改 `src/components/TaskDrawer.tsx`**
 
 1. 版面寬度：`max-w-md` → `max-w-3xl`（`<form>` 的 className）
 2. `import ReactMarkdown from 'react-markdown'` 與 `import remarkGfm from 'remark-gfm'`
@@ -446,17 +448,17 @@ git commit -m "feat: add frontend API client for comments"
 
 > 注意：`prose` class 來自 Tailwind Typography plugin，本專案**未安裝**該 plugin（避免新增額外依賴），因此 Markdown 預覽區塊會是無特殊排版樣式的純渲染（標題、清單、表格等仍會依 HTML 預設樣式呈現，只是沒有 Tailwind 美化）。若未來需要更好看的排版，可另外評估是否安裝 `@tailwindcss/typography`（本次 plan 範圍不含）。實作時可以移除 `prose prose-sm max-w-none` 這幾個 class，避免造成誤導性的 class 名稱掛在沒安裝對應 plugin 的專案上。
 
-- [ ] **Step 2：用 `tsc` 驗證**
+- [x] **Step 2：用 `tsc` 驗證**
 
 執行：`npx tsc -b`
 預期：無錯誤（確認 `react-markdown`/`remark-gfm` 型別定義可正確被 TS 辨識，這兩個套件本身含 `.d.ts`，不需要額外安裝 `@types/*`）
 
-- [ ] **Step 3：`npm run build` 驗證**
+- [x] **Step 3：`npm run build` 驗證**
 
 執行：`npm run build`
 預期：build 成功，確認新套件正確被打包，無 externalize 相關錯誤
 
-- [ ] **Step 4：Commit**
+- [x] **Step 4：Commit**
 
 ```bash
 git add src/components/TaskDrawer.tsx
@@ -477,7 +479,7 @@ interface CommentListProps {
 export default function CommentList({ taskId }: CommentListProps)
 ```
 
-- [ ] **Step 1：撰寫 `src/components/CommentList.tsx`**
+- [x] **Step 1：撰寫 `src/components/CommentList.tsx`**
 
 ```tsx
 import { useEffect, useState } from 'react'
@@ -673,7 +675,7 @@ export default function CommentList({ taskId }: CommentListProps) {
 }
 ```
 
-- [ ] **Step 2：修改 `src/components/TaskDrawer.tsx` 掛載 `CommentList`**
+- [x] **Step 2：修改 `src/components/TaskDrawer.tsx` 掛載 `CommentList`**
 
 在描述編輯區塊之後、按鈕列之前，加入：
 
@@ -685,17 +687,17 @@ export default function CommentList({ taskId }: CommentListProps) {
 
 > **注意（重要的按鈕型別陷阱）：** `TaskDrawer` 的 `<form onSubmit={handleSubmit}>` 包裹整個表單，`CommentList` 內的「送出」「儲存」「取消」等按鈕**必須明確加上 `type="button"`**（範例程式碼已加），否則會被瀏覽器當成表單的 submit 按鈕，點擊留言的按鈕會意外觸發外層 `TaskDrawer` 的 `handleSubmit`（等於誤送出/誤儲存整個任務表單）。實作與 review 時務必逐一確認 `CommentList.tsx` 裡沒有任何按鈕缺少 `type="button"`。
 
-- [ ] **Step 3：用 `tsc` 驗證**
+- [x] **Step 3：用 `tsc` 驗證**
 
 執行：`npx tsc -b`
 預期：無錯誤
 
-- [ ] **Step 4：`npm run build` 驗證**
+- [x] **Step 4：`npm run build` 驗證**
 
 執行：`npm run build`
 預期：build 成功
 
-- [ ] **Step 5：Commit**
+- [x] **Step 5：Commit**
 
 ```bash
 git add src/components/CommentList.tsx src/components/TaskDrawer.tsx
@@ -710,14 +712,27 @@ git commit -m "feat: add CommentList component with full CRUD, mount into TaskDr
 
 **介面：** 無。
 
-- [ ] **Step 1：啟動開發環境**
+- [x] **Step 1：啟動開發環境**
 
 ```bash
 npm run db:seed
 npm run dev
 ```
 
-- [ ] **Step 2：瀏覽器互動驗證（若環境支援瀏覽器操作）**
+- [x] **Step 2：瀏覽器互動驗證（若環境支援瀏覽器操作）**
+
+> **實際執行結果（2026-09-08）：** 環境支援瀏覽器操作，已完整執行：
+> 1. 點擊既有任務卡片開啟編輯 Drawer，確認寬度明顯加寬（`max-w-3xl`），描述雙欄編輯器正常顯示
+> 2. 輸入含標題/清單/粗體/行內程式碼/GFM 表格的 Markdown 內容，右側預覽即時正確渲染（`<h1>`/`<ul><li>`/`<strong>`/`<code>`/`<table>` 皆正確）
+> 3. 新增留言「這是第一則測試留言」，送出後立即出現在列表，作者顯示「Josh」，時間戳正確
+> 4. 點擊該留言編輯按鈕，修改內容為「這是已編輯的留言」並儲存，確認內容更新且顯示「（已編輯）」標記
+> 5. 點擊任務層級「儲存」按鈕，確認 Drawer 正確關閉（原生合成點擊事件一度未觸發 submit，改用 `element.click()` 直接觸發後確認正常，非程式問題），用 API 確認 description 已正確持久化寫入 DB
+> 6. 重新開啟編輯 Drawer，確認 description 與留言（含編輯後內容）皆正確帶回顯示，證實持久化與重新載入邏輯正確
+> 7. 確認留言區塊操作（新增/編輯按鈕）**未**誤觸發外層任務表單 submit（Drawer 全程未意外關閉、標題等欄位內容未遺失）
+> 8. 點擊留言刪除按鈕，確認觸發瀏覽器原生 `window.confirm()` 對話框（自動化工具無法程式化點擊原生 dialog 按鈕，但用 API 確認在對話框跳出期間 DELETE 未被呼叫，資料未被誤刪，二次確認機制正確運作），改用 curl 執行對應 DELETE 驗證回傳 `204`，留言確實被清除
+> 9. 開啟「新增任務」（create 模式），確認**不顯示**留言區塊（只有描述雙欄編輯器，無「留言」標題與 CommentList），符合設計預期
+>
+> 測試資料已於驗證後清理乾淨（description 重設為空字串、留言已刪除）。
 
 1. 點擊既有任務卡片開啟編輯 Drawer，確認 Drawer 明顯變寬，且描述雙欄編輯器正常顯示（左 textarea、右預覽）
 2. 在描述欄位輸入 Markdown 內容（例如 `# 標題\n\n- 項目一\n- 項目二\n\n**粗體文字**`），確認右側預覽即時渲染正確的標題/清單/粗體樣式
@@ -734,7 +749,9 @@ npm run dev
 
 （比照 Task 4 Step 3 的 curl 驗證流程，額外驗證 `PATCH /api/tasks/:id` 帶 `description` 欄位能正確儲存與讀回）
 
-- [ ] **Step 4：驗證舊資料庫 migration 不影響既有資料**
+- [x] **Step 4：驗證舊資料庫 migration 不影響既有資料**
+
+> 已在 Task 2 執行並驗證通過（見 Task 2 記錄），Task 8 不重複執行。
 
 ```bash
 sqlite3 .data/taskboard.sqlite "SELECT COUNT(*) FROM tasks;"
@@ -742,7 +759,7 @@ sqlite3 .data/taskboard.sqlite "SELECT COUNT(*) FROM tasks;"
 
 確認任務數量與 Phase 2 時期一致（種子資料 8 筆 + 測試過程中增減的筆數應可對得上），確認 migration 沒有清空或破壞既有資料。
 
-- [ ] **Step 5：停止 dev server，清理測試資料**
+- [x] **Step 5：停止 dev server，清理測試資料**
 
 停掉 `npm run dev`（兩個 process）。清除測試過程中建立的任務與留言，確保不留測試髒資料在種子資料集中。
 
@@ -754,7 +771,7 @@ sqlite3 .data/taskboard.sqlite "SELECT COUNT(*) FROM tasks;"
 
 **介面：** 無（純文件更新）。
 
-- [ ] **Step 1：更新 `README.md`**
+- [x] **Step 1：更新 `README.md`**
 
 1. 「目前進度」章節：`⏳ Phase 3` 改為 `✅ Phase 3`
 2. 「技術棧」章節的「前端」小節新增：
@@ -780,13 +797,32 @@ PATCH  /api/comments/:id             編輯留言
 DELETE /api/comments/:id             刪除留言
 ```
 
-- [ ] **Step 2：Commit 並 push**
+- [x] **Step 2：Commit 並 push**
 
 ```bash
 git add README.md
 git commit -m "docs: document Phase 3 task detail feature (markdown description + comments) in README"
 git push origin feature/phase3-task-detail
 ```
+
+---
+
+## 最終 Whole-Branch Review 與修正
+
+全部 9 個 Task 完成後，依 subagent-driven-development 流程對整個分支（`91296a0..1239239`，17 commits）進行最終審查，發現：
+
+- **Important（blocking）**：`description`/留言 `content` 缺乏伺服器端長度限制。實測送出 500KB 的 description payload 會觸發 Express 內建 `PayloadTooLargeError`（因 body 超過預設 100KB 限制），但被通用 error middleware 吞成 `{"error":"internal_server_error"}`、狀態碼 500，前端使用者只會看到「儲存失敗」，無法得知真正原因
+- 其餘架構、介面一致性、Markdown 渲染安全性（無 XSS，未安裝 rehype-raw）、SQLite migration 邊界情況（新舊資料庫皆正確處理、CASCADE 實測生效）、CommentList 按鈕 `type="button"`（5 個全數核對）、SQL injection 防護（prepared statement）、程式碼重複/命名/dead code 檢查皆通過
+
+修正（commit `074f5d2`）：
+- `express.json({ limit: '1mb' })` 明確設定 body size 上限（原本用 Express 預設 ~100KB）
+- 通用 error middleware 新增對 `PayloadTooLargeError`（`err.type === 'entity.too.large' || err.status === 413`）的專屬處理，回傳乾淨的 `413 { error: 'request body too large' }`，不再落入 500 handler
+- `validateTaskFields()` 新增應用層長度驗證：`title` ≤ 500 字元、`description` ≤ 50000 字元
+- 留言 POST/PATCH 路由新增 `content` ≤ 5000 字元驗證
+
+Scoped re-review 確認 ADDRESSED，無新增 Critical/Important 問題，**最終判定：Approved**。
+
+分支已可合併回 `main`。
 
 ---
 
