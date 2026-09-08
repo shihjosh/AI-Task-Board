@@ -240,7 +240,7 @@ PATCH  /api/comments/:id                 編輯留言（body: { content }）
 DELETE /api/comments/:id                 刪除留言
 ```
 
-- [ ] **Step 1：修改 `server/index.mjs`**
+- [x] **Step 1：修改 `server/index.mjs`**
 
 1. Import 新增：`import { listComments, createComment, updateComment, deleteComment } from './commentRepository.mjs'`
 2. `CREATABLE_FIELDS` 陣列加入 `'description'`
@@ -279,12 +279,12 @@ app.delete('/api/comments/:id', (req, res) => {
 
 > 注意：這些新路由要放在既有的 `app.use((err, req, res, next) => {...})` 錯誤處理 middleware **之前**，比照既有路由的擺放順序。
 
-- [ ] **Step 2：用 `tsc` 驗證**
+- [x] **Step 2：用 `tsc` 驗證**
 
 執行：`npx tsc -b`
 預期：無錯誤（`server/*.mjs` 是純 JS，不受影響；此步驟主要確認前端型別沒有因為改動被波及，因為目前還沒有前端改動，理論上無變化）
 
-- [ ] **Step 3：啟動 server 並用 curl 驗證**
+- [x] **Step 3：啟動 server 並用 curl 驗證**
 
 ```bash
 npm run db:seed  # 若尚未 seed
@@ -328,7 +328,7 @@ kill %1
 
 預期：POST/PATCH/DELETE 皆回應正確狀態碼，空白內容回 400，任務刪除後其留言透過 CASCADE 一併清除（若 CASCADE 未生效，改為在 `deleteTask` 中手動加一行 `db.prepare('DELETE FROM comments WHERE task_id = ?').run(id)` 作為保險機制）。
 
-- [ ] **Step 4：Commit**
+- [x] **Step 4：Commit**
 
 ```bash
 git add server/index.mjs
