@@ -20,6 +20,8 @@ const CREATABLE_FIELDS = [
   'hasUnread',
   'columnId',
   'description',
+  'targetPath',
+  'automationStatus',
 ]
 
 function pickFields(source, fields) {

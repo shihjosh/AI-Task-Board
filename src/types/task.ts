@@ -27,6 +27,8 @@ export interface Task {
   hasUnread?: boolean
   columnId: ColumnId
   description?: string // Markdown 原始文字，可為空字串或 undefined
+  targetPath: string // Hermes agent 執行任務時的工作目錄（絕對路徑），空字串代表此卡不可自動執行
+  automationStatus: 'idle' | 'running' | 'done' | 'failed'
 }
 
 export interface Comment {
