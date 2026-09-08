@@ -771,7 +771,7 @@ sqlite3 .data/taskboard.sqlite "SELECT COUNT(*) FROM tasks;"
 
 **介面：** 無（純文件更新）。
 
-- [ ] **Step 1：更新 `README.md`**
+- [x] **Step 1：更新 `README.md`**
 
 1. 「目前進度」章節：`⏳ Phase 3` 改為 `✅ Phase 3`
 2. 「技術棧」章節的「前端」小節新增：
@@ -797,7 +797,7 @@ PATCH  /api/comments/:id             編輯留言
 DELETE /api/comments/:id             刪除留言
 ```
 
-- [ ] **Step 2：Commit 並 push**
+- [x] **Step 2：Commit 並 push**
 
 ```bash
 git add README.md
