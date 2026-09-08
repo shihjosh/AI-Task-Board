@@ -712,14 +712,27 @@ git commit -m "feat: add CommentList component with full CRUD, mount into TaskDr
 
 **介面：** 無。
 
-- [ ] **Step 1：啟動開發環境**
+- [x] **Step 1：啟動開發環境**
 
 ```bash
 npm run db:seed
 npm run dev
 ```
 
-- [ ] **Step 2：瀏覽器互動驗證（若環境支援瀏覽器操作）**
+- [x] **Step 2：瀏覽器互動驗證（若環境支援瀏覽器操作）**
+
+> **實際執行結果（2026-09-08）：** 環境支援瀏覽器操作，已完整執行：
+> 1. 點擊既有任務卡片開啟編輯 Drawer，確認寬度明顯加寬（`max-w-3xl`），描述雙欄編輯器正常顯示
+> 2. 輸入含標題/清單/粗體/行內程式碼/GFM 表格的 Markdown 內容，右側預覽即時正確渲染（`<h1>`/`<ul><li>`/`<strong>`/`<code>`/`<table>` 皆正確）
+> 3. 新增留言「這是第一則測試留言」，送出後立即出現在列表，作者顯示「Josh」，時間戳正確
+> 4. 點擊該留言編輯按鈕，修改內容為「這是已編輯的留言」並儲存，確認內容更新且顯示「（已編輯）」標記
+> 5. 點擊任務層級「儲存」按鈕，確認 Drawer 正確關閉（原生合成點擊事件一度未觸發 submit，改用 `element.click()` 直接觸發後確認正常，非程式問題），用 API 確認 description 已正確持久化寫入 DB
+> 6. 重新開啟編輯 Drawer，確認 description 與留言（含編輯後內容）皆正確帶回顯示，證實持久化與重新載入邏輯正確
+> 7. 確認留言區塊操作（新增/編輯按鈕）**未**誤觸發外層任務表單 submit（Drawer 全程未意外關閉、標題等欄位內容未遺失）
+> 8. 點擊留言刪除按鈕，確認觸發瀏覽器原生 `window.confirm()` 對話框（自動化工具無法程式化點擊原生 dialog 按鈕，但用 API 確認在對話框跳出期間 DELETE 未被呼叫，資料未被誤刪，二次確認機制正確運作），改用 curl 執行對應 DELETE 驗證回傳 `204`，留言確實被清除
+> 9. 開啟「新增任務」（create 模式），確認**不顯示**留言區塊（只有描述雙欄編輯器，無「留言」標題與 CommentList），符合設計預期
+>
+> 測試資料已於驗證後清理乾淨（description 重設為空字串、留言已刪除）。
 
 1. 點擊既有任務卡片開啟編輯 Drawer，確認 Drawer 明顯變寬，且描述雙欄編輯器正常顯示（左 textarea、右預覽）
 2. 在描述欄位輸入 Markdown 內容（例如 `# 標題\n\n- 項目一\n- 項目二\n\n**粗體文字**`），確認右側預覽即時渲染正確的標題/清單/粗體樣式
@@ -736,7 +749,9 @@ npm run dev
 
 （比照 Task 4 Step 3 的 curl 驗證流程，額外驗證 `PATCH /api/tasks/:id` 帶 `description` 欄位能正確儲存與讀回）
 
-- [ ] **Step 4：驗證舊資料庫 migration 不影響既有資料**
+- [x] **Step 4：驗證舊資料庫 migration 不影響既有資料**
+
+> 已在 Task 2 執行並驗證通過（見 Task 2 記錄），Task 8 不重複執行。
 
 ```bash
 sqlite3 .data/taskboard.sqlite "SELECT COUNT(*) FROM tasks;"
@@ -744,7 +759,7 @@ sqlite3 .data/taskboard.sqlite "SELECT COUNT(*) FROM tasks;"
 
 確認任務數量與 Phase 2 時期一致（種子資料 8 筆 + 測試過程中增減的筆數應可對得上），確認 migration 沒有清空或破壞既有資料。
 
-- [ ] **Step 5：停止 dev server，清理測試資料**
+- [x] **Step 5：停止 dev server，清理測試資料**
 
 停掉 `npm run dev`（兩個 process）。清除測試過程中建立的任務與留言，確保不留測試髒資料在種子資料集中。
 
