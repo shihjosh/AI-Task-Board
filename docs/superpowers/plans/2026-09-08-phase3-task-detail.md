@@ -415,7 +415,7 @@ git commit -m "feat: add frontend API client for comments"
 
 **介面：** `TaskDrawer` 的 `TaskDrawerProps` 不變；內部 `form` state 新增 `description: string`。
 
-- [ ] **Step 1：修改 `src/components/TaskDrawer.tsx`**
+- [x] **Step 1：修改 `src/components/TaskDrawer.tsx`**
 
 1. 版面寬度：`max-w-md` → `max-w-3xl`（`<form>` 的 className）
 2. `import ReactMarkdown from 'react-markdown'` 與 `import remarkGfm from 'remark-gfm'`
@@ -448,17 +448,17 @@ git commit -m "feat: add frontend API client for comments"
 
 > 注意：`prose` class 來自 Tailwind Typography plugin，本專案**未安裝**該 plugin（避免新增額外依賴），因此 Markdown 預覽區塊會是無特殊排版樣式的純渲染（標題、清單、表格等仍會依 HTML 預設樣式呈現，只是沒有 Tailwind 美化）。若未來需要更好看的排版，可另外評估是否安裝 `@tailwindcss/typography`（本次 plan 範圍不含）。實作時可以移除 `prose prose-sm max-w-none` 這幾個 class，避免造成誤導性的 class 名稱掛在沒安裝對應 plugin 的專案上。
 
-- [ ] **Step 2：用 `tsc` 驗證**
+- [x] **Step 2：用 `tsc` 驗證**
 
 執行：`npx tsc -b`
 預期：無錯誤（確認 `react-markdown`/`remark-gfm` 型別定義可正確被 TS 辨識，這兩個套件本身含 `.d.ts`，不需要額外安裝 `@types/*`）
 
-- [ ] **Step 3：`npm run build` 驗證**
+- [x] **Step 3：`npm run build` 驗證**
 
 執行：`npm run build`
 預期：build 成功，確認新套件正確被打包，無 externalize 相關錯誤
 
-- [ ] **Step 4：Commit**
+- [x] **Step 4：Commit**
 
 ```bash
 git add src/components/TaskDrawer.tsx
