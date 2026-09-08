@@ -5,6 +5,7 @@ import remarkGfm from 'remark-gfm'
 import type { Task, Priority, ColumnId, TagType } from '../types/task'
 import { TAG_OPTIONS, ASSIGNEE_OPTIONS, PRIORITY_OPTIONS, COLUMN_OPTIONS } from '../data/options'
 import { createTaskApi, updateTaskApi, deleteTaskApi } from '../lib/api'
+import CommentList from './CommentList'
 
 interface TaskDrawerProps {
   isOpen: boolean
@@ -247,6 +248,8 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
             </div>
           </div>
         </div>
+
+        {mode === 'edit' && initialTask && <CommentList taskId={initialTask.id} />}
 
         <div className="mt-auto flex items-center justify-between gap-2">
           {mode === 'edit' && (
