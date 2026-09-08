@@ -1,56 +1,56 @@
-# Hermes Agent Automation Implementation Plan
+# Hermes Agent 自動化功能 實作計畫
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **給執行的 agent：** 必要子技能：使用 superpowers:subagent-driven-development（建議）或 superpowers:executing-plans 逐一任務執行本計畫。步驟使用 checkbox（`- [ ]`）語法追蹤進度。
 
-**Goal:** When a task card's `columnId` transitions into `in_progress` and the card has a `targetPath`, spawn a background `hermes chat -q` process in that directory to actually execute the task, then report the result as a comment and move the card to `review` (or flag it as failed) — without blocking the PATCH request.
+**目標：** 當任務卡的 `columnId` 轉變為 `in_progress`，且該卡有填寫 `targetPath` 時，在該目錄下背景啟動一個 `hermes chat -q` 程序真的動手執行任務，完成後把結果寫回留言區並將卡片移到 `review`（或標記為失敗），且不阻塞 PATCH 請求本身。
 
-**Architecture:** The Express PATCH handler detects the `columnId` transition (`!== 'in_progress' → 'in_progress'`) and delegates to a new `server/automationRunner.mjs` module. That module validates `targetPath`, enforces a small in-process concurrency queue (max 2 concurrent runs), spawns `hermes chat -q "<prompt>"` as a detached child process with `cwd: targetPath`, and on exit writes a comment (`createComment`) plus updates the task's `automationStatus` / `columnId` via the existing `taskRepository.mjs` functions. The frontend gains a `targetPath` field in `TaskDrawer` and a running-state visual indicator on `TaskCard`.
+**架構：** Express 的 PATCH handler 偵測 `columnId` 的轉變（`!== 'in_progress' → 'in_progress'`），並委派給新的 `server/automationRunner.mjs` 模組。該模組驗證 `targetPath`、以模組層級的簡易併發佇列限制（最多同時 2 個執行），以 `cwd: targetPath` 分離（detached）子程序方式 spawn `hermes chat -q "<prompt>"`，並在程序結束時透過既有的 `taskRepository.mjs` 函式寫入留言（`createComment`）並更新任務的 `automationStatus` / `columnId`。前端則在 `TaskDrawer` 新增 `targetPath` 欄位，並在 `TaskCard` 上加入執行中的視覺指示。
 
-**Tech Stack:** Node.js `child_process.spawn` (no new npm dependency), Express, better-sqlite3 (existing), React/TypeScript (existing). No test framework exists in this repo — verification is via `curl` against the running dev server and manual browser checks, per this repo's established convention (see `ai-task-board-ops` skill notes on Phase 3's body-size-limit and progress-validation findings).
+**技術選型：** Node.js `child_process.spawn`（不新增 npm 依賴）、Express、better-sqlite3（既有）、React/TypeScript（既有）。本 repo 沒有測試框架——驗證方式為對執行中的 dev server 下 `curl` 指令加上手動瀏覽器檢查，沿用本 repo 既有慣例（見 `ai-task-board-ops` skill 中關於 Phase 3 body-size-limit 與 progress 驗證發現的紀錄）。
 
-## Global Constraints
+## 全域限制條件
 
-- No new npm dependencies (spawns the `hermes` CLI already installed on the host — same "zero unnecessary dependency" bar this repo has held since Phase 1).
-- Single-container Docker model is unaffected by this phase — the `hermes` CLI runs on the **host**, not inside the app's Docker container (documented as an explicit open item to revisit before this ships to the Dockerized deployment; this plan targets local/dev execution only, per spec's "spec only" framing before container packaging is decided).
-- All new user-facing strings are Traditional Chinese, matching the rest of the UI.
-- Every DB column addition MUST be migration-guarded (`PRAGMA table_info` check) exactly like the existing `description` column migration in `server/db.mjs` — this repo has real seeded `.data/taskboard.sqlite` files that predate this phase.
-- Follow the existing repo pattern: `express.json({ limit: '1mb' })` and the 413/500 error-middleware split already in `server/index.mjs` must not be bypassed by any new route.
+- 不新增任何 npm 依賴（僅 spawn 主機上已安裝的 `hermes` CLI——延續本 repo 自 Phase 1 以來「非必要不加依賴」的標準）。
+- 單一容器 Docker 模式不受本階段影響——`hermes` CLI 是在**主機**上執行，而非在 app 的 Docker 容器內執行（在 Task 6 明確列為已知限制，待後續決定如何打包進 Dockerized 部署前不在本計畫範圍內，呼應 spec 的「spec only」框架）。
+- 所有新增的使用者可見文字一律使用繁體中文，與現有 UI 一致。
+- 每個新增的資料庫欄位都必須有 migration 保護（`PRAGMA table_info` 檢查），做法與 `server/db.mjs` 中既有的 `description` 欄位 migration 完全一致——本 repo 有真實的、早於本階段的種子 `.data/taskboard.sqlite` 檔案需要相容。
+- 遵循既有 repo 模式：`server/index.mjs` 中既有的 `express.json({ limit: '1mb' })` 與 413/500 錯誤中介層拆分邏輯，不可被任何新路由繞過。
 
-## Decisions locked in for this plan (resolving the spec's Open Questions)
+## 本計畫鎖定的決策（解決 spec 留下的 Open Questions）
 
-The spec (`docs/superpowers/specs/2026-09-08-hermes-agent-automation-design.md`) intentionally left 6 questions open for the implementation to resolve. This plan makes explicit, concrete choices for all of them so no task contains a placeholder:
+Spec（`docs/superpowers/specs/2026-09-08-hermes-agent-automation-design.md`）刻意保留了 6 個待實作前確認的問題。本計畫為每一項都做出明確、具體的選擇，確保任何任務都不含 placeholder：
 
-1. **Failure/blocked handling:** non-zero exit code or timeout → task stays in `in_progress`, `automationStatus` becomes `failed`, and a comment is written with the error detail (stderr tail + exit code). It is NOT auto-moved to `review`.
-2. **Re-trigger on repeat drag:** allowed only when `automationStatus` is `idle`, `done`, or `failed` — never when it is already `running`. A repeat drag while `running` is silently ignored (no duplicate spawn, no error surfaced).
-3. **UI "running" indicator:** `TaskCard` shows a small pulsing dot + "Hermes 執行中" label next to the title when `task.automationStatus === 'running'`.
-4. **`targetPath` validation:** must be a non-empty string AND `fs.existsSync(targetPath)` must be true, checked at trigger time (not at card-save time, since the directory may not exist yet when the card is created). An invalid path fails immediately (`automationStatus: 'failed'`, comment explaining why) without spawning a process.
-5. **Concurrency limit:** max 2 concurrent Hermes processes system-wide, tracked by a module-level counter in `automationRunner.mjs`. A trigger arriving at capacity is queued in-memory (FIFO) and started when a slot frees. The queue is **not persisted** — a server restart drops any queued (not yet started) automation runs; this is called out explicitly in the README update (Task 6) as a known limitation.
-6. **Timeout:** 15 minutes (`900_000` ms) wall-clock per run, enforced with `child.kill('SIGTERM')`; a timed-out run is treated identically to a non-zero exit (failed path, rule 1).
+1. **失敗/阻塞的處理方式：** 非 0 結束代碼或逾時 → 卡片停留在 `in_progress`，`automationStatus` 變成 `failed`，並寫入一則包含錯誤細節（stderr 尾段 + exit code）的留言。**不會**自動移到 `review`。
+2. **重複拖回 in_progress 是否可重新觸發：** 僅當 `automationStatus` 為 `idle`、`done` 或 `failed` 時才允許重新觸發——`running` 狀態時絕不允許。若在 `running` 狀態時又符合觸發條件的拖曳，一律靜默忽略（不重複 spawn、不回報錯誤）。
+3. **UI 執行中指示：** 當 `task.automationStatus === 'running'` 時，`TaskCard` 在標題旁顯示一個小的脈動圓點與「Hermes 執行中」文字。
+4. **`targetPath` 欄位驗證：** 必須是非空字串，且 `fs.existsSync(targetPath)` 必須為 true，此檢查在**觸發當下**執行（而非卡片儲存時），因為建立卡片時該目錄可能還不存在。路徑無效時立即失敗（`automationStatus: 'failed'`，留言說明原因），不會啟動任何程序。
+5. **併發上限：** 全系統最多同時 2 個 Hermes 程序，由 `automationRunner.mjs` 內的模組層級計數器追蹤。超過上限到達的觸發會被放進記憶體內的佇列（先進先出），待有空位時才啟動。此佇列**不會持久化**——伺服器重啟會遺失所有已排隊但尚未啟動的自動執行任務；此限制會在 README 更新（Task 6）中明確標註。
+6. **逾時策略：** 每次執行的牆鐘時間上限為 15 分鐘（`900_000` 毫秒），以 `child.kill('SIGTERM')` 強制中止；逾時視同非 0 結束代碼，走與規則 1 相同的失敗路徑。
 
-## Global data model addition
+## 全域資料模型異動
 
 ```sql
 ALTER TABLE tasks ADD COLUMN target_path TEXT NOT NULL DEFAULT '';
 ALTER TABLE tasks ADD COLUMN automation_status TEXT NOT NULL DEFAULT 'idle';
 ```
 
-`automation_status` values: `'idle' | 'running' | 'done' | 'failed'`.
+`automation_status` 可能的值：`'idle' | 'running' | 'done' | 'failed'`。
 
 ---
 
-### Task 1: DB migration + repository fields for `targetPath` / `automationStatus`
+### Task 1：DB migration + `targetPath` / `automationStatus` 的 repository 欄位支援
 
-**Files:**
-- Modify: `server/db.mjs:35-40` (add two migration-guarded `ALTER TABLE` blocks after the existing `description` migration)
-- Modify: `server/taskRepository.mjs` (`rowToTask`, `createTask`, `updateTask`)
-- Modify: `src/types/task.ts` (add `targetPath` and `automationStatus` to the `Task` interface)
+**檔案：**
+- 修改：`server/db.mjs:35-40`（在既有的 `description` migration 之後加入兩段 migration 保護的 `ALTER TABLE`）
+- 修改：`server/taskRepository.mjs`（`rowToTask`、`createTask`、`updateTask`）
+- 修改：`src/types/task.ts`（在 `Task` interface 新增 `targetPath` 與 `automationStatus`）
 
-**Interfaces:**
-- Produces: `Task.targetPath: string` (always present, default `''`), `Task.automationStatus: 'idle' | 'running' | 'done' | 'failed'` (always present, default `'idle'`) — every later task reads/writes these exact field names.
+**介面：**
+- 產出：`Task.targetPath: string`（永遠存在，預設 `''`）、`Task.automationStatus: 'idle' | 'running' | 'done' | 'failed'`（永遠存在，預設 `'idle'`）——後續所有任務都會用這兩個確切的欄位名稱讀寫。
 
-- [ ] **Step 1: Add the migration to `server/db.mjs`**
+- [ ] **Step 1：在 `server/db.mjs` 加入 migration**
 
-Add immediately after the existing `description` migration block (after line 40, before the `comments` table creation):
+在既有的 `description` migration 區塊之後（第 40 行之後、`comments` 資料表建立之前）加入：
 
 ```js
   const hasTargetPath = taskColumns.some((col) => col.name === 'target_path')
@@ -64,7 +64,7 @@ Add immediately after the existing `description` migration block (after line 40,
   }
 ```
 
-- [ ] **Step 2: Verify migration against a fresh DB**
+- [ ] **Step 2：對全新 DB 驗證 migration**
 
 ```bash
 rm -f .data/taskboard.sqlite .data/taskboard.sqlite-wal .data/taskboard.sqlite-shm
@@ -72,9 +72,9 @@ node -e "import('./server/db.mjs').then(m => { m.getDb(); console.log('ok') })"
 sqlite3 .data/taskboard.sqlite "PRAGMA table_info(tasks)"
 ```
 
-Expected: `target_path` and `automation_status` columns appear in the `PRAGMA table_info` output with the correct defaults, and `node` prints `ok` with no errors.
+預期結果：`PRAGMA table_info` 輸出中出現 `target_path` 與 `automation_status` 欄位且預設值正確，`node` 印出 `ok` 且無任何錯誤。
 
-- [ ] **Step 3: Verify migration against the existing seeded DB (no data loss)**
+- [ ] **Step 3：對既有已種子的 DB 驗證 migration（確認無資料遺失）**
 
 ```bash
 cp .data/taskboard.sqlite /tmp/taskboard.sqlite.pre-migration.bak
@@ -85,47 +85,47 @@ sqlite3 .data/taskboard.sqlite "SELECT COUNT(*) FROM tasks;"
 sqlite3 .data/taskboard.sqlite "PRAGMA table_info(tasks)"
 ```
 
-Expected: row count identical before/after, new columns present with default values on all pre-existing rows.
+預期結果：前後列數完全相同，所有既有列都出現新欄位且為預設值。
 
-- [ ] **Step 4: Update `server/taskRepository.mjs`**
+- [ ] **Step 4：更新 `server/taskRepository.mjs`**
 
-In `rowToTask`, add after `columnId: row.column_id,`:
+在 `rowToTask` 中，於 `columnId: row.column_id,` 之後加入：
 
 ```js
     targetPath: row.target_path,
     automationStatus: row.automation_status,
 ```
 
-In `createTask`'s SQL (`INSERT INTO tasks (...)`), add `target_path, automation_status` to the column list and `@targetPath, @automationStatus` to the `VALUES` list, and in the params object passed to `.run(...)` add:
+在 `createTask` 的 SQL（`INSERT INTO tasks (...)`）中，於欄位清單加入 `target_path, automation_status`，`VALUES` 清單加入 `@targetPath, @automationStatus`，並在傳給 `.run(...)` 的參數物件中加入：
 
 ```js
     targetPath: input.targetPath ?? '',
     automationStatus: input.automationStatus ?? 'idle',
 ```
 
-In `updateTask`'s `merged` object, add:
+在 `updateTask` 的 `merged` 物件中加入：
 
 ```js
     targetPath: patch.targetPath ?? existing.target_path,
     automationStatus: patch.automationStatus ?? existing.automation_status,
 ```
 
-and add `target_path=@targetPath, automation_status=@automationStatus,` to the `UPDATE tasks SET ...` SQL string.
+並在 `UPDATE tasks SET ...` 的 SQL 字串中加入 `target_path=@targetPath, automation_status=@automationStatus,`。
 
-- [ ] **Step 5: Update `src/types/task.ts`**
+- [ ] **Step 5：更新 `src/types/task.ts`**
 
-In the `Task` interface, add after `columnId: ColumnId`:
+在 `Task` interface 中，於 `columnId: ColumnId` 之後加入：
 
 ```ts
   targetPath: string // Hermes agent 執行任務時的工作目錄（絕對路徑），空字串代表此卡不可自動執行
   automationStatus: 'idle' | 'running' | 'done' | 'failed'
 ```
 
-- [ ] **Step 6: Add `targetPath` and `automationStatus` to `CREATABLE_FIELDS` in `server/index.mjs`**
+- [ ] **Step 6：在 `server/index.mjs` 的 `CREATABLE_FIELDS` 加入 `targetPath` 與 `automationStatus`**
 
-In the `CREATABLE_FIELDS` array (`server/index.mjs:13-23`), add `'targetPath'` and `'automationStatus'` so the PATCH/POST handlers pass them through via `pickFields`.
+在 `CREATABLE_FIELDS` 陣列（`server/index.mjs:13-23`）中加入 `'targetPath'` 與 `'automationStatus'`，讓 PATCH/POST handler 透過 `pickFields` 正確傳遞這兩個欄位。
 
-- [ ] **Step 7: Manual verification via curl**
+- [ ] **Step 7：以 curl 手動驗證**
 
 ```bash
 npm run dev:server &
@@ -135,9 +135,9 @@ curl -s -X POST http://localhost:3001/api/tasks \
   -d '{"title":"migration test","priority":"low","columnId":"todo","targetPath":"/tmp"}' | python3 -m json.tool
 ```
 
-Expected: response JSON includes `"targetPath": "/tmp"` and `"automationStatus": "idle"`. Delete the test task afterward with `curl -X DELETE http://localhost:3001/api/tasks/<id>`.
+預期結果：回應 JSON 包含 `"targetPath": "/tmp"` 與 `"automationStatus": "idle"`。驗證完畢後用 `curl -X DELETE http://localhost:3001/api/tasks/<id>` 刪除測試卡片。
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 8：Commit**
 
 ```bash
 git add server/db.mjs server/taskRepository.mjs server/index.mjs src/types/task.ts
@@ -146,17 +146,17 @@ git commit -m "feat: add target_path and automation_status columns to tasks"
 
 ---
 
-### Task 2: `automationRunner.mjs` — spawn, timeout, concurrency queue
+### Task 2：`automationRunner.mjs` —— spawn、逾時、併發佇列
 
-**Files:**
-- Create: `server/automationRunner.mjs`
-- Consumes: `updateTask(id, patch)` and `createComment(taskId, content)` from `server/taskRepository.mjs` / `server/commentRepository.mjs` (Task 1's fields already merged)
+**檔案：**
+- 新增：`server/automationRunner.mjs`
+- 依賴：`server/taskRepository.mjs` 的 `updateTask(id, patch)`、`server/commentRepository.mjs` 的 `createComment(taskId, content)`（Task 1 新增的欄位已合併進去）
 
-**Interfaces:**
-- Produces: `export function triggerAutomation(task)` — `task` is a full `Task` object (post-update, already has `columnId === 'in_progress'`). Returns nothing (fire-and-forget); all side effects happen via `updateTask`/`createComment`. This is the exact function name `server/index.mjs` (Task 3) imports and calls.
-- Produces: `export function getQueueDepth()` — returns the current in-memory queue length, used only for the curl-based verification below (not required by the UI).
+**介面：**
+- 產出：`export function triggerAutomation(task)` —— `task` 是完整的 `Task` 物件（已更新後的，`columnId === 'in_progress'`）。不回傳任何值（fire-and-forget）；所有副作用都透過 `updateTask`/`createComment` 完成。這是 `server/index.mjs`（Task 3）會 import 並呼叫的確切函式名稱。
+- 產出：`export function getQueueDepth()` —— 回傳目前記憶體內佇列的長度，僅用於下方 curl 驗證用途（UI 不需要此功能）。
 
-- [ ] **Step 1: Write `server/automationRunner.mjs`**
+- [ ] **Step 1：撰寫 `server/automationRunner.mjs`**
 
 ```js
 import { spawn } from 'node:child_process'
@@ -267,9 +267,9 @@ export function triggerAutomation(task) {
 }
 ```
 
-- [ ] **Step 2: Manual verification — success path**
+- [ ] **Step 2：手動驗證——成功路徑**
 
-Create a `/tmp/automation-test` directory with a trivial file, then trigger via a temporary Node script (this module has no HTTP route yet, so it's called directly for isolated verification):
+先建立 `/tmp/automation-test` 目錄，再透過臨時 Node 腳本觸發（此模組目前尚無 HTTP 路由，故先以直接呼叫的方式做獨立驗證）：
 
 ```bash
 mkdir -p /tmp/automation-test
@@ -282,9 +282,9 @@ setTimeout(() => process.exit(0), 5000)
 "
 ```
 
-Expected: no thrown errors; a `hermes` child process starts (visible in `ps aux | grep hermes` during the 5s window).
+預期結果：無任何拋出錯誤；`hermes` 子程序啟動（在這 5 秒的視窗內用 `ps aux | grep hermes` 可以看到）。
 
-- [ ] **Step 3: Manual verification — invalid targetPath fails immediately**
+- [ ] **Step 3：手動驗證——無效 targetPath 立即失敗**
 
 ```bash
 node --input-type=module -e "
@@ -300,9 +300,9 @@ setTimeout(() => {
 "
 ```
 
-Expected: printed comment array contains one comment starting with `❌ 無法啟動 Hermes 自動執行`, and no `hermes` child process was spawned.
+預期結果：印出的留言陣列中有一則以 `❌ 無法啟動 Hermes 自動執行` 開頭，且完全沒有 `hermes` 子程序被啟動。
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 4：Commit**
 
 ```bash
 git add server/automationRunner.mjs
@@ -311,17 +311,17 @@ git commit -m "feat: add automationRunner with spawn, timeout, and concurrency q
 
 ---
 
-### Task 3: Wire the trigger into `PATCH /api/tasks/:id`
+### Task 3：把觸發邏輯接進 `PATCH /api/tasks/:id`
 
-**Files:**
-- Modify: `server/index.mjs:83-91` (the existing `app.patch('/api/tasks/:id', ...)` handler)
+**檔案：**
+- 修改：`server/index.mjs:83-91`（既有的 `app.patch('/api/tasks/:id', ...)` handler）
 
-**Interfaces:**
-- Consumes: `triggerAutomation(task)` from Task 2's `server/automationRunner.mjs`.
+**介面：**
+- 依賴：Task 2 `server/automationRunner.mjs` 的 `triggerAutomation(task)`。
 
-- [ ] **Step 1: Capture the pre-update `columnId` and call `triggerAutomation` after the update**
+- [ ] **Step 1：記錄更新前的 `columnId`，並在更新後呼叫 `triggerAutomation`**
 
-Replace the existing handler body:
+將既有的 handler 內容替換為：
 
 ```js
 app.patch('/api/tasks/:id', (req, res) => {
@@ -342,15 +342,15 @@ app.patch('/api/tasks/:id', (req, res) => {
 })
 ```
 
-Add the import at the top of the file (with the other repository imports):
+在檔案頂端（與其他 repository imports 放一起）加入：
 
 ```js
 import { triggerAutomation } from './automationRunner.mjs'
 ```
 
-Note: `res.json({ task })` is sent **before** calling `triggerAutomation` — this is what satisfies the spec's "觸發後應立即回應 PATCH 請求" requirement; `triggerAutomation` itself is synchronous-looking but only spawns and returns, it does not await process completion.
+注意：`res.json({ task })` 是在呼叫 `triggerAutomation` **之前**送出的——這正是滿足 spec 要求「觸發後應立即回應 PATCH 請求」的做法；`triggerAutomation` 本身看似同步，但只負責 spawn 後立即返回，並不會等待程序執行完成。
 
-- [ ] **Step 2: Manual verification — dragging into in_progress triggers automation**
+- [ ] **Step 2：手動驗證——拖到 in_progress 會觸發自動執行**
 
 ```bash
 npm run dev:server &
@@ -370,9 +370,9 @@ print([t for t in tasks if t['id'] == '$TASK_ID'][0])
 "
 ```
 
-Expected: the PATCH response returns immediately with the task showing `columnId: in_progress` (not yet `review`); a follow-up GET a moment later shows `automationStatus: running` (or already `done`/`failed` if the Hermes call finished fast). Clean up with `curl -X DELETE http://localhost:3001/api/tasks/$TASK_ID`.
+預期結果：PATCH 回應立即回傳，任務顯示 `columnId: in_progress`（尚未變成 `review`）；稍後再 GET 一次會看到 `automationStatus: running`（若 Hermes 呼叫很快結束，也可能已經是 `done`/`failed`）。驗證完畢用 `curl -X DELETE http://localhost:3001/api/tasks/$TASK_ID` 清理。
 
-- [ ] **Step 3: Manual verification — re-trigger guard**
+- [ ] **Step 3：手動驗證——重複觸發防護**
 
 ```bash
 TASK_ID=$(curl -s -X POST http://localhost:3001/api/tasks \
@@ -389,9 +389,9 @@ print([t for t in tasks if t['id'] == '$TASK_ID'][0]['automationStatus'])
 "
 ```
 
-Expected: `automationStatus` stays `running` and no second `hermes` process is spawned (only one entry in `ps aux | grep 'hermes chat'` for this task) — because `triggerAutomation` checks `task.automationStatus === 'running'` and returns early on the second PATCH. Clean up the test task afterward.
+預期結果：`automationStatus` 維持 `running`，且沒有第二個 `hermes` 程序被啟動（用 `ps aux | grep 'hermes chat'` 檢查這張卡片只有一筆）——因為 `triggerAutomation` 會檢查 `task.automationStatus === 'running'` 並在第二次 PATCH 時提早返回。驗證完畢請清理測試卡片。
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 4：Commit**
 
 ```bash
 git add server/index.mjs
@@ -400,37 +400,37 @@ git commit -m "feat: trigger Hermes automation on columnId transition to in_prog
 
 ---
 
-### Task 4: `targetPath` field in `TaskDrawer`
+### Task 4：`TaskDrawer` 新增 `targetPath` 欄位
 
-**Files:**
-- Modify: `src/components/TaskDrawer.tsx`
+**檔案：**
+- 修改：`src/components/TaskDrawer.tsx`
 
-**Interfaces:**
-- Consumes: `Task.targetPath` (Task 1), `Task.automationStatus` (Task 1, read-only display).
+**介面：**
+- 依賴：`Task.targetPath`（Task 1）、`Task.automationStatus`（Task 1，僅唯讀顯示）。
 
-- [ ] **Step 1: Add `targetPath` to the form state**
+- [ ] **Step 1：在表單狀態中加入 `targetPath`**
 
-In `emptyFormState` (`src/components/TaskDrawer.tsx:18-26`), add:
+在 `emptyFormState`（`src/components/TaskDrawer.tsx:18-26`）中加入：
 
 ```ts
   targetPath: '',
 ```
 
-In the `useEffect` that loads `initialTask` into `form` (around line 36-44), add:
+在把 `initialTask` 帶入 `form` 的 `useEffect`（約第 36-44 行）中加入：
 
 ```ts
         targetPath: initialTask.targetPath ?? '',
 ```
 
-In `buildPayload()` (around line 71-87), add to the returned object:
+在 `buildPayload()`（約第 71-87 行）回傳的物件中加入：
 
 ```ts
       targetPath: form.targetPath.trim(),
 ```
 
-- [ ] **Step 2: Add the input field to the form JSX**
+- [ ] **Step 2：在表單 JSX 中加入輸入欄位**
 
-Insert this block right after the "進度" `<label>` (after line 230, before the description `<div>`):
+在「進度」`<label>` 之後（第 230 行之後、描述 `<div>` 之前）插入以下區塊：
 
 ```tsx
         <label className="mb-6 block text-sm">
@@ -455,11 +455,11 @@ Insert this block right after the "進度" `<label>` (after line 230, before the
         </label>
 ```
 
-- [ ] **Step 3: Manual verification via browser**
+- [ ] **Step 3：在瀏覽器手動驗證**
 
-Start `npm run dev`, open the app, click "新增任務", fill in title + a `targetPath` value, save, then reopen the created card and confirm the `targetPath` value round-trips (persisted and pre-filled on edit).
+啟動 `npm run dev`，打開 app，點擊「新增任務」，填入標題與 `targetPath` 值後儲存，再重新打開該卡片確認 `targetPath` 有正確回顯（成功持久化並在編輯時預先帶入）。
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 4：Commit**
 
 ```bash
 git add src/components/TaskDrawer.tsx
@@ -468,23 +468,23 @@ git commit -m "feat: add targetPath field to TaskDrawer"
 
 ---
 
-### Task 5: "Hermes 執行中" indicator on `TaskCard`
+### Task 5：`TaskCard` 加入「Hermes 執行中」指示
 
-**Files:**
-- Modify: `src/components/TaskCard.tsx`
+**檔案：**
+- 修改：`src/components/TaskCard.tsx`
 
-**Interfaces:**
-- Consumes: `Task.automationStatus` (Task 1).
+**介面：**
+- 依賴：`Task.automationStatus`（Task 1）。
 
-- [ ] **Step 1: Add the running indicator**
+- [ ] **Step 1：加入執行中指示**
 
-Import `Loader2` from `lucide-react` alongside the existing icon imports (`src/components/TaskCard.tsx:1`):
+在既有的圖示 import 旁（`src/components/TaskCard.tsx:1`）加入 `Loader2`：
 
 ```tsx
 import { MessageSquare, AlertTriangle, GitPullRequest, Code2, CircleDot, Loader2 } from 'lucide-react'
 ```
 
-Insert this block right after the title `<div>` (after line 54, before the tags `<div>`):
+在標題 `<div>` 之後（第 54 行之後、標籤 `<div>` 之前）插入以下區塊：
 
 ```tsx
       {task.automationStatus === 'running' && (
@@ -495,11 +495,11 @@ Insert this block right after the title `<div>` (after line 54, before the tags 
       )}
 ```
 
-- [ ] **Step 2: Manual verification via browser**
+- [ ] **Step 2：在瀏覽器手動驗證**
 
-Using the curl commands from Task 3 Step 2, set a task's `automationStatus` to `running` (via `PATCH /api/tasks/:id` with `{"automationStatus":"running"}`), reload the board in the browser, and confirm the card shows the spinning "Hermes 執行中" label. Reset it back afterward (`{"automationStatus":"idle"}`) or delete the test task.
+使用 Task 3 Step 2 的 curl 指令，透過 `PATCH /api/tasks/:id`（帶 `{"automationStatus":"running"}`）將某張卡片的 `automationStatus` 設為 `running`，重新整理瀏覽器看板，確認卡片顯示旋轉中的「Hermes 執行中」文字。驗證完畢後將其重設回 `{"automationStatus":"idle"}` 或直接刪除測試卡片。
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 3：Commit**
 
 ```bash
 git add src/components/TaskCard.tsx
@@ -508,28 +508,28 @@ git commit -m "feat: show Hermes 執行中 indicator on TaskCard"
 
 ---
 
-### Task 6: README sync + final whole-branch review
+### Task 6：同步 README + 最終整分支 review
 
-**Files:**
-- Modify: `README.md`
-- Modify: `docs/superpowers/plans/2026-09-08-hermes-agent-automation.md` (this file — tick all boxes as work completes)
+**檔案：**
+- 修改：`README.md`
+- 修改：`docs/superpowers/plans/2026-09-08-hermes-agent-automation.md`（本檔案——隨工作完成逐一打勾）
 
-**Interfaces:** None (documentation-only task).
+**介面：** 無（純文件任務）。
 
-- [ ] **Step 1: Add a section to `README.md` documenting the automation feature**
+- [ ] **Step 1：在 `README.md` 中新增說明本自動化功能的章節**
 
-Add a new section (after the existing feature list) covering: what `targetPath` does, the `automationStatus` state machine (`idle → running → done|failed`), the 15-minute timeout, the 2-process concurrency cap with in-memory (non-persisted) queueing, and the explicit limitation that `hermes` runs on the host, not inside the app's Docker container — so this feature is only usable when running the API server directly on a host that has the `hermes` CLI installed (`npm run dev:server` / `npm start`), not yet wired for the Dockerized deployment path.
+新增一個章節（放在既有功能清單之後），說明：`targetPath` 的用途、`automationStatus` 狀態機（`idle → running → done|failed`）、15 分鐘的逾時限制、2 個程序的併發上限與記憶體內（不持久化）的排隊機制，以及明確標註「`hermes` 是在主機上執行，而非在 app 的 Docker 容器內」這個限制——因此本功能目前僅適用於直接在有安裝 `hermes` CLI 的主機上執行 API server（`npm run dev:server` / `npm start`），尚未接上 Dockerized 部署路徑。
 
-- [ ] **Step 2: Final whole-branch review**
+- [ ] **Step 2：最終整分支 review**
 
-Following this repo's established review process (`ai-task-board-ops` skill), perform one whole-branch review before declaring the phase done:
-- Boundary-value probe: PATCH a task with `targetPath` pointing at a file (not a directory) — confirm `fs.existsSync` still returns true and document whether `spawn(..., { cwd: <file> })` fails gracefully (it should hit the `child.on('error', ...)` path in `automationRunner.mjs` and produce a failed-comment, not crash the server).
-- Confirm the `enteringInProgress` check in Task 3 does NOT fire when a task is *created* directly with `columnId: 'in_progress'` (only PATCH transitions trigger it, per the spec's explicit "非建立時" requirement) — verify via `POST /api/tasks` with `columnId: 'in_progress'` and confirm no `hermes` process spawns and `automationStatus` stays `idle`.
-- Grep `src/` for any new `dangerouslySetInnerHTML`/`innerHTML`/`eval` introduced by this phase (should be zero, per the existing XSS-check convention).
-- Run `npx tsc -b` (not bare `npx tsc --noEmit` — this repo's solution-style tsconfig silently checks nothing under the bare form) and `npm run lint` (oxlint) and confirm both are clean.
-- Clean up every test task/comment created during Tasks 1-6's manual verification steps so the seed data count is unchanged.
+依照本 repo 既有的 review 流程（`ai-task-board-ops` skill），在宣告本階段完成前執行一次整分支 review：
+- 邊界值測試：對某張卡片 PATCH 一個指向「檔案」而非「目錄」的 `targetPath`——確認 `fs.existsSync` 依然回傳 true，並記錄 `spawn(..., { cwd: <file> })` 是否能優雅地失敗（應該會走到 `automationRunner.mjs` 的 `child.on('error', ...)` 路徑並產生失敗留言，而不是讓伺服器崩潰）。
+- 確認 Task 3 中的 `enteringInProgress` 判斷，在**建立**卡片時直接帶 `columnId: 'in_progress'` 的情況下**不會**觸發（只有 PATCH 造成的狀態轉變才觸發，符合 spec 明確要求的「非建立時」）——用 `POST /api/tasks` 帶 `columnId: 'in_progress'` 驗證不會 spawn 任何 `hermes` 程序，且 `automationStatus` 維持 `idle`。
+- 對 `src/` 做 grep，確認本階段沒有新增任何 `dangerouslySetInnerHTML`/`innerHTML`/`eval`（應為零筆，延續既有的 XSS 檢查慣例）。
+- 執行 `npx tsc -b`（不要用裸的 `npx tsc --noEmit`——本 repo 的 solution-style tsconfig 在裸指令下會靜默地什麼都不檢查）與 `npm run lint`（oxlint），確認兩者皆乾淨無錯誤。
+- 清理 Task 1-6 手動驗證過程中建立的所有測試卡片/留言，確保種子資料筆數維持不變。
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 3：Commit**
 
 ```bash
 git add README.md docs/superpowers/plans/2026-09-08-hermes-agent-automation.md
@@ -538,8 +538,8 @@ git commit -m "docs: sync README with Hermes automation feature, mark plan compl
 
 ---
 
-## Not in scope for this plan (per spec's 範圍外 section)
+## 本計畫範圍外（依 spec 的「範圍外」章節）
 
-- Slack integration as a trigger source.
-- Direct 9Router LLM API calls (this plan spawns the `hermes` CLI, which handles its own model routing).
-- Packaging this feature for the Dockerized production deployment (the `hermes` CLI dependency on the host is called out as a known limitation in Task 6, not solved here).
+- 以 Slack 作為觸發來源的整合。
+- 直接呼叫 9Router LLM API（本計畫改為 spawn `hermes` CLI，由其自行處理模型路由）。
+- 將本功能打包進 Dockerized 正式部署（`hermes` CLI 依賴主機這件事在 Task 6 中列為已知限制，本計畫不解決）。
