@@ -3,6 +3,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { listTasks, createTask, updateTask, deleteTask } from './taskRepository.mjs'
+import { listComments, createComment, updateComment, deleteComment } from './commentRepository.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const distDir = path.join(__dirname, '..', 'dist')
@@ -18,6 +19,7 @@ const CREATABLE_FIELDS = [
   'commentCount',
   'hasUnread',
   'columnId',
+  'description',
 ]
 
 function pickFields(source, fields) {
@@ -78,6 +80,35 @@ app.patch('/api/tasks/:id', (req, res) => {
 
 app.delete('/api/tasks/:id', (req, res) => {
   const ok = deleteTask(req.params.id)
+  if (!ok) return res.status(404).json({ error: 'not_found' })
+  res.status(204).end()
+})
+
+app.get('/api/tasks/:taskId/comments', (req, res) => {
+  res.json({ comments: listComments(req.params.taskId) })
+})
+
+app.post('/api/tasks/:taskId/comments', (req, res) => {
+  const content = (req.body?.content ?? '').trim()
+  if (!content) {
+    return res.status(400).json({ error: 'content is required' })
+  }
+  const comment = createComment(req.params.taskId, content)
+  res.status(201).json({ comment })
+})
+
+app.patch('/api/comments/:id', (req, res) => {
+  const content = (req.body?.content ?? '').trim()
+  if (!content) {
+    return res.status(400).json({ error: 'content is required' })
+  }
+  const comment = updateComment(req.params.id, content)
+  if (!comment) return res.status(404).json({ error: 'not_found' })
+  res.json({ comment })
+})
+
+app.delete('/api/comments/:id', (req, res) => {
+  const ok = deleteComment(req.params.id)
   if (!ok) return res.status(404).json({ error: 'not_found' })
   res.status(204).end()
 })
