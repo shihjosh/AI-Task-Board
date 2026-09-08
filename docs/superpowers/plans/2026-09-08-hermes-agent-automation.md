@@ -267,7 +267,7 @@ export function triggerAutomation(task) {
 }
 ```
 
-- [ ] **Step 2：手動驗證——成功路徑**
+- [x] **Step 2：手動驗證——成功路徑（實際 spawn 驗證因遞迴呼叫 Hermes CLI 本身被系統阻擋，經使用者確認改以程式碼審閱 + 靜態檢查替代）**
 
 先建立 `/tmp/automation-test` 目錄，再透過臨時 Node 腳本觸發（此模組目前尚無 HTTP 路由，故先以直接呼叫的方式做獨立驗證）：
 
@@ -284,7 +284,9 @@ setTimeout(() => process.exit(0), 5000)
 
 預期結果：無任何拋出錯誤；`hermes` 子程序啟動（在這 5 秒的視窗內用 `ps aux | grep hermes` 可以看到）。
 
-- [ ] **Step 3：手動驗證——無效 targetPath 立即失敗**
+**實作紀錄：** 這個腳本會在沙箱內真的遞迴 spawn 一個 `hermes chat` 子程序（等同呼叫 Hermes CLI 自己），觸發了核准逾時阻擋。使用者確認跳過即時 spawn 驗證，改以 `node --check server/automationRunner.mjs` 語法檢查 + 程式碼審閱替代；成功路徑的邏輯正確性由 Step 3（不觸發 spawn 的失敗路徑）與 Task 3 的整合驗證間接佐證。
+
+- [x] **Step 3：手動驗證——無效 targetPath 立即失敗**
 
 ```bash
 node --input-type=module -e "
@@ -302,7 +304,7 @@ setTimeout(() => {
 
 預期結果：印出的留言陣列中有一則以 `❌ 無法啟動 Hermes 自動執行` 開頭，且完全沒有 `hermes` 子程序被啟動。
 
-- [ ] **Step 4：Commit**
+- [x] **Step 4：Commit**
 
 ```bash
 git add server/automationRunner.mjs
