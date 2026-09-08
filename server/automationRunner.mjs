@@ -31,10 +31,16 @@ function runOne(task) {
   updateTask(task.id, { automationStatus: 'running' })
 
   const prompt = buildPrompt(task)
-  const child = spawn('hermes', ['chat', '-q', prompt, '--cli'], {
-    cwd: task.targetPath,
-    detached: true,
-  })
+  let child
+  try {
+    child = spawn('hermes', ['chat', '-q', prompt, '--cli'], {
+      cwd: task.targetPath,
+      detached: true,
+    })
+  } catch (err) {
+    finishFailed(task, `無法啟動 Hermes 程序：${err.message}`)
+    return
+  }
 
   let stdout = ''
   let stderr = ''

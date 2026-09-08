@@ -7,8 +7,9 @@
 - ✅ **Phase 1**：純前端、無後端的靜態看板 UI（React + Vite + Tailwind + dnd-kit），使用 mock 資料
 - ✅ **Phase 2**：任務 CRUD + SQLite 後端持久化，資料不再因重新整理而消失
 - ✅ Phase 3：任務詳情（Markdown 描述、留言系統）
-- ⏳ Phase 4：多視圖（列表 / 甘特圖）、標籤篩選、搜尋
-- ⏳ Phase 5（可選）：即時多人同步（SSE/WebSocket）
+- ✅ Phase 4：Hermes Agent 自動化執行（卡片拖到「處理中」時背景觸發 Hermes agent 動手執行任務）
+- ⏳ Phase 5（可選）：多視圖（列表 / 甘特圖）、標籤篩選、搜尋
+- ⏳ Phase 6（可選）：即時多人同步（SSE/WebSocket）
 
 詳見分期規劃與功能盤點：[docs/superpowers/specs/2026-09-07-phase2-sqlite-backend-design.md](docs/superpowers/specs/2026-09-07-phase2-sqlite-backend-design.md)
 
@@ -47,6 +48,19 @@
 - 編輯任務時，Drawer 下方會顯示「留言」區塊，可新增/編輯/刪除留言（刪除前會有確認提示），留言固定顯示作者為「Josh」
 - 新增任務（尚未建立）時不會顯示留言區塊，需先建立任務後才能留言
 
+## Hermes Agent 自動化執行（Phase 4）
+
+- 每張任務卡可選填「自動執行目錄」（`targetPath`，絕對路徑），指向本機某個專案/repo。
+- 當卡片被拖曳（或 PATCH）使 `columnId` 從其他狀態變為 `in_progress`，且該卡已填 `targetPath` 時，後端會在該目錄下背景 spawn 一個 `hermes chat -q` 子程序，根據卡片標題與描述實際動手執行任務。
+- `automationStatus` 狀態機：`idle → running → done | failed`
+  - `done`：執行成功（exit code 0），結果會寫成一則留言，卡片自動移到「等你確認」（`review`）欄位。
+  - `failed`：非 0 結束代碼、逾時，或 `targetPath` 無效／不存在，卡片停留在原欄位並寫入失敗原因留言，**不會**自動移到 `review`。
+- 執行中的卡片在看板上會顯示旋轉圖示與「Hermes 執行中」文字。
+- **重複觸發防護**：`automationStatus` 為 `running` 時，再次拖回 `in_progress`會被靜默忽略，不會產生第二個程序。
+- **逾時**：每次執行上限 15 分鐘，超過會被強制中止並視為失敗。
+- **併發上限**：全系統最多同時 2 個 Hermes 程序，超過上限的觸發會排進記憶體內的佇列（先進先出）；此佇列**不會持久化**，伺服器重啟會遺失所有已排隊但尚未啟動的自動執行任務。
+- **已知限制**：`hermes` CLI 是在**執行 API server 的主機**上執行，並非在 app 的 Docker 容器內執行。此功能目前僅適用於直接在有安裝 `hermes` CLI 的主機上以 `npm run dev:server` / `npm start` 執行 API server，尚未接上 Dockerized 部署路徑（`docker compose up`）。
+
 ## API（Phase 2 起）
 
 ```
@@ -68,7 +82,7 @@ DELETE /api/comments/:id             刪除留言
 - `description` 若提供，長度不可超過 50000 字元
 - 留言 `content` 長度不可超過 5000 字元，且不可為空白
 - 請求 body 大小上限為 1MB，超過回 `413`
-- `POST`/`PATCH` 皆採白名單方式只接受既定欄位（`title, priority, tags, assignees, progress, commentCount, hasUnread, columnId, description`），多餘欄位（如客戶端夾帶的 `id`）會被忽略，不會覆蓋伺服器產生的值
+- `POST`/`PATCH` 皆採白名單方式只接受既定欄位（`title, priority, tags, assignees, progress, commentCount, hasUnread, columnId, description, targetPath, automationStatus`），多餘欄位（如客戶端夾帶的 `id`）會被忽略，不會覆蓋伺服器產生的值
 - 找不到指定 `id` 的 `PATCH`/`DELETE` 回 `404`
 - 未預期的伺服器錯誤統一回 `500`（不含 stack trace，詳細錯誤僅記錄於伺服器端 console）
 
@@ -126,6 +140,8 @@ AI-Task-Board/
 │   ├── index.mjs
 │   ├── db.mjs
 │   ├── taskRepository.mjs
+│   ├── commentRepository.mjs
+│   ├── automationRunner.mjs
 │   └── seed.mjs
 ├── src/
 │   ├── components/
