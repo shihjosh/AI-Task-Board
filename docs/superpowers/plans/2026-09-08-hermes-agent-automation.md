@@ -518,11 +518,11 @@ git commit -m "feat: show Hermes 執行中 indicator on TaskCard"
 
 **介面：** 無（純文件任務）。
 
-- [ ] **Step 1：在 `README.md` 中新增說明本自動化功能的章節**
+- [x] **Step 1：在 `README.md` 中新增說明本自動化功能的章節**
 
 新增一個章節（放在既有功能清單之後），說明：`targetPath` 的用途、`automationStatus` 狀態機（`idle → running → done|failed`）、15 分鐘的逾時限制、2 個程序的併發上限與記憶體內（不持久化）的排隊機制，以及明確標註「`hermes` 是在主機上執行，而非在 app 的 Docker 容器內」這個限制——因此本功能目前僅適用於直接在有安裝 `hermes` CLI 的主機上執行 API server（`npm run dev:server` / `npm start`），尚未接上 Dockerized 部署路徑。
 
-- [ ] **Step 2：最終整分支 review**
+- [x] **Step 2：最終整分支 review**
 
 依照本 repo 既有的 review 流程（`ai-task-board-ops` skill），在宣告本階段完成前執行一次整分支 review：
 - 邊界值測試：對某張卡片 PATCH 一個指向「檔案」而非「目錄」的 `targetPath`——確認 `fs.existsSync` 依然回傳 true，並記錄 `spawn(..., { cwd: <file> })` 是否能優雅地失敗（應該會走到 `automationRunner.mjs` 的 `child.on('error', ...)` 路徑並產生失敗留言，而不是讓伺服器崩潰）。
@@ -531,7 +531,16 @@ git commit -m "feat: show Hermes 執行中 indicator on TaskCard"
 - 執行 `npx tsc -b`（不要用裸的 `npx tsc --noEmit`——本 repo 的 solution-style tsconfig 在裸指令下會靜默地什麼都不檢查）與 `npm run lint`（oxlint），確認兩者皆乾淨無錯誤。
 - 清理 Task 1-6 手動驗證過程中建立的所有測試卡片/留言，確保種子資料筆數維持不變。
 
-- [ ] **Step 3：Commit**
+**Review 發現並修正的真實缺陷：** 邊界值測試（`targetPath` 指向檔案而非目錄）發現 `node:child_process` 的 `spawn()` 在 `cwd` 不是目錄時會**同步拋出** `ENOTDIR` 例外，而非透過非同步 `child.on('error', ...)` 事件觸發——這代表原本 `runOne()` 裡沒有 try/catch 包住 `spawn()` 呼叫本身，例外會直接往上拋穿過 `triggerAutomation()`、`app.patch` handler，因為 `res.json({ task })` 已經送出，最終在 Express 全域錯誤中介層造成 `ERR_HTTP_HEADERS_SENT`（雖不影響已送出的回應，但會在 server log 產生未預期的例外堆疊，且該次自動執行不會走到 `finishFailed()` 寫入失敗留言）。修正方式：把 `spawn()` 呼叫包進 try/catch，catch 到的同步例外一律呼叫既有的 `finishFailed()`，行為與非同步 `child.on('error', ...)` 一致。修正後重新測試同一個邊界案例：`automationStatus` 正確變成 `failed`，留言正確寫入「無法啟動 Hermes 程序：spawn ENOTDIR」，server log 乾淨無例外堆疊。此修正已併入 commit（見下方 Step 3）。
+
+其餘檢查結果：
+- `enteringInProgress` 建立時不觸發：驗證通過（`POST` 帶 `columnId: 'in_progress'` 不 spawn 任何程序，`automationStatus` 維持 `idle`）。
+- `src/` grep `dangerouslySetInnerHTML`/`innerHTML`/`eval`：0 筆。
+- `npx tsc -b`：無錯誤。
+- `npm run lint`：0 錯誤（2 個既有、與本階段改動無關的 warning：`server/index.mjs` 的 `next` 未使用參數、`TaskDrawer.tsx` 既有的 `set-state-in-effect` 模式，兩者皆為 Phase 3 之前就存在的程式碼）。
+- 所有手動驗證測試卡片/留言均已清理，種子資料筆數不變。
+
+- [x] **Step 3：Commit**
 
 ```bash
 git add README.md docs/superpowers/plans/2026-09-08-hermes-agent-automation.md
