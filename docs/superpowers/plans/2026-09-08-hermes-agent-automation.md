@@ -478,7 +478,7 @@ git commit -m "feat: add targetPath field to TaskDrawer"
 **介面：**
 - 依賴：`Task.automationStatus`（Task 1）。
 
-- [ ] **Step 1：加入執行中指示**
+- [x] **Step 1：加入執行中指示**
 
 在既有的圖示 import 旁（`src/components/TaskCard.tsx:1`）加入 `Loader2`：
 
@@ -497,11 +497,11 @@ import { MessageSquare, AlertTriangle, GitPullRequest, Code2, CircleDot, Loader2
       )}
 ```
 
-- [ ] **Step 2：在瀏覽器手動驗證**
+- [x] **Step 2：在瀏覽器手動驗證**
 
 使用 Task 3 Step 2 的 curl 指令，透過 `PATCH /api/tasks/:id`（帶 `{"automationStatus":"running"}`）將某張卡片的 `automationStatus` 設為 `running`，重新整理瀏覽器看板，確認卡片顯示旋轉中的「Hermes 執行中」文字。驗證完畢後將其重設回 `{"automationStatus":"idle"}` 或直接刪除測試卡片。
 
-- [ ] **Step 3：Commit**
+- [x] **Step 3：Commit**
 
 ```bash
 git add src/components/TaskCard.tsx
