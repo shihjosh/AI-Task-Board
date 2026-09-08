@@ -349,7 +349,7 @@ export async function updateCommentApi(id: string, content: string): Promise<Com
 export async function deleteCommentApi(id: string): Promise<void>
 ```
 
-- [ ] **Step 1：撰寫 `src/lib/commentsApi.ts`**
+- [x] **Step 1：撰寫 `src/lib/commentsApi.ts`**
 
 ```ts
 import type { Comment } from '../types/task'
@@ -395,12 +395,12 @@ export async function deleteCommentApi(id: string): Promise<void> {
 }
 ```
 
-- [ ] **Step 2：用 `tsc` 驗證**
+- [x] **Step 2：用 `tsc` 驗證**
 
 執行：`npx tsc -b`
 預期：無錯誤
 
-- [ ] **Step 3：Commit**
+- [x] **Step 3：Commit**
 
 ```bash
 git add src/lib/commentsApi.ts
