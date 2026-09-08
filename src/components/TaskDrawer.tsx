@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { X, Trash2 } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import type { Task, Priority, ColumnId, TagType } from '../types/task'
 import { TAG_OPTIONS, ASSIGNEE_OPTIONS, PRIORITY_OPTIONS, COLUMN_OPTIONS } from '../data/options'
 import { createTaskApi, updateTaskApi, deleteTaskApi } from '../lib/api'
@@ -19,6 +21,7 @@ const emptyFormState = {
   tagTypes: [] as TagType[],
   assigneeIds: [] as string[],
   progress: '' as string,
+  description: '',
 }
 
 export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved }: TaskDrawerProps) {
@@ -36,6 +39,7 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
         tagTypes: initialTask.tags.map((t) => t.type),
         assigneeIds: initialTask.assignees.map((a) => a.id),
         progress: typeof initialTask.progress === 'number' ? String(initialTask.progress) : '',
+        description: initialTask.description ?? '',
       })
     } else {
       setForm(emptyFormState)
@@ -75,6 +79,7 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
       tags,
       assignees,
       progress,
+      description: form.description,
       commentCount: initialTask?.commentCount ?? 0,
       hasUnread: initialTask?.hasUnread ?? false,
     }
@@ -124,7 +129,7 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
       <form
         onSubmit={handleSubmit}
-        className="relative flex h-full w-full max-w-md flex-col overflow-y-auto bg-white p-6 shadow-xl"
+        className="relative flex h-full w-full max-w-3xl flex-col overflow-y-auto bg-white p-6 shadow-xl"
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-slate-800">
@@ -222,6 +227,26 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
             className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
           />
         </label>
+
+        <div className="mb-6">
+          <span className="mb-1 block text-sm font-medium text-slate-600">描述（Markdown）</span>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <textarea
+              value={form.description}
+              onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+              rows={8}
+              placeholder="支援 Markdown 語法（標題、清單、表格、程式碼區塊等）"
+              className="w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-sm"
+            />
+            <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 overflow-y-auto text-sm">
+              {form.description.trim() ? (
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{form.description}</ReactMarkdown>
+              ) : (
+                <span className="text-slate-400">預覽區（尚無內容）</span>
+              )}
+            </div>
+          </div>
+        </div>
 
         <div className="mt-auto flex items-center justify-between gap-2">
           {mode === 'edit' && (
