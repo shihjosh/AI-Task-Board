@@ -22,6 +22,8 @@
 - 編輯模式下的刪除需要 `window.confirm()` 二次確認
 - 既有元件的既有 props 與行為不可破壞（拖拉換欄位功能必須維持正常）
 
+> **注意（Task 3 執行中發現）：** 根目錄 `tsconfig.json` 是 solution-style project references，直接執行裸的 `npx tsc --noEmit` 會 exit 0、看不到任何型別錯誤（不會實際檢查 `src/` 底下的檔案）。後續所有 Task 的型別驗證步驟，請改用 `npx tsc -b` 才能看到真實的編譯錯誤。
+
 ---
 
 ### Task 1：固定選單常數與型別擴充
@@ -34,7 +36,7 @@
   - `TAG_OPTIONS: { type: TagType; label: string }[]`（4 筆固定選項）
   - `ASSIGNEE_OPTIONS: Assignee[]`（3 筆固定選項，型別來自 `src/types/task.ts`）
 
-- [ ] **Step 1：撰寫 `src/data/options.ts`**
+- [x] **Step 1：撰寫 `src/data/options.ts`**
 
 ```typescript
 import type { Assignee, Tag, TagType } from '../types/task'
@@ -67,12 +69,12 @@ export const COLUMN_OPTIONS: { value: 'todo' | 'in_progress' | 'review'; label: 
 
 （`TagType` 目前未被此檔案直接使用作為獨立型別標註，若 `tsc` 提示未使用的 import，移除 `TagType` import 即可，只留 `Assignee`、`Tag`。）
 
-- [ ] **Step 2：用 `tsc` 驗證**
+- [x] **Step 2：用 `tsc` 驗證**
 
 執行：`npx tsc --noEmit`
 預期：無錯誤（若有「未使用的 import」錯誤，依照上一步的備註移除多餘 import）
 
-- [ ] **Step 3：Commit**
+- [x] **Step 3：Commit**
 
 ```bash
 git add src/data/options.ts
@@ -103,7 +105,7 @@ git commit -m "feat: add fixed option lists for tags/assignees/priority/column"
   ```
 - 元件內部用 `useState` 管理表單欄位（title, priority, columnId, tags 選取狀態, assignees 選取狀態, progress），`useEffect` 在 `initialTask`/`isOpen` 改變時重置表單。
 
-- [ ] **Step 1：撰寫 `src/components/TaskDrawer.tsx`**
+- [x] **Step 1：撰寫 `src/components/TaskDrawer.tsx`**
 
 ```typescript
 import { useEffect, useState } from 'react'
@@ -366,12 +368,12 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
 }
 ```
 
-- [ ] **Step 2：用 `tsc` 驗證**
+- [x] **Step 2：用 `tsc` 驗證**
 
 執行：`npx tsc --noEmit`
 預期：無錯誤
 
-- [ ] **Step 3：Commit**
+- [x] **Step 3：Commit**
 
 ```bash
 git add src/components/TaskDrawer.tsx
@@ -388,7 +390,7 @@ git commit -m "feat: add TaskDrawer component for create/edit task form"
 **介面：**
 - Props 新增：`onAddTask: () => void`
 
-- [ ] **Step 1：修改 `src/components/Toolbar.tsx`**
+- [x] **Step 1：修改 `src/components/Toolbar.tsx`**
 
 在檔案開頭的 import 之後，修改元件簽名與按鈕：
 
@@ -416,12 +418,12 @@ export default function Toolbar({ onAddTask }: ToolbarProps) {
 
 （僅新增 `onClick={onAddTask}`，其餘 className 與內容不變）
 
-- [ ] **Step 2：用 `tsc` 驗證**
+- [x] **Step 2：用 `tsc` 驗證**
 
-執行：`npx tsc --noEmit`
+執行：`npx tsc -b`
 預期：會出現 `App.tsx` 呼叫 `<Toolbar />` 缺少必要 prop `onAddTask` 的錯誤——這是預期的，因為 Task 5 才會修改 `App.tsx` 補上這個 prop。此步驟先確認 `Toolbar.tsx` 本身語法正確、型別定義正確即可，`App.tsx` 的錯誤留到 Task 5 解決。
 
-- [ ] **Step 3：Commit**
+- [x] **Step 3：Commit**
 
 ```bash
 git add src/components/Toolbar.tsx
@@ -442,7 +444,7 @@ git commit -m "feat: add onAddTask prop to Toolbar for opening TaskDrawer"
 - `SortableTaskCard` Props 新增：`onTaskClick?: (task: Task) => void`
 - `BoardColumn` Props 新增：`onTaskClick?: (task: Task) => void`
 
-- [ ] **Step 1：修改 `src/components/TaskCard.tsx`**
+- [x] **Step 1：修改 `src/components/TaskCard.tsx`**
 
 修改 `TaskCardProps` 介面與元件簽名：
 
@@ -471,7 +473,7 @@ export default function TaskCard({ task, dragHandleProps, isDragging, onClick }:
 
 （因為 dnd-kit 的 `activationConstraint: { distance: 5 }` 已經確保「單純點擊」不會觸發拖拉手勢，`onClick` 只有在滑鼠沒有移動超過 5px 時才會被觸發，兩者可以正常共存，不需要額外的事件阻擋邏輯）
 
-- [ ] **Step 2：修改 `src/components/SortableTaskCard.tsx`**
+- [x] **Step 2：修改 `src/components/SortableTaskCard.tsx`**
 
 ```typescript
 import { useSortable } from '@dnd-kit/sortable'
@@ -508,7 +510,7 @@ export default function SortableTaskCard({ task, onTaskClick }: SortableTaskCard
 }
 ```
 
-- [ ] **Step 3：修改 `src/components/BoardColumn.tsx`**
+- [x] **Step 3：修改 `src/components/BoardColumn.tsx`**
 
 ```typescript
 import { useDroppable } from '@dnd-kit/core'
@@ -555,12 +557,12 @@ export default function BoardColumn({ column, tasks, onTaskClick }: BoardColumnP
 }
 ```
 
-- [ ] **Step 4：用 `tsc` 驗證**
+- [x] **Step 4：用 `tsc` 驗證**
 
-執行：`npx tsc --noEmit`
+執行：`npx tsc -b`
 預期：會出現 `App.tsx` 呼叫 `<BoardColumn />` 未傳入 `onTaskClick` 的情況——因為 `onTaskClick` 是 optional prop（`?:`），這不會是型別錯誤，只會在執行期沒有點擊反應，屬預期中，留到 Task 5 補上呼叫端。確認沒有其他型別錯誤。
 
-- [ ] **Step 5：Commit**
+- [x] **Step 5：Commit**
 
 ```bash
 git add src/components/TaskCard.tsx src/components/SortableTaskCard.tsx src/components/BoardColumn.tsx
@@ -578,7 +580,7 @@ git commit -m "feat: propagate onTaskClick through BoardColumn/SortableTaskCard/
 - 消費：`src/components/TaskDrawer.tsx`（Task 2）、`Toolbar` 的 `onAddTask`（Task 3）、`BoardColumn` 的 `onTaskClick`（Task 4）
 - 產出：`App.tsx` 管理 `isDrawerOpen`、`drawerMode`、`editingTask` 三個狀態，控制 `TaskDrawer` 的顯示與行為
 
-- [ ] **Step 1：修改 `src/App.tsx`**
+- [x] **Step 1：修改 `src/App.tsx`**
 
 在既有的 import 區塊新增：
 
@@ -660,17 +662,17 @@ import TaskDrawer from './components/TaskDrawer'
 ```
 改為上面那段，`<TaskDrawer />` 插入在 `</main>` 之後、最外層 `</div>` 之前）
 
-- [ ] **Step 2：用 `tsc` 驗證**
+- [x] **Step 2：用 `tsc` 驗證**
 
-執行：`npx tsc --noEmit`
+執行：`npx tsc -b`
 預期：無錯誤
 
-- [ ] **Step 3：`npm run build` 驗證**
+- [x] **Step 3：`npm run build` 驗證**
 
 執行：`npm run build`
 預期：build 成功，無錯誤
 
-- [ ] **Step 4：Commit**
+- [x] **Step 4：Commit**
 
 ```bash
 git add src/App.tsx
@@ -685,7 +687,7 @@ git commit -m "feat: integrate TaskDrawer into App for create/edit task flow"
 
 **介面：** 無。
 
-- [ ] **Step 1：啟動開發環境**
+- [x] **Step 1：啟動開發環境**
 
 ```bash
 npm run db:seed
@@ -694,7 +696,7 @@ npm run dev
 
 （`npm run dev` 會同時啟動 Vite 前端與 Express 後端）
 
-- [ ] **Step 2：用 curl 驗證新增流程對應的 API 呼叫正確**
+- [x] **Step 2：用 curl 驗證新增流程對應的 API 呼叫正確**
 
 由於此環境可能無法操作圖形瀏覽器，改用 curl 直接驗證 `TaskDrawer` 送出時會呼叫的 API 端點行為（等同於驗證「若使用者填完表單按下建立/儲存/刪除，後端會如何回應」）：
 
@@ -725,7 +727,17 @@ curl -s -o /dev/null -w "%{http_code}\n" -X DELETE http://localhost:8088/api/tas
 ```
 預期：`204`
 
-- [ ] **Step 3：若環境支援瀏覽器操作，做一次真實互動驗證**
+- [x] **Step 3：若環境支援瀏覽器操作，做一次真實互動驗證**
+
+> **實際執行結果（2026-09-07）：** 環境支援瀏覽器操作，已完整執行：
+> 1. 點擊「新增任務」→ Drawer 正確從右側滑出，含標題/優先級/欄位/標籤/負責人/進度全部欄位
+> 2. 填寫標題「瀏覽器測試任務」、勾選 Issue 標籤與 Josh 負責人 → 點擊「建立」→ Drawer 關閉，新任務正確出現在「等待認領」欄位，標籤與負責人顯示正確
+> 3. 點擊該任務卡片 → Drawer 以編輯模式開啟，標題/優先級/欄位/已勾選的標籤與負責人全部正確帶入
+> 4. 修改標題為「瀏覽器測試任務（已編輯）」→ 點擊「儲存」→ 卡片標題即時更新
+> 5. 再次點擊卡片 → 點擊「刪除」→ 觸發瀏覽器原生 `window.confirm()` 對話框（自動化工具無法程式化點擊原生 dialog 按鈕，但對話框確實跳出且阻塞了後續 JS 執行，證明二次確認機制正確運作；用 curl 確認在對話框跳出期間 DELETE 並未被呼叫，資料未被誤刪）
+> 6. 改用 curl 執行對應的 DELETE 請求（模擬使用者按下確認），驗證回傳 `204`，任務從列表消失，回到 8 筆種子資料
+>
+> 測試資料已於驗證後清理乾淨，`GET /api/tasks` 確認剩 8 筆（種子資料原始數量）。
 
 若可以使用瀏覽器工具（如 browser_navigate 等），實際打開 `http://localhost:8088`（或 dev 模式的對應 port），執行：
 1. 點擊「新增任務」→ 確認 Drawer 從右側滑出
@@ -737,7 +749,7 @@ curl -s -o /dev/null -w "%{http_code}\n" -X DELETE http://localhost:8088/api/tas
 
 若環境不支援瀏覽器操作，Step 2 的 curl 驗證已足以證明 API 串接邏輯正確，可在報告中註明此限制。
 
-- [ ] **Step 4：停止 dev server，清理測試資料**
+- [x] **Step 4：停止 dev server，清理測試資料**
 
 停掉 `npm run dev`（兩個 process）。若 Step 2/3 有殘留測試任務未清乾淨，用 DELETE API 或直接檢查 `docker exec`/本機 SQLite 清除，確保不留測試髒資料在種子資料集中。
 
@@ -752,7 +764,7 @@ curl -s -o /dev/null -w "%{http_code}\n" -X DELETE http://localhost:8088/api/tas
 
 **介面：** 無（純文件更新）。
 
-- [ ] **Step 1：更新 `README.md`**
+- [x] **Step 1：更新 `README.md`**
 
 在「看板設計」章節之後（或適當位置）新增一小節說明新增/編輯功能：
 
@@ -764,10 +776,27 @@ curl -s -o /dev/null -w "%{http_code}\n" -X DELETE http://localhost:8088/api/tas
 - 標籤與負責人皆為固定選單（不開放自由輸入新增選項）
 ```
 
-- [ ] **Step 2：Commit 並 push**
+- [x] **Step 2：Commit 並 push**
 
 ```bash
 git add README.md
 git commit -m "docs: document add/edit task UI in README"
 git push origin <當前分支>
 ```
+
+---
+
+## 最終 Whole-Branch Review 與修正
+
+全部 7 個 Task 完成後，依 subagent-driven-development 流程對整個分支（`0257671..da36bbe`，13 commits）進行最終審查，發現：
+
+- **Important（blocking）**：`progress` 欄位前後端皆無 0-100 邊界驗證。用 curl 直接呼叫 `POST /api/tasks` 送 `progress:9999` 或 `progress:-50` 會被接受並寫入 DB，導致 `TaskCard.tsx` 的進度條渲染出現撐爆版面或負寬度的視覺異常
+- 其餘架構、介面一致性、表單驗證、click/drag 事件共存機制、安全性（無 XSS 風險）、程式碼重複/命名/dead code 檢查皆通過
+
+修正（commit `9f1c52b`）：
+- 前端 `TaskDrawer.tsx` 的 `buildPayload()` 對 `progress` 加上 `Math.min(100, Math.max(0, Number(...)))` clamp（空字串仍回傳 `undefined`）
+- 後端 `server/index.mjs` 的 `validateTaskFields()` 新增檢查：`progress` 若提供必須是 `0`-`100` 之間的數字，否則回 `400`
+
+Scoped re-review 確認 ADDRESSED，無新增 Critical/Important 問題，**最終判定：Approved**。
+
+分支已可合併回 `main`。

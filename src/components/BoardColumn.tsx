@@ -6,9 +6,10 @@ import type { Column, Task } from '../types/task'
 interface BoardColumnProps {
   column: Column
   tasks: Task[]
+  onTaskClick?: (task: Task) => void
 }
 
-export default function BoardColumn({ column, tasks }: BoardColumnProps) {
+export default function BoardColumn({ column, tasks, onTaskClick }: BoardColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id })
 
   return (
@@ -27,7 +28,7 @@ export default function BoardColumn({ column, tasks }: BoardColumnProps) {
       >
         <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (
-            <SortableTaskCard key={task.id} task={task} />
+            <SortableTaskCard key={task.id} task={task} onTaskClick={onTaskClick} />
           ))}
         </SortableContext>
         {tasks.length === 0 && (
