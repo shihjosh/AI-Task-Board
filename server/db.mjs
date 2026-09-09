@@ -39,6 +39,16 @@ export function getDb() {
     db.exec(`ALTER TABLE tasks ADD COLUMN description TEXT NOT NULL DEFAULT ''`)
   }
 
+  const hasTargetPath = taskColumns.some((col) => col.name === 'target_path')
+  if (!hasTargetPath) {
+    db.exec(`ALTER TABLE tasks ADD COLUMN target_path TEXT NOT NULL DEFAULT ''`)
+  }
+
+  const hasAutomationStatus = taskColumns.some((col) => col.name === 'automation_status')
+  if (!hasAutomationStatus) {
+    db.exec(`ALTER TABLE tasks ADD COLUMN automation_status TEXT NOT NULL DEFAULT 'idle'`)
+  }
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS comments (
       id TEXT PRIMARY KEY,

@@ -4,6 +4,7 @@ import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { listTasks, createTask, updateTask, deleteTask } from './taskRepository.mjs'
 import { listComments, createComment, updateComment, deleteComment } from './commentRepository.mjs'
+import { triggerAutomation } from './automationRunner.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const distDir = path.join(__dirname, '..', 'dist')
@@ -20,6 +21,8 @@ const CREATABLE_FIELDS = [
   'hasUnread',
   'columnId',
   'description',
+  'targetPath',
+  'automationStatus',
 ]
 
 function pickFields(source, fields) {
@@ -85,9 +88,16 @@ app.patch('/api/tasks/:id', (req, res) => {
   if (validationError) {
     return res.status(400).json({ error: validationError })
   }
+  const existing = listTasks().find((t) => t.id === req.params.id)
   const task = updateTask(req.params.id, pickFields(req.body, CREATABLE_FIELDS))
   if (!task) return res.status(404).json({ error: 'not_found' })
   res.json({ task })
+
+  const enteringInProgress =
+    existing && existing.columnId !== 'in_progress' && task.columnId === 'in_progress'
+  if (enteringInProgress) {
+    triggerAutomation(task)
+  }
 })
 
 app.delete('/api/tasks/:id', (req, res) => {

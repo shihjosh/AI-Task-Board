@@ -1,4 +1,4 @@
-import { MessageSquare, AlertTriangle, GitPullRequest, Code2, CircleDot } from 'lucide-react'
+import { MessageSquare, AlertTriangle, GitPullRequest, Code2, CircleDot, Loader2 } from 'lucide-react'
 import type { Task, TagType } from '../types/task'
 
 const priorityStyles: Record<Task['priority'], string> = {
@@ -52,6 +52,13 @@ export default function TaskCard({ task, dragHandleProps, isDragging, onClick }:
       <div className="mb-2 text-sm font-semibold leading-snug text-slate-800">
         {task.title}
       </div>
+
+      {task.automationStatus === 'running' && (
+        <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-sky-600">
+          <Loader2 size={12} className="animate-spin" />
+          Hermes 執行中
+        </div>
+      )}
 
       <div className="mb-3 flex flex-wrap gap-1.5">
         <span

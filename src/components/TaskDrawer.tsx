@@ -23,6 +23,7 @@ const emptyFormState = {
   assigneeIds: [] as string[],
   progress: '' as string,
   description: '',
+  targetPath: '',
 }
 
 export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved }: TaskDrawerProps) {
@@ -41,6 +42,7 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
         assigneeIds: initialTask.assignees.map((a) => a.id),
         progress: typeof initialTask.progress === 'number' ? String(initialTask.progress) : '',
         description: initialTask.description ?? '',
+        targetPath: initialTask.targetPath ?? '',
       })
     } else {
       setForm(emptyFormState)
@@ -81,6 +83,8 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
       assignees,
       progress,
       description: form.description,
+      targetPath: form.targetPath.trim(),
+      automationStatus: initialTask?.automationStatus ?? 'idle',
       commentCount: initialTask?.commentCount ?? 0,
       hasUnread: initialTask?.hasUnread ?? false,
     }
@@ -227,6 +231,27 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
             onChange={(e) => setForm((p) => ({ ...p, progress: e.target.value }))}
             className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
           />
+        </label>
+
+        <label className="mb-6 block text-sm">
+          <span className="mb-1 block font-medium text-slate-600">
+            自動執行目錄（選填，絕對路徑；填寫後拖到「處理中」會觸發 Hermes 自動執行）
+          </span>
+          <input
+            type="text"
+            value={form.targetPath}
+            onChange={(e) => setForm((p) => ({ ...p, targetPath: e.target.value }))}
+            placeholder="/home/ubuntu/some-project"
+            className="w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-sm"
+          />
+          {mode === 'edit' && initialTask?.automationStatus && initialTask.automationStatus !== 'idle' && (
+            <span className="mt-1 block text-xs text-slate-400">
+              目前自動執行狀態：
+              {initialTask.automationStatus === 'running' && '執行中'}
+              {initialTask.automationStatus === 'done' && '已完成'}
+              {initialTask.automationStatus === 'failed' && '失敗'}
+            </span>
+          )}
         </label>
 
         <div className="mb-6">
