@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS automation_runs (
 - 產出：`export function listAutomationRuns(taskId)` → 回傳依 `startedAt` 升冪排序的 run 陣列
 - 產出：`AutomationRun` TypeScript interface：`{ id, taskId, status: 'running'|'done'|'failed', prompt, output, error?: string, startedAt, finishedAt?: string }`
 
-- [ ] **Step 1：在 `server/db.mjs` 加入 `automation_runs` 表**
+- [x] **Step 1：在 `server/db.mjs` 加入 `automation_runs` 表**
 
 在既有 `comments` 表的 `CREATE TABLE IF NOT EXISTS` 區塊之後（`db.pragma('foreign_keys = ON')` 之前或之後皆可，建議放在同一個 `db.exec` 呼叫鏈的最後）加入：
 
@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS automation_runs (
   `)
 ```
 
-- [ ] **Step 2：撰寫 `server/automationRunRepository.mjs`**
+- [x] **Step 2：撰寫 `server/automationRunRepository.mjs`**
 
 ```js
 import { randomUUID } from 'node:crypto'
@@ -128,7 +128,7 @@ export function updateAutomationRun(id, { status, output, error }) {
 }
 ```
 
-- [ ] **Step 3：在 `src/types/task.ts` 新增 `AutomationRun` interface**
+- [x] **Step 3：在 `src/types/task.ts` 新增 `AutomationRun` interface**
 
 ```ts
 export interface AutomationRun {
@@ -143,7 +143,7 @@ export interface AutomationRun {
 }
 ```
 
-- [ ] **Step 4：手動驗證——建立、更新、列出 run**
+- [x] **Step 4：手動驗證——建立、更新、列出 run**
 
 ```bash
 node --input-type=module -e "
@@ -162,7 +162,7 @@ process.exit(0)
 
 預期結果：`created` 的 `status` 為 `running`、`finishedAt` 為 `undefined`；`updated` 的 `status` 為 `done`、`output` 為 `hello output`、`finishedAt` 有值；`list` 陣列包含這筆更新後的紀錄。刪除測試任務後，因 `ON DELETE CASCADE`，該筆 run 也應一併被刪除（可額外用 `sqlite3 .data/taskboard.sqlite "SELECT COUNT(*) FROM automation_runs WHERE task_id='<task.id>'"` 確認為 0，但因程序已結束、task.id 不易取得，此步驟為選用加強驗證）。
 
-- [ ] **Step 5：Commit**
+- [x] **Step 5：Commit**
 
 ```bash
 git add server/db.mjs server/automationRunRepository.mjs src/types/task.ts
