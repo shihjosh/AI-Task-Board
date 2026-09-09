@@ -6,6 +6,7 @@ import type { Task, Priority, ColumnId, TagType } from '../types/task'
 import { TAG_OPTIONS, ASSIGNEE_OPTIONS, PRIORITY_OPTIONS, COLUMN_OPTIONS } from '../data/options'
 import { createTaskApi, updateTaskApi, deleteTaskApi } from '../lib/api'
 import CommentList from './CommentList'
+import AutomationRunList from './AutomationRunList'
 
 interface TaskDrawerProps {
   isOpen: boolean
@@ -30,6 +31,8 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
   const [form, setForm] = useState(emptyFormState)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [descriptionTab, setDescriptionTab] = useState<'edit' | 'preview'>('edit')
+  const [bottomTab, setBottomTab] = useState<'comments' | 'automation'>('comments')
 
   useEffect(() => {
     if (!isOpen) return
@@ -48,6 +51,8 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
       setForm(emptyFormState)
     }
     setError(null)
+    setDescriptionTab('edit')
+    setBottomTab('comments')
   }, [isOpen, mode, initialTask])
 
   if (!isOpen) return null
@@ -256,7 +261,31 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
 
         <div className="mb-6">
           <span className="mb-1 block text-sm font-medium text-slate-600">描述（Markdown）</span>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div className="mb-2 flex gap-1 border-b border-slate-200">
+            <button
+              type="button"
+              onClick={() => setDescriptionTab('edit')}
+              className={`px-3 py-1.5 text-sm font-medium ${
+                descriptionTab === 'edit'
+                  ? 'border-b-2 border-slate-900 text-slate-900'
+                  : 'text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              編輯
+            </button>
+            <button
+              type="button"
+              onClick={() => setDescriptionTab('preview')}
+              className={`px-3 py-1.5 text-sm font-medium ${
+                descriptionTab === 'preview'
+                  ? 'border-b-2 border-slate-900 text-slate-900'
+                  : 'text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              預覽
+            </button>
+          </div>
+          {descriptionTab === 'edit' ? (
             <textarea
               value={form.description}
               onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
@@ -264,17 +293,53 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
               placeholder="支援 Markdown 語法（標題、清單、表格、程式碼區塊等）"
               className="w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-sm"
             />
-            <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 overflow-y-auto text-sm">
+          ) : (
+            <div className="min-h-[12rem] rounded-md border border-slate-200 bg-slate-50 px-3 py-2 overflow-y-auto text-sm">
               {form.description.trim() ? (
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{form.description}</ReactMarkdown>
               ) : (
                 <span className="text-slate-400">預覽區（尚無內容）</span>
               )}
             </div>
-          </div>
+          )}
         </div>
 
-        {mode === 'edit' && initialTask && <CommentList taskId={initialTask.id} />}
+        {mode === 'edit' && initialTask && (
+          <div className="mb-6">
+            <div className="mb-2 flex gap-1 border-b border-slate-200">
+              <button
+                type="button"
+                onClick={() => setBottomTab('comments')}
+                className={`px-3 py-1.5 text-sm font-medium ${
+                  bottomTab === 'comments'
+                    ? 'border-b-2 border-slate-900 text-slate-900'
+                    : 'text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                留言
+              </button>
+              <button
+                type="button"
+                onClick={() => setBottomTab('automation')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium ${
+                  bottomTab === 'automation'
+                    ? 'border-b-2 border-slate-900 text-slate-900'
+                    : 'text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                執行紀錄
+                {initialTask.automationStatus === 'running' && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-sky-500" />
+                )}
+              </button>
+            </div>
+            {bottomTab === 'comments' ? (
+              <CommentList taskId={initialTask.id} />
+            ) : (
+              <AutomationRunList taskId={initialTask.id} />
+            )}
+          </div>
+        )}
 
         <div className="mt-auto flex items-center justify-between gap-2">
           {mode === 'edit' && (
