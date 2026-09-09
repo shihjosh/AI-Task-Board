@@ -252,7 +252,7 @@ git commit -m "feat: support mobile width and move-to-column prop passthrough in
 - 消耗：Task 2 透傳的 `isMobile`, `onMoveToColumn`。
 - 產出：`TaskCard` 在 `isMobile === true` 時渲染一個「移動到...」`<select>`，選項為 `columns`（排除目前所在欄位），選擇後呼叫 `onMoveToColumn(task, 選中的columnId)`。
 
-- [ ] **Step 1：修改 `SortableTaskCard.tsx`，透傳新 props**
+- [x] **Step 1：修改 `SortableTaskCard.tsx`，透傳新 props**
 
 ```tsx
 import { useSortable } from '@dnd-kit/sortable'
@@ -298,7 +298,7 @@ export default function SortableTaskCard({
 }
 ```
 
-- [ ] **Step 2：修改 `TaskCard.tsx`，新增「移動到...」選單**
+- [x] **Step 2：修改 `TaskCard.tsx`，新增「移動到...」選單**
 
 在檔案頂端加入 import：
 
@@ -361,7 +361,7 @@ export default function TaskCard({
 
 （`onClick={(e) => e.stopPropagation()}` 防止點擊選單觸發外層卡片的 `onClick`——即誤開 `TaskDrawer` 編輯視窗；`value=""` + 選完後不手動重置，讓 `<select>` 每次都從「移動到...」這個 placeholder 選項開始，避免顯示卡片剛移動前的舊 columnId 造成混淆。）
 
-- [ ] **Step 3：型別檢查**
+- [x] **Step 3：型別檢查**
 
 ```bash
 npx tsc -b
@@ -369,7 +369,7 @@ npx tsc -b
 
 預期結果：無錯誤（Task 1-3 的 props 鏈路完整銜接）。
 
-- [ ] **Step 4：Commit**
+- [x] **Step 4：Commit**
 
 ```bash
 git add src/components/SortableTaskCard.tsx src/components/TaskCard.tsx
