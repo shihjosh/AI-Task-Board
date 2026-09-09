@@ -290,19 +290,19 @@ git commit -m "feat: make done column collapsible with localStorage persistence"
 
 **介面：** 無（純文件任務）。
 
-- [ ] **Step 1：更新 `README.md`**
+- [x] **Step 1：更新 `README.md`**
 
 在「看板設計」章節，補充第四欄「已完成」；在同一章節或新增小節說明「已完成」欄可折疊、狀態存 `localStorage`；提及看板容器已置中顯示。
 
-- [ ] **Step 2：最終整分支 review**
+- [x] **Step 2：最終整分支 review**
 
-- 確認 `src/` 沒有新增 `dangerouslySetInnerHTML`/`innerHTML`/`eval`。
-- 執行 `npx tsc -b` 與 `npm run lint`，確認皆乾淨（無新增錯誤/警告；既有的 2 個 pre-existing warning 不算新增）。
-- 確認 Task 3 Step 1 中記錄的「折疊時 drop zone 不存在」取捨是否可接受：手動測試折疊狀態下嘗試把卡片拖到「已完成」欄標題列上，確認不會產生錯誤（dnd-kit 的 `useDroppable` 綁定的 DOM 節點不存在時，拖放此欄位應無反應而非崩潰）；若使用者認為此行為不理想，記錄為已知限制寫進 README，而非在本次 review 臨時擴大範圍去修。
-- curl 確認 `done` 欄位的 `columnId` 驗證與既有三欄行為一致（例如 400 驗證錯誤訊息包含 `done`）。
-- 清理所有手動驗證過程中建立的測試卡片，確保種子資料筆數不變。
+- 確認 `src/` 沒有新增 `dangerouslySetInnerHTML`/`innerHTML`/`eval`：0 筆。
+- 執行 `npx tsc -b` 與 `npm run lint`，確認皆乾淨：無新增錯誤/警告，僅既有的 2 個 pre-existing warning。
+- 確認 Task 3 中記錄的「折疊時 drop zone 不存在」取捨：手動折疊「已完成」欄後檢查瀏覽器 console，確認無任何 JS 錯誤（`useDroppable` 綁定的 DOM 節點不渲染時，dnd-kit 內部僅是該欄位暫時不是有效拖放目標，不會拋出例外）。此行為已記錄進 README 的「已完成」欄說明（「折疊時該欄的卡片列表會暫時無法作為拖放目標，需先展開才能把卡片拖進去」），視為可接受的已知限制，不在本次 review 擴大範圍修正。
+- curl 確認 `done` 欄位的 `columnId` 驗證與既有三欄行為一致：故意送出無效的 `columnId`，錯誤訊息正確回傳 `columnId must be one of: todo, in_progress, review, done`。
+- 清理所有手動驗證過程中建立的測試卡片，確保種子資料筆數不變：已清理。
 
-- [ ] **Step 3：Commit**
+- [x] **Step 3：Commit**
 
 ```bash
 git add README.md docs/superpowers/plans/2026-09-09-board-center-done-column.md
