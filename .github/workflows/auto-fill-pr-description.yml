@@ -1,0 +1,76 @@
+name: Auto-fill PR Description
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  fill-description:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Generate and fill PR description
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: commits } = await github.rest.pulls.listCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              per_page: 100,
+            });
+
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              per_page: 100,
+            });
+
+            // 整理 commit 清單（去掉 merge commit）
+            const commitLines = commits
+              .filter(c => !c.commit.message.startsWith('Merge'))
+              .map(c => `- ${c.commit.message.split('\n')[0]}`)
+              .join('\n');
+
+            // 整理變更檔案摘要
+            const fileLines = files
+              .map(f => {
+                const status = { added: '新增', removed: '刪除', modified: '修改', renamed: '重新命名' }[f.status] || f.status;
+                return `- \`${f.filename}\` (${status})`;
+              })
+              .join('\n');
+
+            // 從 commit message 嘗試找 Issue 編號（例如 #123 或 closes #123）
+            const allMessages = commits.map(c => c.commit.message).join('\n');
+            const issueMatches = allMessages.match(/#\d+/g);
+            const issueSection = issueMatches
+              ? [...new Set(issueMatches)].map(i => `Closes ${i}`).join('\n')
+              : '<!-- 例如: Closes #123 -->';
+
+            const body = [
+              '## 🚀 變更描述',
+              commitLines || '<!-- 無 commit 記錄 -->',
+              '',
+              '## 📁 變更檔案',
+              fileLines || '<!-- 無變更檔案 -->',
+              '',
+              '## 📌 相關的 Issue',
+              issueSection,
+              '',
+              '## 🧪 測試項',
+              '- [ ] 單元測試已通過',
+              '- [ ] 已在本地測試過此功能',
+            ].join('\n');
+
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              body,
+            });
+
+            console.log('PR description updated successfully.');
