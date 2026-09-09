@@ -25,13 +25,13 @@
 **介面：**
 - 產出：佇列內部行為變更，不新增任何對外 export（`triggerAutomation`、`getQueueDepth` 簽章不變）。
 
-- [ ] **Step 1：把 `MAX_CONCURRENT` 從 2 改為 1**
+- [x] **Step 1：把 `MAX_CONCURRENT` 從 2 改為 1**
 
 ```js
 const MAX_CONCURRENT = 1
 ```
 
-- [ ] **Step 2：新增優先級數值化的 helper function**
+- [x] **Step 2：新增優先級數值化的 helper function**
 
 在 `buildPrompt` 之前加入：
 
@@ -43,7 +43,7 @@ function priorityRank(task) {
 }
 ```
 
-- [ ] **Step 3：修改 `onSlotFreed()`，從佇列中依優先級取出下一個**
+- [x] **Step 3：修改 `onSlotFreed()`，從佇列中依優先級取出下一個**
 
 將現有的：
 
@@ -75,7 +75,7 @@ function onSlotFreed() {
 
 （`splice` 取出優先級數值最小者；當多筆同優先級時，迴圈用嚴格 `<` 比較，遇到相同優先級不會覆蓋 `bestIndex`，因此保留陣列中最早出現的那筆——等同穩定排序。）
 
-- [ ] **Step 4：手動驗證——多張不同優先級任務依序執行**
+- [x] **Step 4：手動驗證——多張不同優先級任務依序執行（跳過，改用 Step 4b 驗證，避免遞迴呼叫 Hermes CLI）**
 
 ```bash
 mkdir -p /tmp/priority-queue-test
@@ -105,7 +105,7 @@ setTimeout(() => {
 
 預期結果：因為 `targetPath` 指向一個存在的目錄，三個 `triggerAutomation` 呼叫會實際 spawn `hermes` 子程序（此步驟涉及遞迴呼叫 Hermes CLI，若環境阻擋此操作，改用下一步的「無效 targetPath」版本驗證佇列排序邏輯本身，不驗證 spawn 行為）。
 
-- [ ] **Step 4b（若 Step 4 因遞迴呼叫被阻擋，改用此驗證）：手動驗證——用無效 targetPath 驗證佇列排序邏輯（不觸發真實 spawn）**
+- [x] **Step 4b（若 Step 4 因遞迴呼叫被阻擋，改用此驗證）：手動驗證——用無效 targetPath 驗證佇列排序邏輯（不觸發真實 spawn）**
 
 ```bash
 node --input-type=module -e "
@@ -142,7 +142,7 @@ process.exit(0)
 
 預期輸出依序為 `b`、`d`、`c`、`a`——驗證同優先級（兩個 `high`）時取先加入者、且整體依優先級排序正確。
 
-- [ ] **Step 5：Commit**
+- [x] **Step 5：Commit**
 
 ```bash
 git add server/automationRunner.mjs
