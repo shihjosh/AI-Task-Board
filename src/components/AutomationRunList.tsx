@@ -24,12 +24,17 @@ export default function AutomationRunList({ taskId }: AutomationRunListProps) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskId])
+
+  function load() {
     setIsLoading(true)
     fetchAutomationRuns(taskId)
       .then(setRuns)
       .catch((err) => setError(err instanceof Error ? err.message : '載入執行紀錄失敗'))
       .finally(() => setIsLoading(false))
-  }, [taskId])
+  }
 
   if (isLoading) {
     return <p className="text-sm text-slate-400">載入執行紀錄中…</p>
