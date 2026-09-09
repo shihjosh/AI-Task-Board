@@ -181,7 +181,7 @@ git commit -m "feat: add automation_runs table and repository"
 - 消耗：Task 1 的 `createAutomationRun`、`updateAutomationRun`、`listAutomationRuns`
 - 產出：`GET /api/tasks/:taskId/automation-runs` → `{ runs: AutomationRun[] }`（比照 `GET /api/tasks/:taskId/comments` 的回應格式，欄位改為 `runs`）
 
-- [ ] **Step 1：在 `server/index.mjs` 新增 GET 端點**
+- [x] **Step 1：在 `server/index.mjs` 新增 GET 端點**
 
 在既有 `app.get('/api/tasks/:taskId/comments', ...)` 之後加入：
 
@@ -197,7 +197,7 @@ app.get('/api/tasks/:taskId/automation-runs', (req, res) => {
 import { listAutomationRuns } from './automationRunRepository.mjs'
 ```
 
-- [ ] **Step 2：修改 `server/automationRunner.mjs`，改用新 repository**
+- [x] **Step 2：修改 `server/automationRunner.mjs`，改用新 repository**
 
 移除 `import { createComment } from './commentRepository.mjs'`，改為：
 
@@ -249,7 +249,7 @@ export function triggerAutomation(task) {
 }
 ```
 
-- [ ] **Step 3：手動驗證——curl 呼叫新端點 + 確認執行紀錄不再寫進留言**
+- [x] **Step 3：手動驗證——curl 呼叫新端點 + 確認執行紀錄不再寫進留言**
 
 ```bash
 mkdir -p /tmp/automation-runs-test
@@ -272,7 +272,7 @@ curl -s -X DELETE http://localhost:3001/api/tasks/$TASK_ID
 
 預期結果：`automation-runs` 端點回傳一筆 `status: failed` 的紀錄，`error` 欄位說明 targetPath 不存在；`comments` 端點回傳空陣列（因為這次失敗不再寫留言）。
 
-- [ ] **Step 4：Commit**
+- [x] **Step 4：Commit**
 
 ```bash
 git add server/index.mjs server/automationRunner.mjs
