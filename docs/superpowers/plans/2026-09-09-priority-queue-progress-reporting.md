@@ -160,7 +160,7 @@ git commit -m "feat: sort automation queue by priority, reduce concurrency to 1"
 - 消耗：`process.env.PORT`（沿用 `server/index.mjs` 既有的 `?? 3001` 預設值邏輯）
 - 產出：`buildPrompt(task)` 回傳內容新增進度回報段落，簽章不變。
 
-- [ ] **Step 1：修改 `buildPrompt(task)`，加入進度回報指示**
+- [x] **Step 1：修改 `buildPrompt(task)`，加入進度回報指示**
 
 將現有的：
 
@@ -206,7 +206,7 @@ function buildPrompt(task) {
 }
 ```
 
-- [ ] **Step 2：手動驗證——確認 prompt 內容包含正確的 URL 與 task id**
+- [x] **Step 2：手動驗證——確認 prompt 內容包含正確的 URL 與 task id**
 
 ```bash
 node --input-type=module -e "
@@ -219,7 +219,7 @@ process.exit(0)
 "
 ```
 
-- [ ] **Step 3：手動驗證——端對端確認 prompt 寫入 automation_runs 且含正確 curl 指令**
+- [x] **Step 3：手動驗證——端對端確認 prompt 寫入 automation_runs 且含正確 curl 指令**
 
 ```bash
 node server/index.mjs &
@@ -244,7 +244,7 @@ curl -s -X DELETE http://localhost:3001/api/tasks/$TASK_ID
 
 預期結果：印出的 `prompt` 內容包含 `curl -s -X PATCH http://localhost:3001/api/tasks/<TASK_ID>` 字串，且 URL 中的 task id 與實際建立的 `$TASK_ID` 一致。
 
-- [ ] **Step 4：Commit**
+- [x] **Step 4：Commit**
 
 ```bash
 git add server/automationRunner.mjs
