@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import { updateTask } from './taskRepository.mjs'
 import { createAutomationRun, updateAutomationRun } from './automationRunRepository.mjs'
 
-const MAX_CONCURRENT = 2
+const MAX_CONCURRENT = 1
 const TIMEOUT_MS = 15 * 60 * 1000 // 15 分鐘
 
 let runningCount = 0
@@ -11,6 +11,12 @@ const queue = []
 
 export function getQueueDepth() {
   return queue.length
+}
+
+const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 }
+
+function priorityRank(task) {
+  return PRIORITY_ORDER[task.priority] ?? PRIORITY_ORDER.low
 }
 
 function buildPrompt(task) {
@@ -93,8 +99,16 @@ function finishFailed(task, run, reason) {
 
 function onSlotFreed() {
   runningCount -= 1
-  const next = queue.shift()
-  if (next) runOne(next)
+  if (queue.length === 0) return
+
+  let bestIndex = 0
+  for (let i = 1; i < queue.length; i += 1) {
+    if (priorityRank(queue[i]) < priorityRank(queue[bestIndex])) {
+      bestIndex = i
+    }
+  }
+  const [next] = queue.splice(bestIndex, 1)
+  runOne(next)
 }
 
 export function triggerAutomation(task) {
