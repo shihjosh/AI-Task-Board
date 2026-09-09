@@ -26,7 +26,7 @@
 **介面：**
 - 產出：`mobileActiveColumnId: ColumnId` state，預設為 `columns[0].id`；後續 Task 2/3 的元件會依此渲染對應內容。
 
-- [ ] **Step 1：新增手機模式選中欄位的 state**
+- [x] **Step 1：新增手機模式選中欄位的 state**
 
 在既有 `isDoneCollapsed` state 之後加入：
 
@@ -34,7 +34,7 @@
   const [mobileActiveColumnId, setMobileActiveColumnId] = useState<ColumnId>(columns[0].id)
 ```
 
-- [ ] **Step 2：新增換欄位的 handler，供手機版「移動到...」選單使用**
+- [x] **Step 2：新增換欄位的 handler，供手機版「移動到...」選單使用**
 
 在 `handleDragEnd` 函式之後加入：
 
@@ -50,7 +50,7 @@
   }
 ```
 
-- [ ] **Step 3：重構看板渲染區塊——桌面版與手機版分岔**
+- [x] **Step 3：重構看板渲染區塊——桌面版與手機版分岔**
 
 將現有的：
 
@@ -123,7 +123,7 @@
 
 （`isMobile` 與 `onMoveToColumn` props 由 Task 2 在 `BoardColumn.tsx`/`TaskCard.tsx` 中定義並串接，此處先在呼叫端加上。）
 
-- [ ] **Step 4：型別檢查（預期此時會因 `BoardColumn` 尚未支援新 props 而報錯，屬於正常過渡狀態，留給 Task 2 修正）**
+- [x] **Step 4：型別檢查（預期此時會因 `BoardColumn` 尚未支援新 props 而報錯，屬於正常過渡狀態，留給 Task 2 修正）——確認錯誤訊息確實只跟 `isMobile`/`onMoveToColumn` props 有關**
 
 ```bash
 npx tsc -b
@@ -131,7 +131,7 @@ npx tsc -b
 
 預期結果：報錯訊息應該只與 `BoardColumn` 缺少 `isMobile`/`onMoveToColumn` props 有關；若出現其他非預期錯誤，先排除再繼續。
 
-- [ ] **Step 5：Commit**
+- [x] **Step 5：Commit**
 
 ```bash
 git add src/App.tsx
