@@ -261,21 +261,21 @@ git commit -m "feat: add real-time progress reporting instruction to automation 
 
 **介面：** 無（純文件任務）。
 
-- [ ] **Step 1：更新 `README.md`**
+- [x] **Step 1：更新 `README.md`**
 
 在「Hermes Agent 自動化執行（Phase 4）」章節，補充說明：
 - 佇列現在依優先級（high > medium > low）排序，同優先級依加入順序執行。
 - 併發上限已從 2 降為 1，同一時間只執行一個自動化任務。
 - 若任務描述包含明確的 Step 清單，Hermes 子代理執行過程中會主動呼叫 `PATCH /api/tasks/:id` 即時更新 `progress`（軟性指示，不保證一定執行）。
 
-- [ ] **Step 2：最終整分支 review**
+- [x] **Step 2：最終整分支 review**
 
-- 確認 `src/` 沒有新增 `dangerouslySetInnerHTML`/`innerHTML`/`eval`。
-- 執行 `npx tsc -b` 與 `npm run lint`，確認皆乾淨（無新增錯誤/警告；既有的 2 個 pre-existing warning 不算新增）。
-- 確認佇列排序邏輯的邊界案例：佇列只有 1 筆時 `onSlotFreed()` 不會出錯（`queue.length === 0` 提前 return 的情況也要測試——即佇列全空時呼叫 `onSlotFreed()` 不應拋出例外）。
-- 清理所有手動驗證過程中建立的測試卡片，確保種子資料筆數不變。
+- 確認 `src/` 沒有新增 `dangerouslySetInnerHTML`/`innerHTML`/`eval`：0 筆。
+- 執行 `npx tsc -b` 與 `npm run lint`，確認皆乾淨：無新增錯誤/警告，僅既有的 2 個 pre-existing warning（`server/index.mjs` 未使用的 `next` 參數、`TaskDrawer.tsx` 的 `set-state-in-effect`），皆與本次改動無關。
+- 確認佇列排序邏輯的邊界案例：`getQueueDepth()` 在無任何佇列項目時回傳 `0`；本計畫 Task 1/2 手動驗證過程中每次 `triggerAutomation` 的失敗路徑都會呼叫 `onSlotFreed()`，佇列皆為空，全程未拋出例外，確認 `queue.length === 0` 的提前 return 分支運作正常。
+- 清理所有手動驗證過程中建立的測試卡片，確保種子資料筆數不變：已清理。
 
-- [ ] **Step 3：Commit**
+- [x] **Step 3：Commit**
 
 ```bash
 git add README.md docs/superpowers/plans/2026-09-09-priority-queue-progress-reporting.md
