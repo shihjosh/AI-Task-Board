@@ -597,26 +597,20 @@ git commit -m "feat: split TaskDrawer description into edit/preview tabs, commen
 
 **介面：** 無（純文件任務）。
 
-- [ ] **Step 1：更新 `README.md`**
+- [x] **Step 1：更新 `README.md`**
 
 在「任務詳情」章節，補充說明描述欄位改為頁籤切換；在「Hermes Agent 自動化執行（Phase 4）」章節，補充說明執行結果現在記錄在獨立的「執行紀錄」頁籤（`automation_runs` 表），不再寫入留言。在「API」章節新增 `GET /api/tasks/:taskId/automation-runs` 的說明。
 
-- [ ] **Step 2：最終整分支 review**
+- [x] **Step 2：最終整分支 review**
 
-- 確認 `src/` 沒有新增 `dangerouslySetInnerHTML`/`innerHTML`/`eval`。
+- 確認 `src/` 沒有新增 `dangerouslySetInnerHTML`/`innerHTML`/`eval`：0 筆。
 - 執行 `npx tsc -b` 與 `npm run lint`，確認皆乾淨（無新增錯誤；既有的 2 個 pre-existing warning 不算新增）。
-- 用 curl 確認刪除任務時，該任務的 `automation_runs` 紀錄也一併被刪除（驗證 `ON DELETE CASCADE` 生效）：
-  ```bash
-  TASK_ID=$(curl -s -X POST http://localhost:3001/api/tasks -H 'Content-Type: application/json' -d '{"title":"cascade test","priority":"low","columnId":"in_progress","targetPath":"/does/not/exist"}' | python3 -c "import json,sys;print(json.load(sys.stdin)['task']['id'])")
-  sleep 1
-  curl -s http://localhost:3001/api/tasks/$TASK_ID/automation-runs
-  curl -s -X DELETE http://localhost:3001/api/tasks/$TASK_ID
-  sqlite3 .data/taskboard.sqlite "SELECT COUNT(*) FROM automation_runs WHERE task_id='$TASK_ID'"
-  ```
-  預期：刪除後 `COUNT(*)` 為 `0`。
-- 清理所有手動驗證過程中建立的測試卡片，確保種子資料筆數不變。
+- 用 curl 確認刪除任務時，該任務的 `automation_runs` 紀錄也一併被刪除（驗證 `ON DELETE CASCADE` 生效）：驗證結果刪除前 `COUNT(*)` 為 `1`，刪除後為 `0`，通過。
+- 清理所有手動驗證過程中建立的測試卡片，確保種子資料筆數不變：已清理。
 
-- [ ] **Step 3：Commit**
+**Review 過程中發現並修正的問題：** 初版 `AutomationRunList.tsx` 在 `useEffect` 內直接呼叫 `setIsLoading(true)`，觸發 oxlint 新的 `react(set-state-in-effect)` warning。既有的 `CommentList.tsx` 是把載入邏輯包成具名函式 `reload()` 後在 `useEffect` 內呼叫，同樣的模式套用到 `AutomationRunList.tsx`（改為 `load()`），修正後 `npm run lint` 恢復到只有 2 個既有、與本次改動無關的 warning。
+
+- [x] **Step 3：Commit**
 
 ```bash
 git add README.md docs/superpowers/plans/2026-09-09-task-drawer-tabs-automation-runs.md
