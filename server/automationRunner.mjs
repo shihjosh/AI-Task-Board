@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import { updateTask } from './taskRepository.mjs'
 import { createAutomationRun, updateAutomationRun } from './automationRunRepository.mjs'
 
-const MAX_CONCURRENT = 2
+const MAX_CONCURRENT = 1
 const TIMEOUT_MS = 15 * 60 * 1000 // 15 分鐘
 
 let runningCount = 0
@@ -13,8 +13,15 @@ export function getQueueDepth() {
   return queue.length
 }
 
+const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 }
+
+function priorityRank(task) {
+  return PRIORITY_ORDER[task.priority] ?? PRIORITY_ORDER.low
+}
+
 function buildPrompt(task) {
   const description = task.description?.trim() ? task.description : '（無描述）'
+  const port = process.env.PORT ?? 3001
   return [
     `任務標題：${task.title}`,
     '',
@@ -23,6 +30,15 @@ function buildPrompt(task) {
     '',
     '請根據上述標題與描述實際動手執行任務（修改程式碼、執行指令等），完成後清楚說明做了哪些變更；',
     '若無法完成或被阻塞，請明確說明原因與卡住的地方。',
+    '',
+    '若上述任務描述包含明確的執行步驟（例如「Step 1」「Step 2」等清單），請在完成每一個步驟後，',
+    '立即執行以下指令回報進度（將 <百分比整數> 換成實際數字，例如完成 2 個 step、共 5 個 step，則填 40）：',
+    '',
+    `curl -s -X PATCH http://localhost:${port}/api/tasks/${task.id} \\`,
+    `  -H 'Content-Type: application/json' \\`,
+    `  -d '{"progress": <百分比整數>}'`,
+    '',
+    '若描述中沒有明確的步驟清單，則不需要回報進度。',
   ].join('\n')
 }
 
@@ -93,8 +109,16 @@ function finishFailed(task, run, reason) {
 
 function onSlotFreed() {
   runningCount -= 1
-  const next = queue.shift()
-  if (next) runOne(next)
+  if (queue.length === 0) return
+
+  let bestIndex = 0
+  for (let i = 1; i < queue.length; i += 1) {
+    if (priorityRank(queue[i]) < priorityRank(queue[bestIndex])) {
+      bestIndex = i
+    }
+  }
+  const [next] = queue.splice(bestIndex, 1)
+  runOne(next)
 }
 
 export function triggerAutomation(task) {
