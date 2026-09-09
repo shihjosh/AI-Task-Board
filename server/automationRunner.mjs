@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import { updateTask } from './taskRepository.mjs'
-import { createComment } from './commentRepository.mjs'
+import { createAutomationRun, updateAutomationRun } from './automationRunRepository.mjs'
 
 const MAX_CONCURRENT = 2
 const TIMEOUT_MS = 15 * 60 * 1000 // 15 分鐘
@@ -31,6 +31,8 @@ function runOne(task) {
   updateTask(task.id, { automationStatus: 'running' })
 
   const prompt = buildPrompt(task)
+  const run = createAutomationRun(task.id, { prompt })
+
   let child
   try {
     child = spawn('hermes', ['chat', '-q', prompt, '--cli'], {
@@ -38,7 +40,7 @@ function runOne(task) {
       detached: true,
     })
   } catch (err) {
-    finishFailed(task, `無法啟動 Hermes 程序：${err.message}`)
+    finishFailed(task, run, `無法啟動 Hermes 程序：${err.message}`)
     return
   }
 
@@ -60,31 +62,31 @@ function runOne(task) {
 
   child.on('error', (err) => {
     clearTimeout(timer)
-    finishFailed(task, `無法啟動 Hermes 程序：${err.message}`)
+    finishFailed(task, run, `無法啟動 Hermes 程序：${err.message}`)
   })
 
   child.on('exit', (code) => {
     clearTimeout(timer)
     if (timedOut) {
-      finishFailed(task, `執行逾時（超過 ${TIMEOUT_MS / 60000} 分鐘），已強制中止`)
+      finishFailed(task, run, `執行逾時（超過 ${TIMEOUT_MS / 60000} 分鐘），已強制中止`)
       return
     }
     if (code === 0) {
-      finishSuccess(task, stdout)
+      finishSuccess(task, run, stdout)
     } else {
-      finishFailed(task, `Hermes 程序結束代碼非 0（exit code ${code}）：\n${stderr.slice(-2000)}`)
+      finishFailed(task, run, `Hermes 程序結束代碼非 0（exit code ${code}）：\n${stderr.slice(-2000)}`)
     }
   })
 }
 
-function finishSuccess(task, output) {
-  createComment(task.id, `✅ Hermes 自動執行完成：\n\n${output.trim() || '（無輸出）'}`)
+function finishSuccess(task, run, output) {
+  updateAutomationRun(run.id, { status: 'done', output })
   updateTask(task.id, { automationStatus: 'done', columnId: 'review' })
   onSlotFreed()
 }
 
-function finishFailed(task, reason) {
-  createComment(task.id, `❌ Hermes 自動執行失敗：\n\n${reason}`)
+function finishFailed(task, run, reason) {
+  updateAutomationRun(run.id, { status: 'failed', error: reason })
   updateTask(task.id, { automationStatus: 'failed' })
   onSlotFreed()
 }
@@ -97,8 +99,12 @@ function onSlotFreed() {
 
 export function triggerAutomation(task) {
   if (!task.targetPath || !fs.existsSync(task.targetPath)) {
+    const run = createAutomationRun(task.id, { prompt: buildPrompt(task) })
+    updateAutomationRun(run.id, {
+      status: 'failed',
+      error: `targetPath「${task.targetPath}」不存在或未設定`,
+    })
     updateTask(task.id, { automationStatus: 'failed' })
-    createComment(task.id, `❌ 無法啟動 Hermes 自動執行：targetPath「${task.targetPath}」不存在或未設定`)
     return
   }
   if (task.automationStatus === 'running') {

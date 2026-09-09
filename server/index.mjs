@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { listTasks, createTask, updateTask, deleteTask } from './taskRepository.mjs'
 import { listComments, createComment, updateComment, deleteComment } from './commentRepository.mjs'
 import { triggerAutomation } from './automationRunner.mjs'
+import { listAutomationRuns } from './automationRunRepository.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const distDir = path.join(__dirname, '..', 'dist')
@@ -108,6 +109,10 @@ app.delete('/api/tasks/:id', (req, res) => {
 
 app.get('/api/tasks/:taskId/comments', (req, res) => {
   res.json({ comments: listComments(req.params.taskId) })
+})
+
+app.get('/api/tasks/:taskId/automation-runs', (req, res) => {
+  res.json({ runs: listAutomationRuns(req.params.taskId) })
 })
 
 app.post('/api/tasks/:taskId/comments', (req, res) => {
