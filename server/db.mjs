@@ -60,6 +60,20 @@ export function getDb() {
     )
   `)
 
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS automation_runs (
+      id TEXT PRIMARY KEY,
+      task_id TEXT NOT NULL,
+      status TEXT NOT NULL,
+      prompt TEXT NOT NULL,
+      output TEXT NOT NULL DEFAULT '',
+      error TEXT,
+      started_at TEXT NOT NULL,
+      finished_at TEXT,
+      FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+    )
+  `)
+
   // SQLite 預設不強制外鍵約束，需要每個連線手動開啟才會啟用 CASCADE
   db.pragma('foreign_keys = ON')
 

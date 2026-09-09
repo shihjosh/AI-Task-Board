@@ -44,17 +44,20 @@
 
 ## 任務詳情
 
-- 編輯任務時，Drawer 會顯示「描述」欄位，支援 Markdown 語法（標題、清單、表格、程式碼區塊等），採左右雙欄即時預覽
-- 編輯任務時，Drawer 下方會顯示「留言」區塊，可新增/編輯/刪除留言（刪除前會有確認提示），留言固定顯示作者為「Josh」
-- 新增任務（尚未建立）時不會顯示留言區塊，需先建立任務後才能留言
+- 編輯任務時，Drawer 會顯示「描述」欄位，支援 Markdown 語法（標題、清單、表格、程式碼區塊等），採「編輯／預覽」頁籤切換顯示（而非左右並排）
+- 編輯任務時，Drawer 下方會顯示「留言／執行紀錄」頁籤：
+  - 「留言」頁籤可新增/編輯/刪除留言（刪除前會有確認提示），留言固定顯示作者為「Josh」
+  - 「執行紀錄」頁籤唯讀顯示該任務所有 Hermes 自動執行紀錄（見下方「Hermes Agent 自動化執行」章節），若有執行中的紀錄，頁籤旁會顯示小圓點提示
+- 新增任務（尚未建立）時不會顯示這兩組頁籤，需先建立任務後才能使用
 
 ## Hermes Agent 自動化執行（Phase 4）
 
 - 每張任務卡可選填「自動執行目錄」（`targetPath`，絕對路徑），指向本機某個專案/repo。
 - 當卡片被拖曳（或 PATCH）使 `columnId` 從其他狀態變為 `in_progress`，且該卡已填 `targetPath` 時，後端會在該目錄下背景 spawn 一個 `hermes chat -q` 子程序，根據卡片標題與描述實際動手執行任務。
 - `automationStatus` 狀態機：`idle → running → done | failed`
-  - `done`：執行成功（exit code 0），結果會寫成一則留言，卡片自動移到「等你確認」（`review`）欄位。
-  - `failed`：非 0 結束代碼、逾時，或 `targetPath` 無效／不存在，卡片停留在原欄位並寫入失敗原因留言，**不會**自動移到 `review`。
+  - `done`：執行成功（exit code 0），卡片自動移到「等你確認」（`review`）欄位。
+  - `failed`：非 0 結束代碼、逾時，或 `targetPath` 無效／不存在，卡片停留在原欄位，**不會**自動移到 `review`。
+- 每次自動執行的完整過程（prompt、輸出、錯誤、開始/結束時間）都記錄在獨立的 `automation_runs` 資料表，透過 TaskDrawer 的「執行紀錄」頁籤查看，**不會**寫入留言（`comments`），避免與使用者手動留言混雜。
 - 執行中的卡片在看板上會顯示旋轉圖示與「Hermes 執行中」文字。
 - **重複觸發防護**：`automationStatus` 為 `running` 時，再次拖回 `in_progress`會被靜默忽略，不會產生第二個程序。
 - **逾時**：每次執行上限 15 分鐘，超過會被強制中止並視為失敗。
@@ -72,6 +75,7 @@ GET    /api/tasks/:taskId/comments   取得指定任務的所有留言
 POST   /api/tasks/:taskId/comments   新增留言
 PATCH  /api/comments/:id             編輯留言
 DELETE /api/comments/:id             刪除留言
+GET    /api/tasks/:taskId/automation-runs   取得指定任務的所有 Hermes 執行紀錄（唯讀，無寫入端點）
 ```
 
 **驗證規則：**
@@ -142,12 +146,19 @@ AI-Task-Board/
 │   ├── taskRepository.mjs
 │   ├── commentRepository.mjs
 │   ├── automationRunner.mjs
+│   ├── automationRunRepository.mjs
 │   └── seed.mjs
 ├── src/
 │   ├── components/
+│   │   ├── TaskDrawer.tsx
+│   │   ├── CommentList.tsx
+│   │   ├── AutomationRunList.tsx
+│   │   └── ...
 │   ├── data/
 │   ├── lib/
-│   │   └── api.ts
+│   │   ├── api.ts
+│   │   ├── commentsApi.ts
+│   │   └── automationRunsApi.ts
 │   ├── types/
 │   ├── App.tsx
 │   └── main.tsx

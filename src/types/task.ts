@@ -39,6 +39,17 @@ export interface Comment {
   updatedAt: string
 }
 
+export interface AutomationRun {
+  id: string
+  taskId: string
+  status: 'running' | 'done' | 'failed'
+  prompt: string
+  output: string
+  error?: string
+  startedAt: string
+  finishedAt?: string
+}
+
 export interface Column {
   id: ColumnId
   title: string
