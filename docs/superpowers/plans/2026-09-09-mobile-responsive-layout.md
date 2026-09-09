@@ -149,7 +149,7 @@ git commit -m "feat: add mobile column tab state and move-to-column handler in A
 - 消耗：Task 1 的 `handleMoveToColumn(task, targetColumnId)`。
 - 產出：`BoardColumn` 新增 props `isMobile?: boolean`, `onMoveToColumn?: (task: Task, targetColumnId: ColumnId) => void`，並把 `onMoveToColumn` 透傳給 `SortableTaskCard`（Task 3 會再往下傳給 `TaskCard`）。
 
-- [ ] **Step 1：修改 `BoardColumnProps` interface**
+- [x] **Step 1：修改 `BoardColumnProps` interface**
 
 ```tsx
 interface BoardColumnProps {
@@ -163,7 +163,7 @@ interface BoardColumnProps {
 }
 ```
 
-- [ ] **Step 2：修改函式簽章與外層容器寬度**
+- [x] **Step 2：修改函式簽章與外層容器寬度**
 
 將：
 
@@ -199,7 +199,7 @@ export default function BoardColumn({
     <div className={`flex shrink-0 flex-col rounded-xl bg-slate-50/60 ${isMobile ? 'w-full' : 'w-80'}`}>
 ```
 
-- [ ] **Step 3：把 `onMoveToColumn` 與 `isMobile` 透傳給 `SortableTaskCard`**
+- [x] **Step 3：把 `onMoveToColumn` 與 `isMobile` 透傳給 `SortableTaskCard`**
 
 將：
 
@@ -227,13 +227,13 @@ export default function BoardColumn({
           </SortableContext>
 ```
 
-- [ ] **Step 4：型別檢查（預期此時會因 `SortableTaskCard` 尚未支援新 props 而報錯，留給 Task 3 修正）**
+- [x] **Step 4：型別檢查（預期此時會因 `SortableTaskCard` 尚未支援新 props 而報錯，留給 Task 3 修正）——確認 Task 1 的錯誤已消失，只剩 `SortableTaskCard` 缺 props 的錯誤**
 
 ```bash
 npx tsc -b
 ```
 
-- [ ] **Step 5：Commit**
+- [x] **Step 5：Commit**
 
 ```bash
 git add src/components/BoardColumn.tsx
