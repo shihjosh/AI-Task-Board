@@ -419,7 +419,7 @@ git commit -m "feat: add AutomationRunList component and API client"
 **介面：**
 - 消耗：`AutomationRunList`（Task 3）、既有 `CommentList`
 
-- [ ] **Step 1：新增兩組頁籤 state**
+- [x] **Step 1：新增兩組頁籤 state**
 
 在 `const [error, setError] = useState<string | null>(null)` 之後加入：
 
@@ -435,7 +435,7 @@ git commit -m "feat: add AutomationRunList component and API client"
     setBottomTab('comments')
 ```
 
-- [ ] **Step 2：把描述區塊改成頁籤切換**
+- [x] **Step 2：把描述區塊改成頁籤切換**
 
 將現有的：
 
@@ -510,7 +510,7 @@ git commit -m "feat: add AutomationRunList component and API client"
         </div>
 ```
 
-- [ ] **Step 3：把下方區塊改成頁籤切換**
+- [x] **Step 3：把下方區塊改成頁籤切換**
 
 將現有的：
 
@@ -565,7 +565,7 @@ git commit -m "feat: add AutomationRunList component and API client"
 import AutomationRunList from './AutomationRunList'
 ```
 
-- [ ] **Step 4：型別檢查**
+- [x] **Step 4：型別檢查**
 
 ```bash
 npx tsc -b
@@ -573,14 +573,14 @@ npx tsc -b
 
 預期結果：無錯誤。
 
-- [ ] **Step 5：瀏覽器手動驗證**
+- [x] **Step 5：瀏覽器手動驗證**
 
 啟動 `npm run dev`，開啟任一既有任務卡：
 1. 確認描述區塊顯示「編輯」「預覽」兩個頁籤，預設在「編輯」，點擊「預覽」能看到 Markdown 渲染結果，再點回「編輯」textarea 內容還在。
 2. 確認下方顯示「留言」「執行紀錄」兩個頁籤，預設在「留言」，點擊「執行紀錄」能看到 `AutomationRunList`（若該任務沒有 `targetPath` 或從未觸發過自動執行，應顯示「尚無執行紀錄」）。
 3. 建立一張帶 `targetPath` 指向不存在路徑的新任務，拖到「處理中」，重新打開該卡，切到「執行紀錄」頁籤，確認能看到一筆 `failed` 紀錄且「留言」頁籤是空的（未被污染）。驗證後刪除測試任務。
 
-- [ ] **Step 6：Commit**
+- [x] **Step 6：Commit**
 
 ```bash
 git add src/components/TaskDrawer.tsx
