@@ -426,19 +426,19 @@ git commit -m "fix: adjust Toolbar responsive layout for mobile width"
 
 **介面：** 無（純文件任務）。
 
-- [ ] **Step 1：更新 `README.md`**
+- [x] **Step 1：更新 `README.md`**
 
 在「看板設計」章節，補充說明：手機寬度（< 640px）下看板改為單欄 + 標籤切換呈現，任務卡片上會出現「移動到...」選單取代拖拉換欄；桌面寬度（≥ 640px）行為不變。
 
-- [ ] **Step 2：最終整分支 review**
+- [x] **Step 2：最終整分支 review**
 
-- 確認 `src/` 沒有新增 `dangerouslySetInnerHTML`/`innerHTML`/`eval`。
-- 執行 `npx tsc -b` 與 `npm run lint`，確認皆乾淨（無新增錯誤/警告；既有的 2 個 pre-existing warning 不算新增）。
-- 確認桌面版（`≥ 640px`）的 `handleDragStart`/`handleDragEnd` 函式本體字元級未被改動（`git diff main -- src/App.tsx` 中這兩個函式不應出現在 diff 裡，只有 state 新增與 JSX 渲染區塊的變動）。
-- 手動測試「移動到...」選單選到與目前卡片相同的欄位這個邊界情況（理論上選單已經排除當前欄位，此案例應無法觸發，用程式碼審閱確認 `filter((c) => c.id !== task.columnId)` 邏輯正確）。
-- 清理所有手動驗證過程中建立的測試卡片，確保種子資料筆數不變。
+- 確認 `src/` 沒有新增 `dangerouslySetInnerHTML`/`innerHTML`/`eval`：0 筆。
+- 執行 `npx tsc -b` 與 `npm run lint`，確認皆乾淨：無新增錯誤/警告，僅既有的 2 個 pre-existing warning。
+- 確認桌面版（`≥ 640px`）的 `handleDragStart`/`handleDragEnd` 函式本體字元級未被改動：`git diff main -- src/App.tsx` 中這兩個函式僅作為既有呼叫出現，函式本體字元未變動。
+- 手動測試「移動到...」選單選到與目前卡片相同的欄位這個邊界情況：程式碼審閱確認 `columns.filter((c) => c.id !== task.columnId)` 邏輯正確，選單不會列出當前欄位；`handleMoveToColumn` 內另有 `if (task.columnId === targetColumnId) return` 作為雙重防禦。
+- 清理所有手動驗證過程中建立的測試卡片：已清理（唯一動過的既有卡片 LOCAL-5 已用 curl 復原回 `todo`）。
 
-- [ ] **Step 3：Commit**
+- [x] **Step 3：Commit**
 
 ```bash
 git add README.md docs/superpowers/plans/2026-09-09-mobile-responsive-layout.md
