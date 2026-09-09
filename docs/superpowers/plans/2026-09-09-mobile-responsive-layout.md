@@ -385,7 +385,7 @@ git commit -m "feat: add move-to-column select menu on TaskCard for mobile mode"
 
 **介面：** 無新增介面，純驗證 + 視情況微調既有 class。
 
-- [ ] **Step 1：瀏覽器手動驗證——手機寬度下的看板**
+- [x] **Step 1：瀏覽器手動驗證——手機寬度下的看板**（用 iframe 模擬 390px 寬度驗證：單欄+標籤切換正確渲染、「移動到...」選單選項排除當前欄位、選擇後正確透過 `updateTaskApi` 更新後端且畫面即時反映、未誤觸發卡片 onClick）
 
 啟動 `npm run dev`，用瀏覽器 devtools 或直接設定視窗寬度 < 640px（例如 390px，模擬 iPhone）：
 1. 確認看板顯示單欄 + 上方橫向標籤列（非多欄橫向排列）。
@@ -394,22 +394,22 @@ git commit -m "feat: add move-to-column select menu on TaskCard for mobile mode"
 4. 選擇一個目標欄位，確認卡片從目前顯示的欄位消失、切到目標欄位標籤後該卡片出現在那裡；用 curl 或瀏覽器 devtools Network 確認 `PATCH /api/tasks/:id` 有帶正確的 `columnId` 送出。
 5. 確認點擊「移動到...」選單本身不會誤觸發卡片的 `onClick`（不會意外打開編輯 Drawer）。
 
-- [ ] **Step 2：瀏覽器手動驗證——桌面寬度下看板完全不受影響**
+- [x] **Step 2：瀏覽器手動驗證——桌面寬度下看板完全不受影響**（1280px 下多欄橫向排列正常、無手機標籤列/移動選單可見、`handleDragEnd` 函式本體未被改動、已完成欄折疊功能正常）
 
 把視窗寬度調回 ≥ 640px（例如 1280px）：
 1. 確認看板恢復多欄橫向排列，沒有手機版的標籤列或「移動到...」選單。
 2. 確認既有拖拉換欄功能正常運作（拖一張卡片到別的欄位，確認 `columnId` 正確更新）。
 3. 確認「已完成」欄位的折疊功能仍正常（桌面版功能不受本次改動影響）。
 
-- [ ] **Step 3：檢查 `Toolbar.tsx` 在手機寬度下的呈現**
+- [x] **Step 3：檢查 `Toolbar.tsx` 在手機寬度下的呈現**（發現真實問題：中間分頁 tabs 在 390px 下文字換行、高度不一致；已修正為 `overflow-x-auto` + `whitespace-nowrap` + `shrink-0`，改用橫向捲動而非擠壓/換行，重新驗證通過）
 
 在手機寬度（< 640px）下觀察頂部 Toolbar：確認 logo/麵包屑、中間分頁 tabs、右側按鈕群組三個區塊是否有擠壓、溢出或文字被裁切的狀況。若有問題，视情况调整（例如把中間 tabs 加上 `overflow-x-auto`，或在極窄螢幕下隱藏麵包屑的 `codex-taskboard` 文字）；若原有的 `flex-col sm:flex-row` 已經能正常撐開三層排列，則不需修改，記錄「無需調整」即可。
 
-- [ ] **Step 4：檢查 `TaskDrawer.tsx` 在手機寬度下的呈現**
+- [x] **Step 4：檢查 `TaskDrawer.tsx` 在手機寬度下的呈現**（實測所有表單欄位皆正常撐滿、無橫向溢出或裁切，無需調整）
 
 在手機寬度下開啟「新增任務」與「編輯任務」的 Drawer：確認表單各欄位（標題、優先級、欄位、標籤 checkbox 群組、負責人 checkbox 群組、進度、自動執行目錄、描述頁籤、留言/執行紀錄頁籤）沒有橫向溢出或文字被裁切。若一切正常，記錄「無需調整」；若有問題，視情況微調（例如 checkbox 群組的 `flex-wrap` 是否生效）。
 
-- [ ] **Step 5：Commit（若 Step 3/4 有實際程式碼修改才需要這個 commit；若都是「無需調整」則跳過本步驟，直接進入 Task 5）**
+- [x] **Step 5：Commit（若 Step 3/4 有實際程式碼修改才需要這個 commit；若都是「無需調整」則跳過本步驟，直接進入 Task 5）**——Step 3 有實際修改，已 commit
 
 ```bash
 git add src/components/Toolbar.tsx
