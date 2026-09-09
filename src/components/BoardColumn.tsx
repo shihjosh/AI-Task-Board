@@ -10,6 +10,8 @@ interface BoardColumnProps {
   onTaskClick?: (task: Task) => void
   isCollapsed?: boolean
   onToggleCollapse?: () => void
+  isMobile?: boolean
+  onMoveToColumn?: (task: Task, targetColumnId: Task['columnId']) => void
 }
 
 export default function BoardColumn({
@@ -18,11 +20,13 @@ export default function BoardColumn({
   onTaskClick,
   isCollapsed = false,
   onToggleCollapse,
+  isMobile = false,
+  onMoveToColumn,
 }: BoardColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id })
 
   return (
-    <div className="flex w-80 shrink-0 flex-col rounded-xl bg-slate-50/60">
+    <div className={`flex shrink-0 flex-col rounded-xl bg-slate-50/60 ${isMobile ? 'w-full' : 'w-80'}`}>
       <div className={`flex items-center justify-between rounded-t-xl border-b px-3 py-2.5 ${column.colorClass}`}>
         <span className="text-sm font-semibold">{column.title}</span>
         <div className="flex items-center gap-2">
@@ -50,7 +54,13 @@ export default function BoardColumn({
         >
           <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
             {tasks.map((task) => (
-              <SortableTaskCard key={task.id} task={task} onTaskClick={onTaskClick} />
+              <SortableTaskCard
+                key={task.id}
+                task={task}
+                onTaskClick={onTaskClick}
+                isMobile={isMobile}
+                onMoveToColumn={onMoveToColumn}
+              />
             ))}
           </SortableContext>
           {tasks.length === 0 && (
