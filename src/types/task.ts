@@ -2,7 +2,7 @@ export type Priority = 'high' | 'medium' | 'low'
 
 export type TagType = 'github' | 'issue' | 'bug' | 'pr'
 
-export type ColumnId = 'todo' | 'in_progress' | 'review'
+export type ColumnId = 'todo' | 'in_progress' | 'review' | 'done'
 
 export interface Tag {
   type: TagType

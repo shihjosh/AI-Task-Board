@@ -11,7 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const distDir = path.join(__dirname, '..', 'dist')
 
 const VALID_PRIORITIES = ['high', 'medium', 'low']
-const VALID_COLUMN_IDS = ['todo', 'in_progress', 'review']
+const VALID_COLUMN_IDS = ['todo', 'in_progress', 'review', 'done']
 const CREATABLE_FIELDS = [
   'title',
   'priority',

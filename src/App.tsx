@@ -61,7 +61,7 @@ export default function App() {
   )
 
   const tasksByColumn = useMemo(() => {
-    const map: Record<ColumnId, Task[]> = { todo: [], in_progress: [], review: [] }
+    const map: Record<ColumnId, Task[]> = { todo: [], in_progress: [], review: [], done: [] }
     for (const task of tasks) {
       map[task.columnId].push(task)
     }
