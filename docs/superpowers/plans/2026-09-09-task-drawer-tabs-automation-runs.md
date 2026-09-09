@@ -292,7 +292,7 @@ git commit -m "feat: add automation-runs endpoint, stop writing automation resul
 - 產出：`export async function fetchAutomationRuns(taskId: string): Promise<AutomationRun[]>`（`AutomationRunList` 元件使用）
 - 產出：`export default function AutomationRunList({ taskId }: { taskId: string })`（`TaskDrawer`，Task 4 會使用）
 
-- [ ] **Step 1：撰寫 `src/lib/automationRunsApi.ts`**
+- [x] **Step 1：撰寫 `src/lib/automationRunsApi.ts`**
 
 ```ts
 import type { AutomationRun } from '../types/task'
@@ -312,7 +312,7 @@ export async function fetchAutomationRuns(taskId: string): Promise<AutomationRun
 }
 ```
 
-- [ ] **Step 2：撰寫 `src/components/AutomationRunList.tsx`**
+- [x] **Step 2：撰寫 `src/components/AutomationRunList.tsx`**
 
 ```tsx
 import { useEffect, useState } from 'react'
@@ -394,7 +394,7 @@ export default function AutomationRunList({ taskId }: AutomationRunListProps) {
 }
 ```
 
-- [ ] **Step 3：型別檢查**
+- [x] **Step 3：型別檢查**
 
 ```bash
 npx tsc -b
@@ -402,7 +402,7 @@ npx tsc -b
 
 預期結果：無錯誤。
 
-- [ ] **Step 4：Commit**
+- [x] **Step 4：Commit**
 
 ```bash
 git add src/lib/automationRunsApi.ts src/components/AutomationRunList.tsx
