@@ -29,19 +29,19 @@
 **介面：**
 - 產出：`ColumnId` 型別新增 `'done'` 成員，後續所有任務都會用到這個值。
 
-- [ ] **Step 1：修改 `src/types/task.ts`**
+- [x] **Step 1：修改 `src/types/task.ts`**
 
 ```ts
 export type ColumnId = 'todo' | 'in_progress' | 'review' | 'done'
 ```
 
-- [ ] **Step 2：修改 `server/index.mjs` 的 `VALID_COLUMN_IDS`**
+- [x] **Step 2：修改 `server/index.mjs` 的 `VALID_COLUMN_IDS`**
 
 ```js
 const VALID_COLUMN_IDS = ['todo', 'in_progress', 'review', 'done']
 ```
 
-- [ ] **Step 3：修改 `src/data/columns.ts`，新增第四欄**
+- [x] **Step 3：修改 `src/data/columns.ts`，新增第四欄**
 
 ```ts
 import type { Column } from '../types/task'
@@ -54,7 +54,7 @@ export const columns: Column[] = [
 ]
 ```
 
-- [ ] **Step 4：修改 `src/App.tsx` 的 `tasksByColumn` 初始 map**
+- [x] **Step 4：修改 `src/App.tsx` 的 `tasksByColumn` 初始 map**
 
 將：
 
@@ -68,7 +68,7 @@ const map: Record<ColumnId, Task[]> = { todo: [], in_progress: [], review: [] }
 const map: Record<ColumnId, Task[]> = { todo: [], in_progress: [], review: [], done: [] }
 ```
 
-- [ ] **Step 5：型別檢查**
+- [x] **Step 5：型別檢查**
 
 ```bash
 npx tsc -b
@@ -76,7 +76,7 @@ npx tsc -b
 
 預期結果：無錯誤。
 
-- [ ] **Step 6：手動驗證——curl 建立一張 `columnId: 'done'` 的任務**
+- [x] **Step 6：手動驗證——curl 建立一張 `columnId: 'done'` 的任務**
 
 ```bash
 node server/index.mjs &
@@ -92,7 +92,7 @@ curl -s -X POST http://localhost:3001/api/tasks \
 
 預期結果：回應 201，`task.columnId` 為 `"done"`，不觸發 400 驗證錯誤。驗證後用 `curl -X DELETE` 刪除測試任務。
 
-- [ ] **Step 7：Commit**
+- [x] **Step 7：Commit**
 
 ```bash
 git add src/types/task.ts server/index.mjs src/data/columns.ts src/App.tsx
