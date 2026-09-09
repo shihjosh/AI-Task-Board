@@ -137,7 +137,7 @@ export default function App() {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div className="flex gap-4">
+          <div className="flex w-full justify-center gap-4">
             {columns.map((column) => (
               <BoardColumn
                 key={column.id}
