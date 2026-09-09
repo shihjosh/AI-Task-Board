@@ -18,6 +18,8 @@ import { columns } from './data/columns'
 import { fetchTasks, updateTaskApi } from './lib/api'
 import type { ColumnId, Task } from './types/task'
 
+const DONE_COLLAPSED_KEY = 'taskboard.doneColumnCollapsed'
+
 export default function App() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -26,6 +28,17 @@ export default function App() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [drawerMode, setDrawerMode] = useState<'create' | 'edit'>('create')
   const [editingTask, setEditingTask] = useState<Task | null>(null)
+  const [isDoneCollapsed, setIsDoneCollapsed] = useState(() => {
+    return localStorage.getItem(DONE_COLLAPSED_KEY) === '1'
+  })
+
+  function toggleDoneCollapsed() {
+    setIsDoneCollapsed((prev) => {
+      const next = !prev
+      localStorage.setItem(DONE_COLLAPSED_KEY, next ? '1' : '0')
+      return next
+    })
+  }
 
   function openCreateDrawer() {
     setDrawerMode('create')
@@ -144,6 +157,8 @@ export default function App() {
                 column={column}
                 tasks={tasksByColumn[column.id]}
                 onTaskClick={openEditDrawer}
+                isCollapsed={column.id === 'done' ? isDoneCollapsed : false}
+                onToggleCollapse={column.id === 'done' ? toggleDoneCollapsed : undefined}
               />
             ))}
           </div>
