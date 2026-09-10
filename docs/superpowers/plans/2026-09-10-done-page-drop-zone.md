@@ -125,7 +125,7 @@ git commit -m "feat: add react-router-dom and route skeleton for board and done 
 - 產出：`BOARD_COLUMNS`（`Column[]`，只含 `todo`/`in_progress`/`review` 三個欄位），供 `Board` 函式的桌面版/手機版渲染迴圈使用。
 - 消耗：既有 `columns`（全量四欄，維持不變，供其他元件使用）。
 
-- [ ] **Step 1：修改 `src/data/columns.ts`，新增 `BOARD_COLUMNS`**
+- [x] **Step 1：修改 `src/data/columns.ts`，新增 `BOARD_COLUMNS`**
 
 在檔案最後新增：
 
@@ -135,7 +135,7 @@ git commit -m "feat: add react-router-dom and route skeleton for board and done 
 export const BOARD_COLUMNS: Column[] = columns.filter((c) => c.id !== 'done')
 ```
 
-- [ ] **Step 2：修改 `src/App.tsx` 的 `Board` 函式**
+- [x] **Step 2：修改 `src/App.tsx` 的 `Board` 函式**
 
 移除已完成欄折疊相關的 state 與函式：
 
@@ -183,20 +183,20 @@ import { BOARD_COLUMNS } from './data/columns'
 
 （桌面版與手機版兩處迴圈都要同步修改；手機版的 `mobileActiveColumnId` 初始值 `columns[0].id` 也要改成 `BOARD_COLUMNS[0].id`。）
 
-- [ ] **Step 3：型別檢查**
+- [x] **Step 3：型別檢查**
 
 ```bash
 npx tsc -b
 ```
 
-- [ ] **Step 4：瀏覽器手動驗證**
+- [x] **Step 4：瀏覽器手動驗證**（`done` 狀態任務用 curl 建立後確認不出現在看板任何欄位、不報錯；手機模式標籤列也確認只剩三個標籤）
 
 啟動 `npm run dev`，確認：
 1. 桌面寬度（≥ 640px）下看板只顯示三欄（等待認領/處理中/等你確認），沒有「已完成」欄。
 2. 手機寬度（< 640px，用先前 Task 驗證方式模擬 390px）下標籤列也只有三個標籤。
 3. 用 curl 建立一個 `columnId: done` 的任務，確認它不會出現在看板任何欄位（因為 `BOARD_COLUMNS` 不含 `done`），但也不會導致頁面報錯（`tasksByColumn.done` 陣列依然存在，只是沒有被渲染）。
 
-- [ ] **Step 5：Commit**
+- [x] **Step 5：Commit**
 
 ```bash
 git add src/data/columns.ts src/App.tsx
