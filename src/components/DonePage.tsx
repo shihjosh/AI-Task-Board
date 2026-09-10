@@ -14,14 +14,16 @@ export default function DonePage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
   function reload() {
+    setIsLoading(true)
     fetchTasks()
       .then(setTasks)
       .catch((err) => setLoadError(err.message))
+      .finally(() => setIsLoading(false))
   }
 
   useEffect(() => {
     reload()
-    setIsLoading(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const doneTasks = tasks.filter((t) => t.columnId === 'done')
