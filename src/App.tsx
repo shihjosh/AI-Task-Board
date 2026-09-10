@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Routes, Route } from 'react-router-dom'
 import {
   DndContext,
   DragOverlay,
@@ -14,13 +15,14 @@ import Toolbar from './components/Toolbar'
 import BoardColumn from './components/BoardColumn'
 import TaskCard from './components/TaskCard'
 import TaskDrawer from './components/TaskDrawer'
+import DonePage from './components/DonePage'
 import { columns } from './data/columns'
 import { fetchTasks, updateTaskApi } from './lib/api'
 import type { ColumnId, Task } from './types/task'
 
 const DONE_COLLAPSED_KEY = 'taskboard.doneColumnCollapsed'
 
-export default function App() {
+function Board() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -220,5 +222,14 @@ export default function App() {
         onSaved={reloadTasks}
       />
     </div>
+  )
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Board />} />
+      <Route path="/done" element={<DonePage />} />
+    </Routes>
   )
 }
