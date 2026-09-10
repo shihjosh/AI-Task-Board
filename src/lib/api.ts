@@ -17,7 +17,7 @@ export async function fetchTasks(): Promise<Task[]> {
   return data.tasks
 }
 
-export async function createTaskApi(input: Omit<Task, 'id'>): Promise<Task> {
+export async function createTaskApi(input: Omit<Task, 'id' | 'createdAt'>): Promise<Task> {
   const res = await fetch(BASE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

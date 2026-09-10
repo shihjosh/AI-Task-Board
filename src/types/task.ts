@@ -29,6 +29,8 @@ export interface Task {
   description?: string // Markdown 原始文字，可為空字串或 undefined
   targetPath: string // Hermes agent 執行任務時的工作目錄（絕對路徑），空字串代表此卡不可自動執行
   automationStatus: 'idle' | 'running' | 'done' | 'failed'
+  createdAt: string
+  dueDate?: string // 預計完成日期，YYYY-MM-DD 格式，選填，甘特圖使用
 }
 
 export interface Comment {

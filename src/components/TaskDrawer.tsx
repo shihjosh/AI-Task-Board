@@ -25,6 +25,7 @@ const emptyFormState = {
   progress: '' as string,
   description: '',
   targetPath: '',
+  dueDate: '',
 }
 
 export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved }: TaskDrawerProps) {
@@ -46,6 +47,7 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
         progress: typeof initialTask.progress === 'number' ? String(initialTask.progress) : '',
         description: initialTask.description ?? '',
         targetPath: initialTask.targetPath ?? '',
+        dueDate: initialTask.dueDate ?? '',
       })
     } else {
       setForm(emptyFormState)
@@ -92,6 +94,7 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
       automationStatus: initialTask?.automationStatus ?? 'idle',
       commentCount: initialTask?.commentCount ?? 0,
       hasUnread: initialTask?.hasUnread ?? false,
+      dueDate: form.dueDate || undefined,
     }
   }
 
@@ -234,6 +237,16 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
             max={100}
             value={form.progress}
             onChange={(e) => setForm((p) => ({ ...p, progress: e.target.value }))}
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+          />
+        </label>
+
+        <label className="mb-6 block text-sm">
+          <span className="mb-1 block font-medium text-slate-600">預計完成日期（選填，甘特圖使用）</span>
+          <input
+            type="date"
+            value={form.dueDate}
+            onChange={(e) => setForm((p) => ({ ...p, dueDate: e.target.value }))}
             className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
           />
         </label>

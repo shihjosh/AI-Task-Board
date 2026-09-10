@@ -24,6 +24,7 @@ const CREATABLE_FIELDS = [
   'description',
   'targetPath',
   'automationStatus',
+  'dueDate',
 ]
 
 function pickFields(source, fields) {
