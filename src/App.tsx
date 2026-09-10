@@ -94,7 +94,14 @@ function Board() {
   function handleDragStart(event: DragStartEvent) {
     const task = tasks.find((t) => t.id === event.active.id)
     setActiveTask(task ?? null)
-    setActiveTaskWidth(event.active.rect.current.initial?.width ?? null)
+    // 優先從實際 DOM 節點量測寬度（拖曳當下的真實畫面狀態），比 dnd-kit 內部快取的
+    // rect.current.initial 更可靠——後者在某些時序下（尤其拖曳剛觸發、layout 尚未穩定時）
+    // 可能量到 0，導致 DragOverlay 內容被壓縮成 0 寬，中文標題逐字換行成一長條。
+    const sourceEl = document.querySelector<HTMLElement>(`[data-task-id="${event.active.id}"]`)
+    const measuredWidth = sourceEl?.getBoundingClientRect().width
+    const fallbackWidth = event.active.rect.current.initial?.width
+    const resolvedWidth = measuredWidth && measuredWidth > 0 ? measuredWidth : fallbackWidth
+    setActiveTaskWidth(resolvedWidth && resolvedWidth > 0 ? resolvedWidth : null)
   }
 
   function handleDragEnd(event: DragEndEvent) {

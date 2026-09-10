@@ -27,7 +27,7 @@ export default function SortableTaskCard({
   }
 
   return (
-    <div ref={setNodeRef} style={style}>
+    <div ref={setNodeRef} data-task-id={task.id} style={style}>
       <TaskCard
         task={task}
         dragHandleProps={{ ...attributes, ...listeners }}
