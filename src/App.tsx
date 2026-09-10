@@ -21,7 +21,7 @@ import DonePage from './components/DonePage'
 import DoneDropZone from './components/DoneDropZone'
 import { BOARD_COLUMNS } from './data/columns'
 import { fetchTasks, updateTaskApi } from './lib/api'
-import type { ColumnId, Task } from './types/task'
+import type { ColumnId, Task, TagType } from './types/task'
 
 function Board() {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -36,6 +36,8 @@ function Board() {
   const [mobileActiveColumnId, setMobileActiveColumnId] = useState<ColumnId>(BOARD_COLUMNS[0].id)
 
   const [searchQuery, setSearchQuery] = useState('')
+
+  const [selectedTagTypes, setSelectedTagTypes] = useState<TagType[]>([])
 
   function openCreateDrawer() {
     setDrawerMode('create')
@@ -87,9 +89,13 @@ function Board() {
 
   const filteredTasks = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
-    if (!query) return tasks
-    return tasks.filter((t) => t.title.toLowerCase().includes(query))
-  }, [tasks, searchQuery])
+    return tasks.filter((t) => {
+      const matchesQuery = !query || t.title.toLowerCase().includes(query)
+      const matchesTags =
+        selectedTagTypes.length === 0 || t.tags.some((tag) => selectedTagTypes.includes(tag.type))
+      return matchesQuery && matchesTags
+    })
+  }, [tasks, searchQuery, selectedTagTypes])
 
   const tasksByColumn = useMemo(() => {
     const map: Record<ColumnId, Task[]> = { todo: [], in_progress: [], review: [], done: [] }
@@ -197,6 +203,8 @@ function Board() {
         doneCount={tasksByColumn.done.length}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        selectedTagTypes={selectedTagTypes}
+        onTagTypesChange={setSelectedTagTypes}
       />
       <main className="flex-1 overflow-x-auto bg-slate-50 px-6 py-5">
         <DndContext
