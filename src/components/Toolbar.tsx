@@ -4,7 +4,12 @@ import SearchBox from './SearchBox'
 import TagFilterPanel from './TagFilterPanel'
 import type { TagType } from '../types/task'
 
-const tabs = ['Dashboard', '議題看板', '列表視圖', '甘特圖']
+const tabs: { id: 'dashboard' | 'board' | 'list' | 'gantt'; label: string }[] = [
+  { id: 'dashboard', label: 'Dashboard' },
+  { id: 'board', label: '議題看板' },
+  { id: 'list', label: '列表視圖' },
+  { id: 'gantt', label: '甘特圖' },
+]
 
 interface ToolbarProps {
   onAddTask: () => void
@@ -13,6 +18,8 @@ interface ToolbarProps {
   onSearchChange: (value: string) => void
   selectedTagTypes: TagType[]
   onTagTypesChange: (tags: TagType[]) => void
+  activeView: 'board' | 'list' | 'gantt'
+  onViewChange: (view: 'board' | 'list' | 'gantt') => void
 }
 
 export default function Toolbar({
@@ -22,6 +29,8 @@ export default function Toolbar({
   onSearchChange,
   selectedTagTypes,
   onTagTypesChange,
+  activeView,
+  onViewChange,
 }: ToolbarProps) {
   return (
     <div className="flex flex-col gap-3 border-b border-slate-200 bg-white px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -33,14 +42,21 @@ export default function Toolbar({
       </div>
 
       <div className="flex items-center gap-1 overflow-x-auto rounded-lg bg-slate-100 p-1">
-        {tabs.map((tab, i) => (
+        {tabs.map((tab) => (
           <button
-            key={tab}
+            key={tab.id}
+            type="button"
+            onClick={() => {
+              if (tab.id === 'dashboard') return
+              onViewChange(tab.id)
+            }}
             className={`shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition ${
-              i === 1 ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              activeView === tab.id
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-500 hover:text-slate-700'
             }`}
           >
-            {tab}
+            {tab.label}
           </button>
         ))}
       </div>
