@@ -35,6 +35,8 @@ function Board() {
 
   const [mobileActiveColumnId, setMobileActiveColumnId] = useState<ColumnId>(BOARD_COLUMNS[0].id)
 
+  const [searchQuery, setSearchQuery] = useState('')
+
   function openCreateDrawer() {
     setDrawerMode('create')
     setEditingTask(null)
@@ -83,13 +85,19 @@ function Board() {
     return closestCorners(args)
   }
 
+  const filteredTasks = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+    if (!query) return tasks
+    return tasks.filter((t) => t.title.toLowerCase().includes(query))
+  }, [tasks, searchQuery])
+
   const tasksByColumn = useMemo(() => {
     const map: Record<ColumnId, Task[]> = { todo: [], in_progress: [], review: [], done: [] }
-    for (const task of tasks) {
+    for (const task of filteredTasks) {
       map[task.columnId].push(task)
     }
     return map
-  }, [tasks])
+  }, [filteredTasks])
 
   function handleDragStart(event: DragStartEvent) {
     const task = tasks.find((t) => t.id === event.active.id)
@@ -184,7 +192,12 @@ function Board() {
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
-      <Toolbar onAddTask={openCreateDrawer} doneCount={tasksByColumn.done.length} />
+      <Toolbar
+        onAddTask={openCreateDrawer}
+        doneCount={tasksByColumn.done.length}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
       <main className="flex-1 overflow-x-auto bg-slate-50 px-6 py-5">
         <DndContext
           sensors={sensors}

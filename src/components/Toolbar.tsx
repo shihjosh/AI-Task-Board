@@ -1,14 +1,17 @@
-import { Search, SlidersHorizontal, Plus, LayoutGrid } from 'lucide-react'
+import { SlidersHorizontal, Plus, LayoutGrid } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import SearchBox from './SearchBox'
 
 const tabs = ['Dashboard', '議題看板', '列表視圖', '甘特圖']
 
 interface ToolbarProps {
   onAddTask: () => void
   doneCount?: number
+  searchQuery: string
+  onSearchChange: (value: string) => void
 }
 
-export default function Toolbar({ onAddTask, doneCount = 0 }: ToolbarProps) {
+export default function Toolbar({ onAddTask, doneCount = 0, searchQuery, onSearchChange }: ToolbarProps) {
   return (
     <div className="flex flex-col gap-3 border-b border-slate-200 bg-white px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-2">
@@ -38,9 +41,7 @@ export default function Toolbar({ onAddTask, doneCount = 0 }: ToolbarProps) {
         >
           已完成 ({doneCount})
         </Link>
-        <button className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
-          <Search size={16} />
-        </button>
+        <SearchBox value={searchQuery} onChange={onSearchChange} />
         <button className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
           <SlidersHorizontal size={16} />
         </button>
