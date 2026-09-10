@@ -174,7 +174,7 @@ function Board() {
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
-      <Toolbar onAddTask={openCreateDrawer} />
+      <Toolbar onAddTask={openCreateDrawer} doneCount={tasksByColumn.done.length} />
       <main className="flex-1 overflow-x-auto bg-slate-50 px-6 py-5">
         <DndContext
           sensors={sensors}
