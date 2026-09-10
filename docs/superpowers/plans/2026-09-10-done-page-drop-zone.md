@@ -29,13 +29,13 @@
 **介面：**
 - 產出：`/` 路由渲染看板主頁（既有 `App` 元件邏輯），`/done` 路由渲染 `DonePage` 元件。
 
-- [ ] **Step 1：安裝依賴**
+- [x] **Step 1：安裝依賴**
 
 ```bash
 npm install react-router-dom
 ```
 
-- [ ] **Step 2：修改 `src/main.tsx`，包一層 `<BrowserRouter>`**
+- [x] **Step 2：修改 `src/main.tsx`，包一層 `<BrowserRouter>`**
 
 ```tsx
 import { StrictMode } from 'react'
@@ -53,7 +53,7 @@ createRoot(document.getElementById('root')!).render(
 )
 ```
 
-- [ ] **Step 3：建立最小可運作的 `src/components/DonePage.tsx`（空殼，Task 4 補完內容）**
+- [x] **Step 3：建立最小可運作的 `src/components/DonePage.tsx`（空殼，Task 4 補完內容）**
 
 ```tsx
 import { Link } from 'react-router-dom'
@@ -71,7 +71,7 @@ export default function DonePage() {
 }
 ```
 
-- [ ] **Step 4：修改 `src/App.tsx`，在既有 `export default function App()` 外層包一個負責路由分派的元件**
+- [x] **Step 4：修改 `src/App.tsx`，在既有 `export default function App()` 外層包一個負責路由分派的元件**
 
 將檔案最上方的 import 區塊新增：
 
@@ -95,7 +95,7 @@ export default function App() {
 
 （`Board` 函式維持 `export` 關鍵字移除，不對外匯出，只有最外層新的 `App` 是預設匯出。）
 
-- [ ] **Step 5：型別檢查 + 瀏覽器手動驗證**
+- [x] **Step 5：型別檢查 + 瀏覽器手動驗證**（`/` 顯示既有四欄看板、`/done` 顯示空殼內容並可點擊返回連結、確認為 client-side navigation 而非整頁重載）
 
 ```bash
 npx tsc -b
@@ -106,7 +106,7 @@ npx tsc -b
 2. `http://localhost:8088/done` 顯示 `DonePage` 的最小空殼內容，並可點擊「← 返回看板」連結回到 `/`。
 3. 瀏覽器網址列的路徑確實跟著切換（`/` ↔ `/done`），非整頁重新載入（React Router 的 client-side navigation）。
 
-- [ ] **Step 6：Commit**
+- [x] **Step 6：Commit**
 
 ```bash
 git add package.json package-lock.json src/main.tsx src/App.tsx src/components/DonePage.tsx
