@@ -28,6 +28,7 @@ function Board() {
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [activeTask, setActiveTask] = useState<Task | null>(null)
+  const [activeTaskWidth, setActiveTaskWidth] = useState<number | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [drawerMode, setDrawerMode] = useState<'create' | 'edit'>('create')
   const [editingTask, setEditingTask] = useState<Task | null>(null)
@@ -93,11 +94,13 @@ function Board() {
   function handleDragStart(event: DragStartEvent) {
     const task = tasks.find((t) => t.id === event.active.id)
     setActiveTask(task ?? null)
+    setActiveTaskWidth(event.active.rect.current.initial?.width ?? null)
   }
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
     setActiveTask(null)
+    setActiveTaskWidth(null)
     if (!over) return
 
     const draggedTask = tasks.find((t) => t.id === active.id)
@@ -226,7 +229,13 @@ function Board() {
               ))}
           </div>
           <DoneDropZone isDragActive={activeTask !== null} />
-          <DragOverlay>{activeTask ? <TaskCard task={activeTask} /> : null}</DragOverlay>
+          <DragOverlay>
+            {activeTask ? (
+              <div style={{ width: activeTaskWidth ?? undefined }}>
+                <TaskCard task={activeTask} />
+              </div>
+            ) : null}
+          </DragOverlay>
         </DndContext>
       </main>
       <TaskDrawer
