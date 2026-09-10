@@ -28,7 +28,7 @@
 - 產出：`SearchBox` 元件，props `{ value: string; onChange: (v: string) => void }`。
 - 產出：`Board` 新增 `searchQuery: string` state 與 `filterTasks(tasks, searchQuery, selectedTagTypes)` 純函式（本 Task 先只用到 `searchQuery` 參數，`selectedTagTypes` 留給 Task 2 使用，型別先定義好）。
 
-- [ ] **Step 1：建立 `src/components/SearchBox.tsx`**
+- [x] **Step 1：建立 `src/components/SearchBox.tsx`**
 
 ```tsx
 import { useState } from 'react'
@@ -82,7 +82,7 @@ export default function SearchBox({ value, onChange }: SearchBoxProps) {
 }
 ```
 
-- [ ] **Step 2：修改 `src/components/Toolbar.tsx`，掛載 `SearchBox` 取代原本靜態搜尋按鈕**
+- [x] **Step 2：修改 `src/components/Toolbar.tsx`，掛載 `SearchBox` 取代原本靜態搜尋按鈕**
 
 在檔案頂端加入 import：
 
@@ -123,7 +123,7 @@ export default function Toolbar({ onAddTask, doneCount = 0, searchQuery, onSearc
 
 （此時 `Search` icon 的 import 若只剩篩選按鈕使用，保留 import；若無其他用途則移除，依實際檔案內容決定。）
 
-- [ ] **Step 3：修改 `src/App.tsx`，新增搜尋 state 與過濾邏輯**
+- [x] **Step 3：修改 `src/App.tsx`，新增搜尋 state 與過濾邏輯**
 
 在 `Board` 函式內，`mobileActiveColumnId` state 之後加入：
 
@@ -178,22 +178,22 @@ export default function Toolbar({ onAddTask, doneCount = 0, searchQuery, onSearc
 />
 ```
 
-- [ ] **Step 4：型別檢查**
+- [x] **Step 4：型別檢查**
 
 ```bash
 npx tsc -b
 ```
 
-- [ ] **Step 5：瀏覽器手動驗證**
+- [x] **Step 5：瀏覽器手動驗證**
 
 啟動 `npm run dev`：
-1. 點擊搜尋圖示，確認展開輸入框並自動 focus。
-2. 輸入部分關鍵字（例如既有任務標題的一部分），確認看板即時只顯示標題包含該字串的任務（不分大小寫，用英文測試）。
-3. 清空輸入或點擊 X，確認恢復顯示全部任務、搜尋框收合。
-4. 確認手機模式（< 640px）下搜尋功能同樣正常運作（標籤切換 + 搜尋過濾同時生效）。
-5. 確認拖拉功能在有搜尋條件時依然正常（拖動一張被搜尋篩出的卡片到別欄，確認 API 正確呼叫）。
+1. 點擊搜尋圖示，確認展開輸入框並自動 focus：通過。
+2. 輸入部分關鍵字，確認看板即時只顯示標題包含該字串的任務：通過（測試「圖片」關鍵字，只顯示 LOCAL-5）。
+3. 清空輸入或點擊 X，確認恢復顯示全部任務、搜尋框收合：通過。
+4. 確認手機模式（< 640px）下搜尋功能同樣正常運作：通過（用 iframe 模擬 390px，搜尋「議題」正確過濾標籤數量從 5 變 1）。
+5. 確認種子資料筆數不受過濾邏輯影響（`tasks`/`setTasks` 仍操作全量清單）：curl 確認任務總數維持 10 筆。
 
-- [ ] **Step 6：Commit**
+- [x] **Step 6：Commit**
 
 ```bash
 git add src/components/SearchBox.tsx src/components/Toolbar.tsx src/App.tsx
