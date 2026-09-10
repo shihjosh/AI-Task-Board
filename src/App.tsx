@@ -6,7 +6,9 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  pointerWithin,
   closestCorners,
+  type CollisionDetection,
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core'
@@ -16,6 +18,7 @@ import BoardColumn from './components/BoardColumn'
 import TaskCard from './components/TaskCard'
 import TaskDrawer from './components/TaskDrawer'
 import DonePage from './components/DonePage'
+import DoneDropZone from './components/DoneDropZone'
 import { BOARD_COLUMNS } from './data/columns'
 import { fetchTasks, updateTaskApi } from './lib/api'
 import type { ColumnId, Task } from './types/task'
@@ -64,6 +67,21 @@ function Board() {
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   )
 
+  // 自訂碰撞偵測：優先用 pointerWithin 判斷指標是否真的落在「拖放標記完成」長條內
+  // （closestCorners 對窄長條 vs 大面積欄位的角點距離比較天生不利於窄長條，
+  // 會導致拖到長條上仍被判定為鄰近的欄位）；其餘情況維持原本的 closestCorners 行為，
+  // 確保欄位間的拖放邏輯不受影響。
+  const collisionDetection: CollisionDetection = (args) => {
+    const pointerCollisions = pointerWithin(args)
+    if (pointerCollisions.some((c) => c.id === 'done-drop-zone')) {
+      return pointerCollisions.filter((c) => c.id === 'done-drop-zone')
+    }
+    if (pointerCollisions.length > 0) {
+      return pointerCollisions
+    }
+    return closestCorners(args)
+  }
+
   const tasksByColumn = useMemo(() => {
     const map: Record<ColumnId, Task[]> = { todo: [], in_progress: [], review: [], done: [] }
     for (const task of tasks) {
@@ -86,6 +104,19 @@ function Board() {
     if (!draggedTask) return
 
     const overId = over.id as string
+
+    // 拖到「拖曳到這裡標記為已完成」長條：直接標記為 done，邏輯與一般欄位拖放共用同一套更新方式
+    if (overId === 'done-drop-zone') {
+      if (draggedTask.columnId === 'done') return
+      setTasks((prev) =>
+        prev.map((t) => (t.id === draggedTask.id ? { ...t, columnId: 'done' } : t)),
+      )
+      updateTaskApi(draggedTask.id, { columnId: 'done' }).catch((err) => {
+        console.error('Failed to persist column change', err)
+      })
+      return
+    }
+
     const overColumnId = (BOARD_COLUMNS.find((c) => c.id === overId)?.id ??
       tasks.find((t) => t.id === overId)?.columnId) as ColumnId | undefined
 
@@ -147,7 +178,7 @@ function Board() {
       <main className="flex-1 overflow-x-auto bg-slate-50 px-6 py-5">
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCorners}
+          collisionDetection={collisionDetection}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
@@ -194,6 +225,7 @@ function Board() {
                 />
               ))}
           </div>
+          <DoneDropZone isDragActive={activeTask !== null} />
           <DragOverlay>{activeTask ? <TaskCard task={activeTask} /> : null}</DragOverlay>
         </DndContext>
       </main>
