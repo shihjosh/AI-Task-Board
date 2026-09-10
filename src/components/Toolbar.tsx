@@ -16,11 +16,11 @@ export default function Toolbar({ onAddTask }: ToolbarProps) {
         <span className="text-sm font-semibold text-slate-800">codex-taskboard</span>
       </div>
 
-      <div className="flex items-center gap-1 rounded-lg bg-slate-100 p-1">
+      <div className="flex items-center gap-1 overflow-x-auto rounded-lg bg-slate-100 p-1">
         {tabs.map((tab, i) => (
           <button
             key={tab}
-            className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+            className={`shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition ${
               i === 1 ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
             }`}
           >

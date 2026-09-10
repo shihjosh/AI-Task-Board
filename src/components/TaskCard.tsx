@@ -1,5 +1,6 @@
 import { MessageSquare, AlertTriangle, GitPullRequest, Code2, CircleDot, Loader2 } from 'lucide-react'
-import type { Task, TagType } from '../types/task'
+import { columns } from '../data/columns'
+import type { ColumnId, Task, TagType } from '../types/task'
 
 const priorityStyles: Record<Task['priority'], string> = {
   high: 'bg-orange-100 text-orange-700',
@@ -32,9 +33,18 @@ interface TaskCardProps {
   dragHandleProps?: Record<string, unknown>
   isDragging?: boolean
   onClick?: () => void
+  isMobile?: boolean
+  onMoveToColumn?: (task: Task, targetColumnId: ColumnId) => void
 }
 
-export default function TaskCard({ task, dragHandleProps, isDragging, onClick }: TaskCardProps) {
+export default function TaskCard({
+  task,
+  dragHandleProps,
+  isDragging,
+  onClick,
+  isMobile = false,
+  onMoveToColumn,
+}: TaskCardProps) {
   return (
     <div
       {...dragHandleProps}
@@ -85,6 +95,28 @@ export default function TaskCard({ task, dragHandleProps, isDragging, onClick }:
               style={{ width: `${task.progress}%` }}
             />
           </div>
+        </div>
+      )}
+
+      {isMobile && onMoveToColumn && (
+        <div className="mb-2" onClick={(e) => e.stopPropagation()}>
+          <select
+            value=""
+            onChange={(e) => {
+              const targetColumnId = e.target.value as ColumnId
+              if (targetColumnId) onMoveToColumn(task, targetColumnId)
+            }}
+            className="w-full rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-600"
+          >
+            <option value="">移動到...</option>
+            {columns
+              .filter((c) => c.id !== task.columnId)
+              .map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.title}
+                </option>
+              ))}
+          </select>
         </div>
       )}
 

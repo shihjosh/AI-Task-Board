@@ -40,6 +40,8 @@ export default function App() {
     })
   }
 
+  const [mobileActiveColumnId, setMobileActiveColumnId] = useState<ColumnId>(columns[0].id)
+
   function openCreateDrawer() {
     setDrawerMode('create')
     setEditingTask(null)
@@ -124,6 +126,16 @@ export default function App() {
     }
   }
 
+  function handleMoveToColumn(task: Task, targetColumnId: ColumnId) {
+    if (task.columnId === targetColumnId) return
+    setTasks((prev) =>
+      prev.map((t) => (t.id === task.id ? { ...t, columnId: targetColumnId } : t)),
+    )
+    updateTaskApi(task.id, { columnId: targetColumnId }).catch((err) => {
+      console.error('Failed to persist column change', err)
+    })
+  }
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-slate-400">
@@ -150,7 +162,8 @@ export default function App() {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div className="flex w-full justify-center gap-4">
+          {/* 桌面版：多欄橫向排列（sm 以上顯示） */}
+          <div className="hidden w-full justify-center gap-4 sm:flex">
             {columns.map((column) => (
               <BoardColumn
                 key={column.id}
@@ -161,6 +174,40 @@ export default function App() {
                 onToggleCollapse={column.id === 'done' ? toggleDoneCollapsed : undefined}
               />
             ))}
+          </div>
+
+          {/* 手機版：單欄 + 標籤切換（sm 以下顯示） */}
+          <div className="flex w-full flex-col gap-3 sm:hidden">
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {columns.map((column) => (
+                <button
+                  key={column.id}
+                  type="button"
+                  onClick={() => setMobileActiveColumnId(column.id)}
+                  className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium transition ${
+                    mobileActiveColumnId === column.id
+                      ? 'bg-slate-900 text-white'
+                      : 'bg-slate-100 text-slate-500'
+                  }`}
+                >
+                  {column.title} ({tasksByColumn[column.id].length})
+                </button>
+              ))}
+            </div>
+            {columns
+              .filter((column) => column.id === mobileActiveColumnId)
+              .map((column) => (
+                <BoardColumn
+                  key={column.id}
+                  column={column}
+                  tasks={tasksByColumn[column.id]}
+                  onTaskClick={openEditDrawer}
+                  isCollapsed={column.id === 'done' ? isDoneCollapsed : false}
+                  onToggleCollapse={column.id === 'done' ? toggleDoneCollapsed : undefined}
+                  isMobile
+                  onMoveToColumn={handleMoveToColumn}
+                />
+              ))}
           </div>
           <DragOverlay>{activeTask ? <TaskCard task={activeTask} /> : null}</DragOverlay>
         </DndContext>
