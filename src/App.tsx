@@ -19,9 +19,10 @@ import TaskCard from './components/TaskCard'
 import TaskDrawer from './components/TaskDrawer'
 import DonePage from './components/DonePage'
 import DoneDropZone from './components/DoneDropZone'
+import ListView from './components/ListView'
 import { BOARD_COLUMNS } from './data/columns'
 import { fetchTasks, updateTaskApi } from './lib/api'
-import type { ColumnId, Task } from './types/task'
+import type { ColumnId, Task, TagType } from './types/task'
 
 function Board() {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -34,6 +35,12 @@ function Board() {
   const [editingTask, setEditingTask] = useState<Task | null>(null)
 
   const [mobileActiveColumnId, setMobileActiveColumnId] = useState<ColumnId>(BOARD_COLUMNS[0].id)
+
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const [selectedTagTypes, setSelectedTagTypes] = useState<TagType[]>([])
+
+  const [activeView, setActiveView] = useState<'board' | 'list' | 'gantt'>('board')
 
   function openCreateDrawer() {
     setDrawerMode('create')
@@ -83,13 +90,23 @@ function Board() {
     return closestCorners(args)
   }
 
+  const filteredTasks = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+    return tasks.filter((t) => {
+      const matchesQuery = !query || t.title.toLowerCase().includes(query)
+      const matchesTags =
+        selectedTagTypes.length === 0 || t.tags.some((tag) => selectedTagTypes.includes(tag.type))
+      return matchesQuery && matchesTags
+    })
+  }, [tasks, searchQuery, selectedTagTypes])
+
   const tasksByColumn = useMemo(() => {
     const map: Record<ColumnId, Task[]> = { todo: [], in_progress: [], review: [], done: [] }
-    for (const task of tasks) {
+    for (const task of filteredTasks) {
       map[task.columnId].push(task)
     }
     return map
-  }, [tasks])
+  }, [filteredTasks])
 
   function handleDragStart(event: DragStartEvent) {
     const task = tasks.find((t) => t.id === event.active.id)
@@ -184,66 +201,80 @@ function Board() {
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
-      <Toolbar onAddTask={openCreateDrawer} doneCount={tasksByColumn.done.length} />
+      <Toolbar
+        onAddTask={openCreateDrawer}
+        doneCount={tasksByColumn.done.length}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        selectedTagTypes={selectedTagTypes}
+        onTagTypesChange={setSelectedTagTypes}
+        activeView={activeView}
+        onViewChange={setActiveView}
+      />
       <main className="flex-1 overflow-x-auto bg-slate-50 px-6 py-5">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={collisionDetection}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-        >
-          {/* 桌面版：多欄橫向排列（sm 以上顯示） */}
-          <div className="hidden w-full justify-center gap-4 sm:flex">
-            {BOARD_COLUMNS.map((column) => (
-              <BoardColumn
-                key={column.id}
-                column={column}
-                tasks={tasksByColumn[column.id]}
-                onTaskClick={openEditDrawer}
-              />
-            ))}
-          </div>
-
-          {/* 手機版：單欄 + 標籤切換（sm 以下顯示） */}
-          <div className="flex w-full flex-col gap-3 sm:hidden">
-            <div className="flex gap-2 overflow-x-auto pb-1">
+        {activeView === 'board' && (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={collisionDetection}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
+            {/* 桌面版：多欄橫向排列（sm 以上顯示） */}
+            <div className="hidden w-full justify-center gap-4 sm:flex">
               {BOARD_COLUMNS.map((column) => (
-                <button
-                  key={column.id}
-                  type="button"
-                  onClick={() => setMobileActiveColumnId(column.id)}
-                  className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium transition ${
-                    mobileActiveColumnId === column.id
-                      ? 'bg-slate-900 text-white'
-                      : 'bg-slate-100 text-slate-500'
-                  }`}
-                >
-                  {column.title} ({tasksByColumn[column.id].length})
-                </button>
-              ))}
-            </div>
-            {BOARD_COLUMNS
-              .filter((column) => column.id === mobileActiveColumnId)
-              .map((column) => (
                 <BoardColumn
                   key={column.id}
                   column={column}
                   tasks={tasksByColumn[column.id]}
                   onTaskClick={openEditDrawer}
-                  isMobile
-                  onMoveToColumn={handleMoveToColumn}
                 />
               ))}
-          </div>
-          <DoneDropZone isDragActive={activeTask !== null} />
-          <DragOverlay>
-            {activeTask ? (
-              <div style={{ width: activeTaskWidth ?? undefined }}>
-                <TaskCard task={activeTask} />
+            </div>
+
+            {/* 手機版：單欄 + 標籤切換（sm 以下顯示） */}
+            <div className="flex w-full flex-col gap-3 sm:hidden">
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {BOARD_COLUMNS.map((column) => (
+                  <button
+                    key={column.id}
+                    type="button"
+                    onClick={() => setMobileActiveColumnId(column.id)}
+                    className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium transition ${
+                      mobileActiveColumnId === column.id
+                        ? 'bg-slate-900 text-white'
+                        : 'bg-slate-100 text-slate-500'
+                    }`}
+                  >
+                    {column.title} ({tasksByColumn[column.id].length})
+                  </button>
+                ))}
               </div>
-            ) : null}
-          </DragOverlay>
-        </DndContext>
+              {BOARD_COLUMNS
+                .filter((column) => column.id === mobileActiveColumnId)
+                .map((column) => (
+                  <BoardColumn
+                    key={column.id}
+                    column={column}
+                    tasks={tasksByColumn[column.id]}
+                    onTaskClick={openEditDrawer}
+                    isMobile
+                    onMoveToColumn={handleMoveToColumn}
+                  />
+                ))}
+            </div>
+            <DoneDropZone isDragActive={activeTask !== null} />
+            <DragOverlay>
+              {activeTask ? (
+                <div style={{ width: activeTaskWidth ?? undefined }}>
+                  <TaskCard task={activeTask} />
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        )}
+        {activeView === 'list' && (
+          <ListView tasks={filteredTasks} onTaskClick={openEditDrawer} />
+        )}
       </main>
       <TaskDrawer
         isOpen={isDrawerOpen}
