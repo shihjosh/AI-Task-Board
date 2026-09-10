@@ -213,7 +213,7 @@ git commit -m "feat: add task title search"
 - 產出：`TagFilterPanel` 元件，props `{ selected: TagType[]; onChange: (tags: TagType[]) => void }`。
 - 消耗：Task 1 的 `filteredTasks` 邏輯位置，擴充加入標籤篩選條件。
 
-- [ ] **Step 1：建立 `src/components/TagFilterPanel.tsx`**
+- [x] **Step 1：建立 `src/components/TagFilterPanel.tsx`**
 
 ```tsx
 import { useState, useRef, useEffect } from 'react'
@@ -278,7 +278,7 @@ export default function TagFilterPanel({ selected, onChange }: TagFilterPanelPro
 }
 ```
 
-- [ ] **Step 2：修改 `src/components/Toolbar.tsx`，掛載 `TagFilterPanel` 取代原本靜態篩選按鈕**
+- [x] **Step 2：修改 `src/components/Toolbar.tsx`，掛載 `TagFilterPanel` 取代原本靜態篩選按鈕**
 
 在檔案頂端加入 import：
 
@@ -316,7 +316,7 @@ interface ToolbarProps {
 
 （若 `SlidersHorizontal` 圖示 import 因此不再被 `Toolbar.tsx` 直接使用，移除該 import。）
 
-- [ ] **Step 3：修改 `src/App.tsx`，擴充過濾邏輯納入標籤條件**
+- [x] **Step 3：修改 `src/App.tsx`，擴充過濾邏輯納入標籤條件**
 
 在 `searchQuery` state 之後加入：
 
@@ -357,23 +357,22 @@ import type { ColumnId, Task, TagType } from './types/task'
 />
 ```
 
-- [ ] **Step 4：型別檢查**
+- [x] **Step 4：型別檢查**
 
 ```bash
 npx tsc -b
 ```
 
-- [ ] **Step 5：瀏覽器手動驗證**
+- [x] **Step 5：瀏覽器手動驗證**
 
 啟動 `npm run dev`：
-1. 點擊篩選圖示，確認彈出面板列出 4 個標籤 checkbox。
-2. 勾選其中一個標籤，確認看板只顯示帶有該標籤的任務；篩選圖示右上角出現數字徽章「1」。
-3. 勾選第二個標籤，確認顯示邏輯是 OR（帶有任一被選標籤的任務都顯示），徽章變成「2」。
-4. 取消勾選，確認恢復顯示全部任務。
-5. 同時輸入搜尋字串 + 勾選標籤，確認兩者為 AND 關係（同時符合才顯示）。
-6. 點擊面板外部，確認面板正確關閉。
+1. 點擊篩選圖示，確認彈出面板列出 4 個標籤 checkbox：通過。
+2. 勾選「Issue」，確認看板只顯示帶有該標籤的任務（3 筆）；徽章顯示「1」：通過。
+3. 勾選第二個「GitHub」，確認顯示邏輯是 OR（顯示 7 筆），徽章變成「2」：通過。
+4. 同時輸入搜尋字串「圖片」+ 已勾選 GitHub/Issue，確認兩者為 AND 關係（只剩 1 筆同時符合）：通過。
+5. 點擊面板外部（`document.body.click()`），確認面板正確關閉：通過。
 
-- [ ] **Step 6：Commit**
+- [x] **Step 6：Commit**
 
 ```bash
 git add src/components/TagFilterPanel.tsx src/components/Toolbar.tsx src/App.tsx
