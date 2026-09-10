@@ -332,7 +332,7 @@ git commit -m "feat: add drop zone at bottom of board to mark tasks as done"
 **介面：**
 - 消耗：既有 `fetchTasks()`（`src/lib/api.ts`）、`TaskDrawer`、`Task` 型別。
 
-- [ ] **Step 1：補完 `src/components/DonePage.tsx`**
+- [x] **Step 1：補完 `src/components/DonePage.tsx`**
 
 ```tsx
 import { useEffect, useState } from 'react'
@@ -425,7 +425,7 @@ export default function DonePage() {
 
 （`TaskCard` 不傳 `dragHandleProps`/`isDragging`，因為此頁面不支援拖拉排序，純點擊開啟編輯即可；點擊任務後透過既有 `TaskDrawer` 的「欄位」下拉選單可以把任務改回其他欄位，改完儲存後 `onSaved={reload}` 會重新拉取清單，若該任務不再是 `done` 狀態就會自動從這個頁面消失。）
 
-- [ ] **Step 2：修改 `Toolbar.tsx`，加入「已完成」連結**
+- [x] **Step 2：修改 `Toolbar.tsx`，加入「已完成」連結**
 
 在檔案頂端加入 import：
 
@@ -463,35 +463,35 @@ export default function Toolbar({ onAddTask, doneCount = 0 }: ToolbarProps) {
 }
 ```
 
-- [ ] **Step 3：修改 `src/App.tsx` 的 `Board` 函式，傳入 `doneCount` 給 `Toolbar`**
+- [x] **Step 3：修改 `src/App.tsx` 的 `Board` 函式，傳入 `doneCount` 給 `Toolbar`**
 
 ```tsx
 <Toolbar onAddTask={openCreateDrawer} doneCount={tasksByColumn.done.length} />
 ```
 
-- [ ] **Step 4：型別檢查**
+- [x] **Step 4：型別檢查**
 
 ```bash
 npx tsc -b
 ```
 
-- [ ] **Step 5：瀏覽器手動驗證**
+- [x] **Step 5：瀏覽器手動驗證**（實測發現真實 bug：`data/options.ts` 的 `COLUMN_OPTIONS` 從未包含 `done`，導致 `TaskDrawer` 的「欄位」下拉選單永遠無法正確顯示/選擇「已完成」；已修正型別與選項清單，重新驗證通過）
 
 啟動 `npm run dev`：
 1. 用 curl 建立至少 2 筆 `columnId: done` 的測試任務。
 2. 確認 `Toolbar` 顯示「已完成 (2)」（數字與實際筆數相符），點擊後導覽到 `/done`。
 3. 確認 `/done` 頁面正確列出這些任務，清單樣式與看板卡片一致（複用 `TaskCard`）。
-4. 點擊其中一張任務卡片，確認 `TaskDrawer` 正確開啟，顯示該任務的既有資料。
+4. 點擊其中一張任務卡片，確認 `TaskDrawer` 正確開啟，顯示該任務的既有資料（含「欄位」下拉正確顯示「已完成」）。
 5. 在 `TaskDrawer` 把「欄位」改回「等你確認」並儲存，確認：
    - `/done` 頁面清單即時更新，該任務消失，數量變成 1。
    - 導覽回 `/` 看板主頁，確認該任務出現在「等你確認」欄位。
 6. 清理所有測試任務。
 
-- [ ] **Step 6：Commit**
+- [x] **Step 6：Commit**（實際 commit 額外納入 `src/data/options.ts` 的修正）
 
 ```bash
-git add src/components/DonePage.tsx src/components/Toolbar.tsx src/App.tsx
-git commit -m "feat: implement done page task list and toolbar link"
+git add src/components/DonePage.tsx src/components/Toolbar.tsx src/App.tsx src/data/options.ts
+git commit -m "feat: implement done page task list and toolbar link; fix: add done option to COLUMN_OPTIONS"
 ```
 
 ---
