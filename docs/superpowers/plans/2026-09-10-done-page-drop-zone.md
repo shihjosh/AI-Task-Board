@@ -504,20 +504,20 @@ git commit -m "feat: implement done page task list and toolbar link; fix: add do
 
 **介面：** 無（純文件任務）。
 
-- [ ] **Step 1：更新 `README.md`**
+- [x] **Step 1：更新 `README.md`**
 
 在「看板設計」章節，說明看板主頁面現在只顯示三欄，「已完成」狀態的任務改在 `/done` 獨立頁面顯示；新增「已完成頁面」小節說明如何標記任務完成（拖到底部長條，或在 `TaskDrawer`/手機版「移動到...」選單手動選「已完成」）以及如何查看（Toolbar 上的「已完成」連結）。移除舊版「已完成欄位可折疊」的說明段落（該功能已被本次改動取代）。
 
-- [ ] **Step 2：最終整分支 review**
+- [x] **Step 2：最終整分支 review**
 
-- 確認 `src/` 沒有新增 `dangerouslySetInnerHTML`/`innerHTML`/`eval`。
-- 執行 `npx tsc -b` 與 `npm run lint`，確認皆乾淨（無新增錯誤/警告；既有的 2 個 pre-existing warning 不算新增）。
-- 用瀏覽器把視窗寬度設回先前重現 bug 的 1280px，確認三欄看板不再出現任何裁切（`main.scrollWidth <= main.clientWidth`，不需要橫向捲動）。
-- 確認既有的欄位間拖放（三欄之間）與新的「拖到底部標記完成」兩種拖放路徑都正常運作，互不干擾。
-- 確認手機模式（< 640px）下：看板只有三個標籤、底部拖放長條不出現、`TaskCard` 的「移動到...」選單依然可以選到「已完成」選項（因為選單資料來源是全量 `columns`，不受 `BOARD_COLUMNS` 影響）。
-- 清理所有手動驗證過程中建立的測試卡片，確保種子資料筆數不變。
+- 確認 `src/` 沒有新增 `dangerouslySetInnerHTML`/`innerHTML`/`eval`：0 筆。
+- 執行 `npx tsc -b` 與 `npm run lint`，確認皆乾淨：無新增錯誤/警告，僅既有的 2 個 pre-existing warning（`DonePage.tsx` 一度新增 1 個 `set-state-in-effect` warning，已比照 `CommentList.tsx`/`AutomationRunList.tsx` 的具名 `reload()` 函式模式修正）。
+- 用瀏覽器把視窗寬度設回先前重現 bug 的 1280px，確認三欄看板不再出現任何裁切：`main.scrollWidth (1265) <= main.clientWidth (1265)`，`needsScroll: false`，原始跑版問題徹底修復。
+- 確認既有的欄位間拖放（三欄之間）與新的「拖到底部標記完成」兩種拖放路徑都正常運作，互不干擾：Task 3 已用 pointer event 模擬完整驗證，兩種路徑皆正確更新後端 `columnId`。
+- 確認手機模式（< 640px）下：看板只有三個標籤、底部拖放長條不出現（`display: none`）、`TaskCard` 的「移動到...」選單依然包含「已完成」選項（選單資料來源是全量 `columns`，不受 `BOARD_COLUMNS` 影響）。
+- 清理所有手動驗證過程中建立的測試卡片：已清理。
 
-- [ ] **Step 3：Commit**
+- [x] **Step 3：Commit**
 
 ```bash
 git add README.md docs/superpowers/plans/2026-09-10-done-page-drop-zone.md
