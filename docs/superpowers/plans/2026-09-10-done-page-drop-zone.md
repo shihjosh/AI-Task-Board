@@ -215,7 +215,7 @@ git commit -m "feat: limit board page to three columns, remove done column colla
 - 產出：`DoneDropZone` 元件，內部用 `useDroppable({ id: 'done-drop-zone' })` 註冊拖放目標；接受 `isDragActive: boolean` prop 決定樣式（拖拉進行中時更明顯）。
 - 消耗：`Board` 函式現有的 `activeTask` state（判斷是否正在拖拉）。
 
-- [ ] **Step 1：建立 `src/components/DoneDropZone.tsx`**
+- [x] **Step 1：建立 `src/components/DoneDropZone.tsx`**
 
 ```tsx
 import { useDroppable } from '@dnd-kit/core'
@@ -248,7 +248,7 @@ export default function DoneDropZone({ isDragActive }: DoneDropZoneProps) {
 
 （`hidden sm:flex` 讓這個長條只在桌面寬度顯示，手機模式不渲染，符合 spec 決策；`isOver` 是 `useDroppable` 內建的即時懸停狀態，`isDragActive` 由外層傳入表示「目前是否有任何卡片正在被拖拉」，兩者疊加控制視覺明顯程度。）
 
-- [ ] **Step 2：修改 `src/App.tsx` 的 `Board` 函式，掛載 `DoneDropZone` 並串接拖放邏輯**
+- [x] **Step 2：修改 `src/App.tsx` 的 `Board` 函式，掛載 `DoneDropZone` 並串接拖放邏輯**
 
 在 import 區塊新增：
 
@@ -297,13 +297,13 @@ function handleDragEnd(event: DragEndEvent) {
 
 （`DoneDropZone` 放在 `<main>` 外、`<DndContext>` 內部的最後，讓它固定在頁面底部；若目前 `<main>` 的 `overflow-x-auto` 影響到长条的定位，視情況調整為 `<main>` 內部最下方或用 `sticky bottom-0`——實作時依實際渲染結果決定，只要保證视觉上「固定在畫面底部」即可。）
 
-- [ ] **Step 3：型別檢查**
+- [x] **Step 3：型別檢查**
 
 ```bash
 npx tsc -b
 ```
 
-- [ ] **Step 4：瀏覽器手動驗證**
+- [x] **Step 4：瀏覽器手動驗證**（實測發現真實 bug：預設 `closestCorners` 對「窄長條 vs 大面積欄位」碰撞判定系統性偏向大欄位，導致拖到長條上仍被誤判為鄰近欄位；已修正為自訂 `collisionDetection`，優先用 `pointerWithin` 判斷、找不到再 fallback `closestCorners`，修正後大量用 pointer event 模擬驗證通過）
 
 啟動 `npm run dev`：
 1. 確認桌面寬度下頁面底部出現「拖曳到這裡標記為已完成」長條，平時樣式較不顯眼（灰色）。
@@ -313,9 +313,9 @@ npx tsc -b
    - 放開後該卡片從原本的欄位消失（因為看板只顯示三欄，`done` 狀態的任務不會出現在任何欄位）。
    - 用 curl 確認該任務的 `columnId` 已經正確更新為 `done`。
 4. 確認手機寬度（< 640px）下，這條長條不會出現（`hidden sm:flex` 生效）。
-5. 確認既有的欄位間拖放（例如「等待認領」拖到「處理中」）功能沒有被這次改動影響。
+5. 確認既有的欄位間拖放（例如「等待認領」拖到「處理中」）功能沒有被這次改動影響（用相同 pointer event 模擬拖到「處理中」欄，驗證 `columnId` 正確更新，確認 fallback 邏輯正常）。
 
-- [ ] **Step 5：Commit**
+- [x] **Step 5：Commit**
 
 ```bash
 git add src/components/DoneDropZone.tsx src/App.tsx
