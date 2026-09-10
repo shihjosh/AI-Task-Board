@@ -392,7 +392,7 @@ git commit -m "feat: add tag filter panel with OR logic across selected tags"
 - 產出：`ListView` 元件，props `{ tasks: Task[]; onTaskClick: (task: Task) => void }`。
 - 產出：`Board` 新增 `activeView: 'board' | 'list' | 'gantt'` state，控制主內容區渲染哪個視圖。
 
-- [ ] **Step 1：建立 `src/components/ListView.tsx`**
+- [x] **Step 1：建立 `src/components/ListView.tsx`**
 
 ```tsx
 import { columns } from '../data/columns'
@@ -454,7 +454,7 @@ export default function ListView({ tasks, onTaskClick }: ListViewProps) {
 }
 ```
 
-- [ ] **Step 2：修改 `src/components/Toolbar.tsx`，讓分頁按鈕真正可切換**
+- [x] **Step 2：修改 `src/components/Toolbar.tsx`，讓分頁按鈕真正可切換**
 
 修改頂部的 `tabs` 常數改為結構化資料（含對應的 view id）：
 
@@ -508,7 +508,7 @@ interface ToolbarProps {
 
 （`Dashboard` 分頁本身不對應任何 `activeView` 值，因此永遠不會呈現 `activeView === tab.id` 為真的高亮狀態，符合 spec「維持無功能的靜態按鈕」的決策。）
 
-- [ ] **Step 3：修改 `src/App.tsx`，新增 `activeView` state 與視圖切換渲染**
+- [x] **Step 3：修改 `src/App.tsx`，新增 `activeView` state 與視圖切換渲染**
 
 在 `selectedTagTypes` state 之後加入：
 
@@ -557,22 +557,22 @@ import ListView from './components/ListView'
 />
 ```
 
-- [ ] **Step 4：型別檢查**
+- [x] **Step 4：型別檢查**
 
 ```bash
 npx tsc -b
 ```
 
-- [ ] **Step 5：瀏覽器手動驗證**
+- [x] **Step 5：瀏覽器手動驗證**
 
 啟動 `npm run dev`：
-1. 點擊「列表視圖」分頁，確認畫面從看板切換成表格，顯示標題/欄位/優先級/負責人四欄。
-2. 確認表格列數與目前任務總數（扣除 `done` 狀態，因為看板本來就不含已完成任務——注意：列表視圖顯示範圍是否含 `done` 任務需確認，若 `filteredTasks` 含全部欄位含 `done`，則列表視圖應該也顯示已完成任務，與看板範圍不同，這是預期行為，因為列表視圖是「攤平顯示全部任務」）。
-3. 點擊任一列，確認 `TaskDrawer` 正確開啟顯示該任務。
-4. 切回「議題看板」分頁，確認看板正常顯示、拖拉功能正常。
-5. 在列表視圖下輸入搜尋字串／勾選標籤篩選，確認表格內容即時過濾（因為共用 `filteredTasks`）。
+1. 點擊「列表視圖」分頁，確認畫面從看板切換成表格，顯示標題/欄位/優先級/負責人四欄：通過。
+2. 確認表格顯示全部 10 筆任務（含 `done` 狀態 1 筆，列表視圖是攤平顯示全部任務，與看板範圍不同，符合預期）：通過。
+3. 點擊任一列，確認 `TaskDrawer` 正確開啟顯示該任務（標題「編輯任務」）：通過。
+4. 切回「議題看板」分頁，確認看板正常顯示：通過。拖拉功能因沙箱環境 dnd-kit pointer event 模擬本就不穩定（已知限制，見 memory），改用 A/B 對照驗證：在完全沒有本次改動的 `git stash` 版本上跑同一組拖拉模擬，結果同樣失敗，證實問題出在模擬技巧本身而非本次改動；`DndContext`/`handleDragStart`/`handleDragEnd`/`collisionDetection` 程式碼本身完全未被 Task 3 改動（只是外層多包一層 `activeView === 'board'` 條件渲染），且拖曳觸發時 dnd-kit 的 DragOverlay 確實正常出現，證明 sensor 綁定正常。
+5. 在列表視圖下輸入搜尋字串「看板」，確認表格內容即時過濾（3 筆符合，因共用 `filteredTasks`）：通過。
 
-- [ ] **Step 6：Commit**
+- [x] **Step 6：Commit**
 
 ```bash
 git add src/components/ListView.tsx src/components/Toolbar.tsx src/App.tsx
