@@ -20,6 +20,7 @@ import TaskDrawer from './components/TaskDrawer'
 import DonePage from './components/DonePage'
 import DoneDropZone from './components/DoneDropZone'
 import ListView from './components/ListView'
+import GanttView from './components/GanttView'
 import { BOARD_COLUMNS } from './data/columns'
 import { fetchTasks, updateTaskApi } from './lib/api'
 import type { ColumnId, Task, TagType } from './types/task'
@@ -274,6 +275,9 @@ function Board() {
         )}
         {activeView === 'list' && (
           <ListView tasks={filteredTasks} onTaskClick={openEditDrawer} />
+        )}
+        {activeView === 'gantt' && (
+          <GanttView tasks={filteredTasks} onTaskClick={openEditDrawer} />
         )}
       </main>
       <TaskDrawer
