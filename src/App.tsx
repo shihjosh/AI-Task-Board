@@ -16,11 +16,9 @@ import BoardColumn from './components/BoardColumn'
 import TaskCard from './components/TaskCard'
 import TaskDrawer from './components/TaskDrawer'
 import DonePage from './components/DonePage'
-import { columns } from './data/columns'
+import { BOARD_COLUMNS } from './data/columns'
 import { fetchTasks, updateTaskApi } from './lib/api'
 import type { ColumnId, Task } from './types/task'
-
-const DONE_COLLAPSED_KEY = 'taskboard.doneColumnCollapsed'
 
 function Board() {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -30,19 +28,8 @@ function Board() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [drawerMode, setDrawerMode] = useState<'create' | 'edit'>('create')
   const [editingTask, setEditingTask] = useState<Task | null>(null)
-  const [isDoneCollapsed, setIsDoneCollapsed] = useState(() => {
-    return localStorage.getItem(DONE_COLLAPSED_KEY) === '1'
-  })
 
-  function toggleDoneCollapsed() {
-    setIsDoneCollapsed((prev) => {
-      const next = !prev
-      localStorage.setItem(DONE_COLLAPSED_KEY, next ? '1' : '0')
-      return next
-    })
-  }
-
-  const [mobileActiveColumnId, setMobileActiveColumnId] = useState<ColumnId>(columns[0].id)
+  const [mobileActiveColumnId, setMobileActiveColumnId] = useState<ColumnId>(BOARD_COLUMNS[0].id)
 
   function openCreateDrawer() {
     setDrawerMode('create')
@@ -99,7 +86,7 @@ function Board() {
     if (!draggedTask) return
 
     const overId = over.id as string
-    const overColumnId = (columns.find((c) => c.id === overId)?.id ??
+    const overColumnId = (BOARD_COLUMNS.find((c) => c.id === overId)?.id ??
       tasks.find((t) => t.id === overId)?.columnId) as ColumnId | undefined
 
     if (!overColumnId) return
@@ -166,14 +153,12 @@ function Board() {
         >
           {/* 桌面版：多欄橫向排列（sm 以上顯示） */}
           <div className="hidden w-full justify-center gap-4 sm:flex">
-            {columns.map((column) => (
+            {BOARD_COLUMNS.map((column) => (
               <BoardColumn
                 key={column.id}
                 column={column}
                 tasks={tasksByColumn[column.id]}
                 onTaskClick={openEditDrawer}
-                isCollapsed={column.id === 'done' ? isDoneCollapsed : false}
-                onToggleCollapse={column.id === 'done' ? toggleDoneCollapsed : undefined}
               />
             ))}
           </div>
@@ -181,7 +166,7 @@ function Board() {
           {/* 手機版：單欄 + 標籤切換（sm 以下顯示） */}
           <div className="flex w-full flex-col gap-3 sm:hidden">
             <div className="flex gap-2 overflow-x-auto pb-1">
-              {columns.map((column) => (
+              {BOARD_COLUMNS.map((column) => (
                 <button
                   key={column.id}
                   type="button"
@@ -196,7 +181,7 @@ function Board() {
                 </button>
               ))}
             </div>
-            {columns
+            {BOARD_COLUMNS
               .filter((column) => column.id === mobileActiveColumnId)
               .map((column) => (
                 <BoardColumn
@@ -204,8 +189,6 @@ function Board() {
                   column={column}
                   tasks={tasksByColumn[column.id]}
                   onTaskClick={openEditDrawer}
-                  isCollapsed={column.id === 'done' ? isDoneCollapsed : false}
-                  onToggleCollapse={column.id === 'done' ? toggleDoneCollapsed : undefined}
                   isMobile
                   onMoveToColumn={handleMoveToColumn}
                 />
