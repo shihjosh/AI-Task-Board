@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Routes, Route } from 'react-router-dom'
 import {
   DndContext,
   DragOverlay,
   PointerSensor,
   useSensor,
   useSensors,
+  pointerWithin,
   closestCorners,
+  type CollisionDetection,
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core'
@@ -14,13 +17,13 @@ import Toolbar from './components/Toolbar'
 import BoardColumn from './components/BoardColumn'
 import TaskCard from './components/TaskCard'
 import TaskDrawer from './components/TaskDrawer'
-import { columns } from './data/columns'
+import DonePage from './components/DonePage'
+import DoneDropZone from './components/DoneDropZone'
+import { BOARD_COLUMNS } from './data/columns'
 import { fetchTasks, updateTaskApi } from './lib/api'
 import type { ColumnId, Task } from './types/task'
 
-const DONE_COLLAPSED_KEY = 'taskboard.doneColumnCollapsed'
-
-export default function App() {
+function Board() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -28,19 +31,8 @@ export default function App() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [drawerMode, setDrawerMode] = useState<'create' | 'edit'>('create')
   const [editingTask, setEditingTask] = useState<Task | null>(null)
-  const [isDoneCollapsed, setIsDoneCollapsed] = useState(() => {
-    return localStorage.getItem(DONE_COLLAPSED_KEY) === '1'
-  })
 
-  function toggleDoneCollapsed() {
-    setIsDoneCollapsed((prev) => {
-      const next = !prev
-      localStorage.setItem(DONE_COLLAPSED_KEY, next ? '1' : '0')
-      return next
-    })
-  }
-
-  const [mobileActiveColumnId, setMobileActiveColumnId] = useState<ColumnId>(columns[0].id)
+  const [mobileActiveColumnId, setMobileActiveColumnId] = useState<ColumnId>(BOARD_COLUMNS[0].id)
 
   function openCreateDrawer() {
     setDrawerMode('create')
@@ -75,6 +67,21 @@ export default function App() {
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   )
 
+  // 自訂碰撞偵測：優先用 pointerWithin 判斷指標是否真的落在「拖放標記完成」長條內
+  // （closestCorners 對窄長條 vs 大面積欄位的角點距離比較天生不利於窄長條，
+  // 會導致拖到長條上仍被判定為鄰近的欄位）；其餘情況維持原本的 closestCorners 行為，
+  // 確保欄位間的拖放邏輯不受影響。
+  const collisionDetection: CollisionDetection = (args) => {
+    const pointerCollisions = pointerWithin(args)
+    if (pointerCollisions.some((c) => c.id === 'done-drop-zone')) {
+      return pointerCollisions.filter((c) => c.id === 'done-drop-zone')
+    }
+    if (pointerCollisions.length > 0) {
+      return pointerCollisions
+    }
+    return closestCorners(args)
+  }
+
   const tasksByColumn = useMemo(() => {
     const map: Record<ColumnId, Task[]> = { todo: [], in_progress: [], review: [], done: [] }
     for (const task of tasks) {
@@ -97,7 +104,20 @@ export default function App() {
     if (!draggedTask) return
 
     const overId = over.id as string
-    const overColumnId = (columns.find((c) => c.id === overId)?.id ??
+
+    // 拖到「拖曳到這裡標記為已完成」長條：直接標記為 done，邏輯與一般欄位拖放共用同一套更新方式
+    if (overId === 'done-drop-zone') {
+      if (draggedTask.columnId === 'done') return
+      setTasks((prev) =>
+        prev.map((t) => (t.id === draggedTask.id ? { ...t, columnId: 'done' } : t)),
+      )
+      updateTaskApi(draggedTask.id, { columnId: 'done' }).catch((err) => {
+        console.error('Failed to persist column change', err)
+      })
+      return
+    }
+
+    const overColumnId = (BOARD_COLUMNS.find((c) => c.id === overId)?.id ??
       tasks.find((t) => t.id === overId)?.columnId) as ColumnId | undefined
 
     if (!overColumnId) return
@@ -154,24 +174,22 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
-      <Toolbar onAddTask={openCreateDrawer} />
+      <Toolbar onAddTask={openCreateDrawer} doneCount={tasksByColumn.done.length} />
       <main className="flex-1 overflow-x-auto bg-slate-50 px-6 py-5">
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCorners}
+          collisionDetection={collisionDetection}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
           {/* 桌面版：多欄橫向排列（sm 以上顯示） */}
           <div className="hidden w-full justify-center gap-4 sm:flex">
-            {columns.map((column) => (
+            {BOARD_COLUMNS.map((column) => (
               <BoardColumn
                 key={column.id}
                 column={column}
                 tasks={tasksByColumn[column.id]}
                 onTaskClick={openEditDrawer}
-                isCollapsed={column.id === 'done' ? isDoneCollapsed : false}
-                onToggleCollapse={column.id === 'done' ? toggleDoneCollapsed : undefined}
               />
             ))}
           </div>
@@ -179,7 +197,7 @@ export default function App() {
           {/* 手機版：單欄 + 標籤切換（sm 以下顯示） */}
           <div className="flex w-full flex-col gap-3 sm:hidden">
             <div className="flex gap-2 overflow-x-auto pb-1">
-              {columns.map((column) => (
+              {BOARD_COLUMNS.map((column) => (
                 <button
                   key={column.id}
                   type="button"
@@ -194,7 +212,7 @@ export default function App() {
                 </button>
               ))}
             </div>
-            {columns
+            {BOARD_COLUMNS
               .filter((column) => column.id === mobileActiveColumnId)
               .map((column) => (
                 <BoardColumn
@@ -202,13 +220,12 @@ export default function App() {
                   column={column}
                   tasks={tasksByColumn[column.id]}
                   onTaskClick={openEditDrawer}
-                  isCollapsed={column.id === 'done' ? isDoneCollapsed : false}
-                  onToggleCollapse={column.id === 'done' ? toggleDoneCollapsed : undefined}
                   isMobile
                   onMoveToColumn={handleMoveToColumn}
                 />
               ))}
           </div>
+          <DoneDropZone isDragActive={activeTask !== null} />
           <DragOverlay>{activeTask ? <TaskCard task={activeTask} /> : null}</DragOverlay>
         </DndContext>
       </main>
@@ -220,5 +237,14 @@ export default function App() {
         onSaved={reloadTasks}
       />
     </div>
+  )
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Board />} />
+      <Route path="/done" element={<DonePage />} />
+    </Routes>
   )
 }

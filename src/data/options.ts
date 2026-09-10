@@ -19,8 +19,9 @@ export const PRIORITY_OPTIONS: { value: 'high' | 'medium' | 'low'; label: string
   { value: 'low', label: '低' },
 ]
 
-export const COLUMN_OPTIONS: { value: 'todo' | 'in_progress' | 'review'; label: string }[] = [
+export const COLUMN_OPTIONS: { value: 'todo' | 'in_progress' | 'review' | 'done'; label: string }[] = [
   { value: 'todo', label: '等待認領' },
   { value: 'in_progress', label: '處理中' },
   { value: 'review', label: '等你確認' },
+  { value: 'done', label: '已完成' },
 ]
