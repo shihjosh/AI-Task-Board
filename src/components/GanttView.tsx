@@ -57,14 +57,16 @@ export default function GanttView({ tasks, onTaskClick }: GanttViewProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-1 self-end rounded-lg bg-slate-100 p-1">
+      <div className="flex items-center gap-1 self-end rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
         {(['week', 'month'] as Granularity[]).map((g) => (
           <button
             key={g}
             type="button"
             onClick={() => setGranularity(g)}
             className={`rounded-md px-3 py-1 text-xs font-medium transition ${
-              granularity === g ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'
+              granularity === g
+                ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-slate-100'
+                : 'text-slate-500 dark:text-slate-400'
             }`}
           >
             {g === 'week' ? '週檢視' : '月檢視'}
@@ -73,22 +75,22 @@ export default function GanttView({ tasks, onTaskClick }: GanttViewProps) {
       </div>
 
       {tasksWithDueDate.length === 0 ? (
-        <div className="flex flex-1 items-center justify-center rounded-lg border-2 border-dashed border-slate-200 py-16 text-sm text-slate-400">
+        <div className="flex flex-1 items-center justify-center rounded-lg border-2 border-dashed border-slate-200 py-16 text-sm text-slate-400 dark:border-slate-700 dark:text-slate-500">
           沒有設定「預計完成日期」的任務，甘特圖暫無內容可顯示
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-slate-200">
+        <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
           <div
             className="grid"
             style={{ gridTemplateColumns: `160px repeat(${dayCount}, minmax(32px, 1fr))` }}
           >
-            <div className="border-b border-r border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-500">
+            <div className="border-b border-r border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
               任務
             </div>
             {dayLabels.map((label, i) => (
               <div
                 key={i}
-                className="border-b border-slate-200 bg-slate-50 px-1 py-2 text-center text-[10px] text-slate-400"
+                className="border-b border-slate-200 bg-slate-50 px-1 py-2 text-center text-[10px] text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-500"
               >
                 {label}
               </div>
@@ -104,7 +106,7 @@ export default function GanttView({ tasks, onTaskClick }: GanttViewProps) {
                   <button
                     type="button"
                     onClick={() => onTaskClick(task)}
-                    className="truncate border-r border-slate-100 px-3 py-2 text-left text-xs text-slate-700 hover:bg-slate-50"
+                    className="truncate border-r border-slate-100 px-3 py-2 text-left text-xs text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
                   >
                     {task.title}
                   </button>
@@ -116,7 +118,7 @@ export default function GanttView({ tasks, onTaskClick }: GanttViewProps) {
                       <button
                         type="button"
                         onClick={() => onTaskClick(task)}
-                        className="absolute h-4 rounded bg-sky-400 hover:bg-sky-500"
+                        className="absolute h-4 rounded bg-sky-400 hover:bg-sky-500 dark:bg-sky-500 dark:hover:bg-sky-400"
                         style={{
                           left: `${(barStart / dayCount) * 100}%`,
                           width: `${(barLength / dayCount) * 100}%`,

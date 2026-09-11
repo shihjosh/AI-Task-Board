@@ -39,7 +39,7 @@ export default function DonePage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-sm text-slate-400">
+      <div className="flex min-h-screen items-center justify-center bg-white text-sm text-slate-400 dark:bg-slate-900 dark:text-slate-500">
         載入任務中…
       </div>
     )
@@ -47,26 +47,26 @@ export default function DonePage() {
 
   if (loadError) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-sm text-red-500">
+      <div className="flex min-h-screen items-center justify-center bg-white text-sm text-red-500 dark:bg-slate-900 dark:text-red-400">
         載入失敗：{loadError}
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-white p-6">
+    <div className="flex min-h-screen flex-col bg-white p-6 dark:bg-slate-900">
       <Link
         to="/"
-        className="mb-4 inline-flex w-fit items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700"
+        className="mb-4 inline-flex w-fit items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
       >
         <ArrowLeft size={15} />
         返回看板
       </Link>
-      <h1 className="mb-4 text-lg font-semibold text-slate-800">
+      <h1 className="mb-4 text-lg font-semibold text-slate-800 dark:text-slate-100">
         已完成任務（{doneTasks.length}）
       </h1>
       {doneTasks.length === 0 ? (
-        <div className="flex flex-1 items-center justify-center rounded-lg border-2 border-dashed border-slate-200 py-16 text-sm text-slate-400">
+        <div className="flex flex-1 items-center justify-center rounded-lg border-2 border-dashed border-slate-200 py-16 text-sm text-slate-400 dark:border-slate-700 dark:text-slate-500">
           目前沒有已完成的任務
         </div>
       ) : (
