@@ -3,9 +3,9 @@ import { columns } from '../data/columns'
 import type { ColumnId, Task, TagType } from '../types/task'
 
 const priorityStyles: Record<Task['priority'], string> = {
-  high: 'bg-orange-100 text-orange-700',
-  medium: 'bg-yellow-100 text-yellow-700',
-  low: 'bg-slate-100 text-slate-500',
+  high: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
+  medium: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
+  low: 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300',
 }
 
 const priorityLabel: Record<Task['priority'], string> = {
@@ -22,10 +22,10 @@ const tagIcon: Record<TagType, React.ReactNode> = {
 }
 
 const tagStyles: Record<TagType, string> = {
-  github: 'bg-slate-100 text-slate-600',
-  issue: 'bg-indigo-50 text-indigo-600',
-  bug: 'bg-red-50 text-red-600',
-  pr: 'bg-violet-50 text-violet-600',
+  github: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300',
+  issue: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-300',
+  bug: 'bg-red-50 text-red-600 dark:bg-red-900/40 dark:text-red-300',
+  pr: 'bg-violet-50 text-violet-600 dark:bg-violet-900/40 dark:text-violet-300',
 }
 
 interface TaskCardProps {
@@ -49,7 +49,7 @@ export default function TaskCard({
     <div
       {...dragHandleProps}
       onClick={onClick}
-      className={`group relative rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition hover:shadow-md cursor-grab active:cursor-grabbing ${
+      className={`group relative rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition hover:shadow-md cursor-grab active:cursor-grabbing dark:border-slate-700 dark:bg-slate-800 ${
         isDragging ? 'opacity-50' : ''
       }`}
     >
@@ -57,9 +57,9 @@ export default function TaskCard({
         <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-sky-500" />
       )}
 
-      <div className="mb-1.5 text-xs font-medium text-slate-400">{task.id}</div>
+      <div className="mb-1.5 text-xs font-medium text-slate-400 dark:text-slate-500">{task.id}</div>
 
-      <div className="mb-2 text-sm font-semibold leading-snug text-slate-800">
+      <div className="mb-2 text-sm font-semibold leading-snug text-slate-800 dark:text-slate-100">
         {task.title}
       </div>
 
@@ -89,7 +89,7 @@ export default function TaskCard({
 
       {typeof task.progress === 'number' && (
         <div className="mb-2">
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
             <div
               className="h-full rounded-full bg-emerald-500 transition-all"
               style={{ width: `${task.progress}%` }}
@@ -106,7 +106,7 @@ export default function TaskCard({
               const targetColumnId = e.target.value as ColumnId
               if (targetColumnId) onMoveToColumn(task, targetColumnId)
             }}
-            className="w-full rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-600"
+            className="w-full rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-600 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200"
           >
             <option value="">移動到...</option>
             {columns
@@ -126,14 +126,14 @@ export default function TaskCard({
             <div
               key={a.id}
               title={a.name}
-              className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold text-white ring-2 ring-white ${a.avatarColor}`}
+              className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold text-white ring-2 ring-white dark:ring-slate-800 ${a.avatarColor}`}
             >
               {a.initials}
             </div>
           ))}
         </div>
         {task.commentCount > 0 && (
-          <div className="flex items-center gap-1 text-xs text-slate-400">
+          <div className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500">
             <MessageSquare size={13} />
             {task.commentCount}
           </div>
