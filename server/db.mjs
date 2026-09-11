@@ -49,6 +49,11 @@ export function getDb() {
     db.exec(`ALTER TABLE tasks ADD COLUMN automation_status TEXT NOT NULL DEFAULT 'idle'`)
   }
 
+  const hasDueDate = taskColumns.some((col) => col.name === 'due_date')
+  if (!hasDueDate) {
+    db.exec(`ALTER TABLE tasks ADD COLUMN due_date TEXT`)
+  }
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS comments (
       id TEXT PRIMARY KEY,

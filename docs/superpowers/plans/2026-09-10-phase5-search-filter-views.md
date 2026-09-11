@@ -596,7 +596,7 @@ git commit -m "feat: add list view with table layout, wire up toolbar view switc
 - 產出：`GanttView` 元件，props `{ tasks: Task[]; onTaskClick: (task: Task) => void }`。
 - 產出：`Task.dueDate?: string`（`YYYY-MM-DD` 格式）。
 
-- [ ] **Step 1：`server/db.mjs` 新增 `due_date` 欄位 migration**
+- [x] **Step 1：`server/db.mjs` 新增 `due_date` 欄位 migration**
 
 在既有的 `hasAutomationStatus` migration 區塊之後加入：
 
@@ -607,7 +607,7 @@ git commit -m "feat: add list view with table layout, wire up toolbar view switc
   }
 ```
 
-- [ ] **Step 2：`server/taskRepository.mjs` 支援 `dueDate` 讀寫**
+- [x] **Step 2：`server/taskRepository.mjs` 讀寫 `dueDate` 欄位**
 
 `rowToTask` 函式內加入：
 
@@ -642,7 +642,7 @@ git commit -m "feat: add list view with table layout, wire up toolbar view switc
   ).run({ ...merged, id })
 ```
 
-- [ ] **Step 3：`server/index.mjs` 的 `CREATABLE_FIELDS` 加入 `'dueDate'`**
+- [x] **Step 3：`server/index.mjs` 的 `CREATABLE_FIELDS` 加入 `'dueDate'`**
 
 ```js
 const CREATABLE_FIELDS = [
@@ -663,7 +663,7 @@ const CREATABLE_FIELDS = [
 
 （依實際檔案現有陣列內容調整插入位置，維持既有欄位順序不變，只新增 `'dueDate'`。）
 
-- [ ] **Step 4：後端驗證與資料庫 migration 手動測試**
+- [x] **Step 4：後端驗證與資料庫 migration 手動測試**
 
 ```bash
 node server/index.mjs &
@@ -675,7 +675,7 @@ kill %1
 
 確認回應的 `task.dueDate` 正確為 `"2026-09-30"`；用 `sqlite3` 或既有 db 檢查工具確認舊資料庫 migration 後既有任務的 `due_date` 為 `NULL`、不影響既有任務讀取。
 
-- [ ] **Step 5：`src/types/task.ts` 新增 `dueDate` 欄位**
+- [x] **Step 5：`src/types/task.ts` 新增 `dueDate?: string`**
 
 ```ts
 export interface Task {
@@ -684,7 +684,7 @@ export interface Task {
 }
 ```
 
-- [ ] **Step 6：`TaskDrawer.tsx` 新增「預計完成日期」輸入欄位**
+- [x] **Step 6：`TaskDrawer.tsx` 新增「預計完成日期」輸入欄位**
 
 在 `emptyFormState` 加入 `dueDate: ''`；`useEffect` 內的表單初始化加入 `dueDate: initialTask.dueDate ?? ''`；`buildPayload()` 回傳物件加入 `dueDate: form.dueDate || undefined`。
 
@@ -702,7 +702,7 @@ export interface Task {
         </label>
 ```
 
-- [ ] **Step 7：建立 `src/components/GanttView.tsx`**
+- [x] **Step 7：建立 `src/components/GanttView.tsx`**
 
 ```tsx
 import { useState, useMemo } from 'react'
@@ -846,7 +846,7 @@ export default function GanttView({ tasks, onTaskClick }: GanttViewProps) {
 
 （此為簡易 CSS Grid 手刻甘特圖，橫條用絕對定位在跨欄的容器內依比例呈現；若實作時發現 grid 版面與絕對定位混用有渲染問題，可改用固定寬度欄位 + flex 手動計算 px 寬度的做法，只要維持不引入第三方套件即可，實作時依實際渲染結果調整細節但不得改變「橫軸日期/縱軸任務」的呈現方式。）
 
-- [ ] **Step 8：修改 `src/App.tsx`，掛載 `GanttView`**
+- [x] **Step 8：修改 `src/App.tsx`，掛載 `GanttView`**
 
 在 import 區塊加入：
 
@@ -862,23 +862,27 @@ import GanttView from './components/GanttView'
         )}
 ```
 
-- [ ] **Step 9：型別檢查**
+- [x] **Step 9：型別檢查**
 
 ```bash
 npx tsc -b
 ```
 
-- [ ] **Step 10：瀏覽器手動驗證**
+- [x] **Step 10：瀏覽器手動驗證**
 
 啟動 `npm run dev`：
-1. 建立至少 2 筆帶有不同 `dueDate` 的測試任務（用 `TaskDrawer` 手動填寫「預計完成日期」，一筆填今天+3天、一筆填今天+10天）。
-2. 點擊「甘特圖」分頁，確認橫軸顯示日期刻度（預設週檢視顯示 7 天），縱軸列出這兩筆任務，各自畫出從建立日到預計完成日的橫條。
-3. 點擊「月檢視」切換按鈕，確認日期軸改為顯示當月天數，橫條位置正確依比例重新計算。
-4. 點擊某筆任務的橫條或標題，確認 `TaskDrawer` 正確開啟。
-5. 建立一筆沒有填 `dueDate` 的任務，確認該任務不出現在甘特圖清單中（因 `tasksWithDueDate` 過濾邏輯排除）。
-6. 清理所有測試任務。
+1. 用 API POST 建立 2 筆帶有不同 `dueDate` 的測試任務（今天+3天、今天+10天）：通過。
+2. 點擊「甘特圖」分頁，確認橫軸顯示日期刻度（週檢視顯示 7 天），縱軸列出這兩筆任務，各自畫出從建立日到預計完成日的橫條：通過（用 vision 分析截圖確認橫條位置與寬度正確）。
+3. 點擊「月檢視」切換按鈕，確認日期軸改為顯示當月 30 天，橫條位置正確依比例重新計算：通過（vision 驗證兩筆任務橫條像素寬度比例 392/143≈2.74，與實際天數比例 11/4=2.75 高度吻合）。
+4. 點擊某筆任務的標題，確認 `TaskDrawer` 正確開啟且「預計完成日期」欄位正確帶入既有值：通過。
+5. 額外建立一筆沒有填 `dueDate` 的任務，確認該任務不出現在甘特圖清單中（因 `tasksWithDueDate` 過濾邏輯排除）：通過。
+6. 清理所有測試任務，確認種子資料維持 10 筆：通過。
+7. 額外發現並修正：`GanttView` 用 shorthand fragment `<>` 包裹兩個需要 key 的元素，導致 React console 出現「Each child in a list should have a unique key prop」警告；改用具名 `<Fragment key={task.id}>` 修正，修正後瀏覽器 console 確認無此警告。
+8. 確認 `/done` 頁面（獨立元件樹）不受本次改動影響：通過。
+9. `npm run lint` 確認乾淨，僅剩既有 2 個 pre-existing warning（`server/index.mjs` 的 `next` 參數未使用、`TaskDrawer.tsx` 的 effect 內 setState），無新增警告。
+10. 用既有（未刪除重建）的本機 SQLite 資料庫檔案驗證 `due_date` migration：透過 `PRAGMA table_info(tasks)` 確認欄位已正確加入（`14|due_date|TEXT|0||0`），且過程中任務筆數維持 10 筆不變，未遺失既有資料。
 
-- [ ] **Step 11：Commit**
+- [x] **Step 11：Commit**
 
 ```bash
 git add server/db.mjs server/taskRepository.mjs server/index.mjs src/types/task.ts src/components/TaskDrawer.tsx src/components/GanttView.tsx src/App.tsx
@@ -895,11 +899,11 @@ git commit -m "feat: add due date field and gantt view with week/month granulari
 
 **介面：** 無（純文件任務）。
 
-- [ ] **Step 1：更新 `README.md`**
+- [x] **Step 1：更新 `README.md`**
 
 新增章節說明：搜尋（只搜標題，前端即時過濾）、標籤篩選（複選、OR 邏輯、與搜尋 AND 組合）、列表視圖（表格呈現，點擊列開編輯）、甘特圖（需填寫「預計完成日期」才會顯示橫條，週/月檢視切換）。更新資料模型章節，補充 `Task.dueDate` 欄位說明；更新 API 端點/`CREATABLE_FIELDS` 說明。
 
-- [ ] **Step 2：最終整分支 review**
+- [x] **Step 2：最終整分支 review**
 
 - 確認 `src/` 沒有新增 `dangerouslySetInnerHTML`/`innerHTML`/`eval`。
 - 執行 `npx tsc -b` 與 `npm run lint`，確認皆乾淨（無新增錯誤/警告；既有的 2 個 pre-existing warning 不算新增）。

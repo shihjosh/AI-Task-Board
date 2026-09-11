@@ -8,7 +8,7 @@
 - ✅ **Phase 2**：任務 CRUD + SQLite 後端持久化，資料不再因重新整理而消失
 - ✅ Phase 3：任務詳情（Markdown 描述、留言系統）
 - ✅ Phase 4：Hermes Agent 自動化執行（卡片拖到「處理中」時背景觸發 Hermes agent 動手執行任務）
-- ⏳ Phase 5（可選）：多視圖（列表 / 甘特圖）、標籤篩選、搜尋
+- ✅ Phase 5（可選）：多視圖（列表 / 甘特圖）、標籤篩選、搜尋
 - ⏳ Phase 6（可選）：即時多人同步（SSE/WebSocket）
 
 詳見分期規劃與功能盤點：[docs/superpowers/specs/2026-09-07-phase2-sqlite-backend-design.md](docs/superpowers/specs/2026-09-07-phase2-sqlite-backend-design.md)
@@ -89,6 +89,32 @@
 - **即時進度回報**：若任務描述包含明確的執行步驟（例如「Step 1」「Step 2」等清單），Hermes 子代理在執行過程中會被要求每完成一個步驟就呼叫 `PATCH /api/tasks/:id` 即時更新 `progress` 欄位。這是 prompt 層級的軟性指示，不保證子代理一定會照做——若未回報，`progress` 就不會變化，但不影響任務本身的執行與最終完成狀態。
 - **已知限制**：`hermes` CLI 是在**執行 API server 的主機**上執行，並非在 app 的 Docker 容器內執行。此功能目前僅適用於直接在有安裝 `hermes` CLI 的主機上以 `npm run dev:server` / `npm start` 執行 API server，尚未接上 Dockerized 部署路徑（`docker compose up`）。
 
+## 搜尋、標籤篩選、多視圖（Phase 5）
+
+看板主頁面（`/` 路由）的 Toolbar 新增以下功能，`/done` 頁面不受影響：
+
+### 搜尋
+
+點擊 Toolbar 上的搜尋圖示展開輸入框並自動 focus，輸入關鍵字即時過濾——只比對任務**標題**（不含描述、留言），前端純過濾，不呼叫額外的後端 API。清空輸入框或點擊 X 即恢復顯示全部任務並收合輸入框。
+
+### 標籤篩選
+
+點擊 Toolbar 上的篩選圖示彈出面板，可複選標籤（GitHub / Issue / BUG / PR），已選標籤之間為 **OR** 關係（符合任一標籤即顯示），與搜尋關鍵字之間為 **AND** 關係（兩者同時符合才顯示）。已選標籤數量會顯示在篩選圖示右上角的徽章。
+
+### 多視圖
+
+Toolbar 上「議題看板」「列表視圖」「甘特圖」三個分頁互斥切換（「Dashboard」目前仍為靜態按鈕，無對應視圖）：
+
+- **議題看板**：預設視圖，即原有的三欄拖拉看板。
+- **列表視圖**：表格形式，一列一筆任務，欄位為標題／欄位／優先級／負責人，**攤平顯示全部任務**（含「已完成」狀態，與看板範圍不同），不可拖拉，點擊列開啟 `TaskDrawer` 編輯。
+- **甘特圖**：橫軸為日期（可切換「週檢視」/「月檢視」），縱軸為任務清單，每筆任務畫出一條從**建立日期**到**預計完成日期**的橫條。**只顯示已填寫「預計完成日期」的任務**，沒有此欄位的任務不會出現在甘特圖中。點擊橫條或任務標題可開啟 `TaskDrawer` 編輯。純 CSS Grid + Tailwind 手刻，未引入第三方甘特圖套件。
+
+三者可同時併用（例如：先用標籤篩選縮小範圍，再切到列表視圖搜尋）。
+
+### 預計完成日期（`dueDate`）
+
+`TaskDrawer` 新增「預計完成日期」欄位（原生 `<input type="date">`，選填），僅供甘特圖使用，不影響看板/列表視圖的顯示或既有欄位驗證規則。
+
 ## API（Phase 2 起）
 
 ```
@@ -111,7 +137,7 @@ GET    /api/tasks/:taskId/automation-runs   取得指定任務的所有 Hermes �
 - `description` 若提供，長度不可超過 50000 字元
 - 留言 `content` 長度不可超過 5000 字元，且不可為空白
 - 請求 body 大小上限為 1MB，超過回 `413`
-- `POST`/`PATCH` 皆採白名單方式只接受既定欄位（`title, priority, tags, assignees, progress, commentCount, hasUnread, columnId, description, targetPath, automationStatus`），多餘欄位（如客戶端夾帶的 `id`）會被忽略，不會覆蓋伺服器產生的值
+- `POST`/`PATCH` 皆採白名單方式只接受既定欄位（`title, priority, tags, assignees, progress, commentCount, hasUnread, columnId, description, targetPath, automationStatus, dueDate`），多餘欄位（如客戶端夾帶的 `id`）會被忽略，不會覆蓋伺服器產生的值
 - 找不到指定 `id` 的 `PATCH`/`DELETE` 回 `404`
 - 未預期的伺服器錯誤統一回 `500`（不含 stack trace，詳細錯誤僅記錄於伺服器端 console）
 
