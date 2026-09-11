@@ -2,6 +2,7 @@ import { Plus, LayoutGrid } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import SearchBox from './SearchBox'
 import TagFilterPanel from './TagFilterPanel'
+import ThemeToggle from './ThemeToggle'
 import type { TagType } from '../types/task'
 
 const tabs: { id: 'dashboard' | 'board' | 'list' | 'gantt'; label: string }[] = [
@@ -42,6 +43,7 @@ export default function Toolbar({
       </div>
 
       <div className="flex items-center gap-1 overflow-x-auto rounded-lg bg-slate-100 p-1">
+        <ThemeToggle />
         {tabs.map((tab) => (
           <button
             key={tab.id}
