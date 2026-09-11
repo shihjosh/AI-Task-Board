@@ -14,7 +14,7 @@ export default function SearchBox({ value, onChange }: SearchBoxProps) {
       <button
         type="button"
         onClick={() => setIsExpanded(true)}
-        className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+        className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-300"
         aria-label="搜尋"
       >
         <Search size={16} />
@@ -23,15 +23,15 @@ export default function SearchBox({ value, onChange }: SearchBoxProps) {
   }
 
   return (
-    <div className="flex items-center gap-1 rounded-lg border border-slate-300 px-2 py-1">
-      <Search size={14} className="text-slate-400" />
+    <div className="flex items-center gap-1 rounded-lg border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-800">
+      <Search size={14} className="text-slate-400 dark:text-slate-500" />
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="搜尋任務標題…"
         autoFocus
-        className="w-32 text-sm outline-none sm:w-48"
+        className="w-32 text-sm outline-none sm:w-48 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
       />
       <button
         type="button"
@@ -39,7 +39,7 @@ export default function SearchBox({ value, onChange }: SearchBoxProps) {
           onChange('')
           setIsExpanded(false)
         }}
-        className="text-slate-400 hover:text-slate-600"
+        className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
         aria-label="清除搜尋"
       >
         <X size={14} />

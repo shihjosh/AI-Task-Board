@@ -115,6 +115,16 @@ Toolbar 上「議題看板」「列表視圖」「甘特圖」三個分頁互斥
 
 `TaskDrawer` 新增「預計完成日期」欄位（原生 `<input type="date">`，選填），僅供甘特圖使用，不影響看板/列表視圖的顯示或既有欄位驗證規則。
 
+## 明亮 / 黑暗模式
+
+Toolbar 左側（與「議題看板／列表視圖／甘特圖」分頁同列）提供一個太陽／月亮圖示的手動切換按鈕：
+
+- 純手動切換，**不**跟隨作業系統的 `prefers-color-scheme` 偏好設定。
+- 選擇的主題會存到瀏覽器 `localStorage`（key: `theme`），重新整理頁面後會維持上次選擇；未選過時預設為明亮模式。
+- 全站生效：議題看板、列表視圖、甘特圖、已完成頁（`/done`）、`TaskDrawer`（含留言、執行紀錄分頁）、搜尋框、標籤篩選面板皆會跟隨切換。
+- 技術實作：`src/contexts/ThemeContext.tsx` 提供 `ThemeProvider`/`useTheme()`，切換時對 `<html>` 加/移除 `dark` class；Tailwind CSS v4 透過 `src/index.css` 的 `@custom-variant dark (&:where(.dark, .dark *));` 讓 `dark:` utility class 依 class（而非 media query）生效。
+- `TaskDrawer` 的 Markdown 預覽區已安裝 `@tailwindcss/typography` plugin（`src/index.css` 的 `@plugin "@tailwindcss/typography";`），標題、清單、code block、表格在明亮/黑暗模式下皆有正確的框線與底色樣式（`.prose.dark:prose-invert`）。
+
 ## API（Phase 2 起）
 
 ```

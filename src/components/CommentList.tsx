@@ -93,34 +93,34 @@ export default function CommentList({ taskId }: CommentListProps) {
 
   return (
     <div className="mb-6">
-      <span className="mb-2 block text-sm font-medium text-slate-600">留言</span>
+      <span className="mb-2 block text-sm font-medium text-slate-600 dark:text-slate-300">留言</span>
 
       {error && (
-        <div className="mb-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{error}</div>
+        <div className="mb-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">{error}</div>
       )}
 
       {isLoading ? (
-        <p className="text-sm text-slate-400">載入留言中…</p>
+        <p className="text-sm text-slate-400 dark:text-slate-500">載入留言中…</p>
       ) : comments.length === 0 ? (
-        <p className="text-sm text-slate-400">尚無留言</p>
+        <p className="text-sm text-slate-400 dark:text-slate-500">尚無留言</p>
       ) : (
         <ul className="mb-3 space-y-2">
           {comments.map((comment) => (
-            <li key={comment.id} className="rounded-md border border-slate-200 px-3 py-2 text-sm">
+            <li key={comment.id} className="rounded-md border border-slate-200 px-3 py-2 text-sm dark:border-slate-700">
               {editingId === comment.id ? (
                 <div>
                   <textarea
                     value={editingContent}
                     onChange={(e) => setEditingContent(e.target.value)}
                     rows={3}
-                    className="mb-2 w-full rounded-md border border-slate-300 px-2 py-1 text-sm"
+                    className="mb-2 w-full rounded-md border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:focus:border-sky-500 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-sky-500"
                   />
                   <div className="flex justify-end gap-2">
                     <button
                       type="button"
                       onClick={cancelEdit}
                       disabled={isSubmitting}
-                      className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-slate-500 hover:bg-slate-100"
+                      className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700"
                     >
                       <X size={13} /> 取消
                     </button>
@@ -128,7 +128,7 @@ export default function CommentList({ taskId }: CommentListProps) {
                       type="button"
                       onClick={() => handleSaveEdit(comment.id)}
                       disabled={isSubmitting}
-                      className="flex items-center gap-1 rounded-md bg-slate-900 px-2 py-1 text-xs text-white hover:bg-slate-800"
+                      className="flex items-center gap-1 rounded-md bg-slate-900 px-2 py-1 text-xs text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-300"
                     >
                       <Check size={13} /> 儲存
                     </button>
@@ -137,8 +137,8 @@ export default function CommentList({ taskId }: CommentListProps) {
               ) : (
                 <div>
                   <div className="mb-1 flex items-center justify-between">
-                    <span className="font-medium text-slate-700">{AUTHOR_NAME}</span>
-                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                    <span className="font-medium text-slate-700 dark:text-slate-200">{AUTHOR_NAME}</span>
+                    <div className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500">
                       <span>
                         {formatTimestamp(comment.createdAt)}
                         {comment.updatedAt !== comment.createdAt ? '（已編輯）' : ''}
@@ -146,7 +146,7 @@ export default function CommentList({ taskId }: CommentListProps) {
                       <button
                         type="button"
                         onClick={() => startEdit(comment)}
-                        className="text-slate-400 hover:text-slate-600"
+                        className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
                         aria-label="編輯留言"
                       >
                         <Pencil size={13} />
@@ -154,14 +154,14 @@ export default function CommentList({ taskId }: CommentListProps) {
                       <button
                         type="button"
                         onClick={() => handleDelete(comment.id)}
-                        className="text-slate-400 hover:text-red-500"
+                        className="text-slate-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400"
                         aria-label="刪除留言"
                       >
                         <Trash2 size={13} />
                       </button>
                     </div>
                   </div>
-                  <p className="whitespace-pre-wrap text-slate-600">{comment.content}</p>
+                  <p className="whitespace-pre-wrap text-slate-600 dark:text-slate-300">{comment.content}</p>
                 </div>
               )}
             </li>
@@ -175,13 +175,13 @@ export default function CommentList({ taskId }: CommentListProps) {
           onChange={(e) => setNewContent(e.target.value)}
           rows={2}
           placeholder="新增留言…"
-          className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm"
+          className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-sky-500 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-sky-500"
         />
         <button
           type="button"
           onClick={handleAdd}
           disabled={isSubmitting || !newContent.trim()}
-          className="self-end rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+          className="self-end rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-300"
         >
           送出
         </button>

@@ -139,40 +139,40 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/30 dark:bg-black/50" onClick={onClose} />
       <form
         onSubmit={handleSubmit}
-        className="relative flex h-full w-full max-w-3xl flex-col overflow-y-auto bg-white p-6 shadow-xl"
+        className="relative flex h-full w-full max-w-3xl flex-col overflow-y-auto bg-white p-6 shadow-xl dark:bg-slate-800"
       >
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-800">
+          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
             {mode === 'create' ? '新增任務' : '編輯任務'}
           </h2>
-          <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600">
+          <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300">
             <X size={20} />
           </button>
         </div>
 
         {error && (
-          <div className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{error}</div>
+          <div className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">{error}</div>
         )}
 
         <label className="mb-3 block text-sm">
-          <span className="mb-1 block font-medium text-slate-600">標題 *</span>
+          <span className="mb-1 block font-medium text-slate-600 dark:text-slate-300">標題 *</span>
           <input
             type="text"
             value={form.title}
             onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-sky-500 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-sky-500"
           />
         </label>
 
         <label className="mb-3 block text-sm">
-          <span className="mb-1 block font-medium text-slate-600">優先級</span>
+          <span className="mb-1 block font-medium text-slate-600 dark:text-slate-300">優先級</span>
           <select
             value={form.priority}
             onChange={(e) => setForm((p) => ({ ...p, priority: e.target.value as Priority }))}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:focus:border-sky-500 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-sky-500"
           >
             {PRIORITY_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -183,11 +183,11 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
         </label>
 
         <label className="mb-3 block text-sm">
-          <span className="mb-1 block font-medium text-slate-600">欄位</span>
+          <span className="mb-1 block font-medium text-slate-600 dark:text-slate-300">欄位</span>
           <select
             value={form.columnId}
             onChange={(e) => setForm((p) => ({ ...p, columnId: e.target.value as ColumnId }))}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:focus:border-sky-500 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-sky-500"
           >
             {COLUMN_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -198,14 +198,15 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
         </label>
 
         <div className="mb-3 text-sm">
-          <span className="mb-1 block font-medium text-slate-600">標籤</span>
+          <span className="mb-1 block font-medium text-slate-600 dark:text-slate-300">標籤</span>
           <div className="flex flex-wrap gap-2">
             {TAG_OPTIONS.map((tag) => (
-              <label key={tag.type} className="flex items-center gap-1.5 text-xs">
+              <label key={tag.type} className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300">
                 <input
                   type="checkbox"
                   checked={form.tagTypes.includes(tag.type)}
                   onChange={() => toggleTag(tag.type)}
+                  className="dark:accent-sky-500"
                 />
                 {tag.label}
               </label>
@@ -214,14 +215,15 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
         </div>
 
         <div className="mb-3 text-sm">
-          <span className="mb-1 block font-medium text-slate-600">負責人</span>
+          <span className="mb-1 block font-medium text-slate-600 dark:text-slate-300">負責人</span>
           <div className="flex flex-wrap gap-2">
             {ASSIGNEE_OPTIONS.map((a) => (
-              <label key={a.id} className="flex items-center gap-1.5 text-xs">
+              <label key={a.id} className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300">
                 <input
                   type="checkbox"
                   checked={form.assigneeIds.includes(a.id)}
                   onChange={() => toggleAssignee(a.id)}
+                  className="dark:accent-sky-500"
                 />
                 {a.name}
               </label>
@@ -230,29 +232,29 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
         </div>
 
         <label className="mb-6 block text-sm">
-          <span className="mb-1 block font-medium text-slate-600">進度（0-100，可留空）</span>
+          <span className="mb-1 block font-medium text-slate-600 dark:text-slate-300">進度（0-100，可留空）</span>
           <input
             type="number"
             min={0}
             max={100}
             value={form.progress}
             onChange={(e) => setForm((p) => ({ ...p, progress: e.target.value }))}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:focus:border-sky-500 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-sky-500"
           />
         </label>
 
         <label className="mb-6 block text-sm">
-          <span className="mb-1 block font-medium text-slate-600">預計完成日期（選填，甘特圖使用）</span>
+          <span className="mb-1 block font-medium text-slate-600 dark:text-slate-300">預計完成日期（選填，甘特圖使用）</span>
           <input
             type="date"
             value={form.dueDate}
             onChange={(e) => setForm((p) => ({ ...p, dueDate: e.target.value }))}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:[color-scheme:dark] dark:focus:border-sky-500 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-sky-500"
           />
         </label>
 
         <label className="mb-6 block text-sm">
-          <span className="mb-1 block font-medium text-slate-600">
+          <span className="mb-1 block font-medium text-slate-600 dark:text-slate-300">
             自動執行目錄（選填，絕對路徑；填寫後拖到「處理中」會觸發 Hermes 自動執行）
           </span>
           <input
@@ -260,10 +262,10 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
             value={form.targetPath}
             onChange={(e) => setForm((p) => ({ ...p, targetPath: e.target.value }))}
             placeholder="/home/ubuntu/some-project"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-sm"
+            className="w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-sky-500 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-sky-500"
           />
           {mode === 'edit' && initialTask?.automationStatus && initialTask.automationStatus !== 'idle' && (
-            <span className="mt-1 block text-xs text-slate-400">
+            <span className="mt-1 block text-xs text-slate-400 dark:text-slate-500">
               目前自動執行狀態：
               {initialTask.automationStatus === 'running' && '執行中'}
               {initialTask.automationStatus === 'done' && '已完成'}
@@ -273,15 +275,15 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
         </label>
 
         <div className="mb-6">
-          <span className="mb-1 block text-sm font-medium text-slate-600">描述（Markdown）</span>
-          <div className="mb-2 flex gap-1 border-b border-slate-200">
+          <span className="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">描述（Markdown）</span>
+          <div className="mb-2 flex gap-1 border-b border-slate-200 dark:border-slate-700">
             <button
               type="button"
               onClick={() => setDescriptionTab('edit')}
               className={`px-3 py-1.5 text-sm font-medium ${
                 descriptionTab === 'edit'
-                  ? 'border-b-2 border-slate-900 text-slate-900'
-                  : 'text-slate-400 hover:text-slate-600'
+                  ? 'border-b-2 border-slate-900 text-slate-900 dark:border-slate-100 dark:text-slate-100'
+                  : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300'
               }`}
             >
               編輯
@@ -291,8 +293,8 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
               onClick={() => setDescriptionTab('preview')}
               className={`px-3 py-1.5 text-sm font-medium ${
                 descriptionTab === 'preview'
-                  ? 'border-b-2 border-slate-900 text-slate-900'
-                  : 'text-slate-400 hover:text-slate-600'
+                  ? 'border-b-2 border-slate-900 text-slate-900 dark:border-slate-100 dark:text-slate-100'
+                  : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300'
               }`}
             >
               預覽
@@ -304,14 +306,14 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
               onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
               rows={8}
               placeholder="支援 Markdown 語法（標題、清單、表格、程式碼區塊等）"
-              className="w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-sm"
+              className="w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-sky-500 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-sky-500"
             />
           ) : (
-            <div className="min-h-[12rem] rounded-md border border-slate-200 bg-slate-50 px-3 py-2 overflow-y-auto text-sm">
+            <div className="prose prose-sm prose-slate dark:prose-invert min-h-[12rem] max-w-none rounded-md border border-slate-200 bg-slate-50 px-3 py-2 overflow-y-auto text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
               {form.description.trim() ? (
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{form.description}</ReactMarkdown>
               ) : (
-                <span className="text-slate-400">預覽區（尚無內容）</span>
+                <span className="text-slate-400 dark:text-slate-500">預覽區（尚無內容）</span>
               )}
             </div>
           )}
@@ -319,14 +321,14 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
 
         {mode === 'edit' && initialTask && (
           <div className="mb-6">
-            <div className="mb-2 flex gap-1 border-b border-slate-200">
+            <div className="mb-2 flex gap-1 border-b border-slate-200 dark:border-slate-700">
               <button
                 type="button"
                 onClick={() => setBottomTab('comments')}
                 className={`px-3 py-1.5 text-sm font-medium ${
                   bottomTab === 'comments'
-                    ? 'border-b-2 border-slate-900 text-slate-900'
-                    : 'text-slate-400 hover:text-slate-600'
+                    ? 'border-b-2 border-slate-900 text-slate-900 dark:border-slate-100 dark:text-slate-100'
+                    : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300'
                 }`}
               >
                 留言
@@ -336,13 +338,13 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
                 onClick={() => setBottomTab('automation')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium ${
                   bottomTab === 'automation'
-                    ? 'border-b-2 border-slate-900 text-slate-900'
-                    : 'text-slate-400 hover:text-slate-600'
+                    ? 'border-b-2 border-slate-900 text-slate-900 dark:border-slate-100 dark:text-slate-100'
+                    : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300'
                 }`}
               >
                 執行紀錄
                 {initialTask.automationStatus === 'running' && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-sky-500" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-sky-500 dark:bg-sky-400" />
                 )}
               </button>
             </div>
@@ -360,7 +362,7 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
               type="button"
               onClick={handleDelete}
               disabled={isSubmitting}
-              className="flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+              className="flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30"
             >
               <Trash2 size={15} />
               刪除
@@ -371,14 +373,14 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="rounded-md px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-100"
+              className="rounded-md px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700"
             >
               取消
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+              className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-300"
             >
               {mode === 'create' ? '建立' : '儲存'}
             </button>

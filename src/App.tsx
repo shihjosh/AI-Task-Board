@@ -186,7 +186,7 @@ function Board() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-sm text-slate-400">
+      <div className="flex min-h-screen items-center justify-center bg-white text-sm text-slate-400 dark:bg-slate-900">
         載入任務中…
       </div>
     )
@@ -194,14 +194,14 @@ function Board() {
 
   if (loadError) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-sm text-red-500">
+      <div className="flex min-h-screen items-center justify-center bg-white text-sm text-red-500 dark:bg-slate-900">
         載入失敗：{loadError}
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-white">
+    <div className="flex min-h-screen flex-col bg-white dark:bg-slate-900">
       <Toolbar
         onAddTask={openCreateDrawer}
         doneCount={tasksByColumn.done.length}
@@ -212,7 +212,7 @@ function Board() {
         activeView={activeView}
         onViewChange={setActiveView}
       />
-      <main className="flex-1 overflow-x-auto bg-slate-50 px-6 py-5">
+      <main className="flex-1 overflow-x-auto bg-slate-50 px-6 py-5 dark:bg-slate-900">
         {activeView === 'board' && (
           <DndContext
             sensors={sensors}
@@ -242,8 +242,8 @@ function Board() {
                     onClick={() => setMobileActiveColumnId(column.id)}
                     className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium transition ${
                       mobileActiveColumnId === column.id
-                        ? 'bg-slate-900 text-white'
-                        : 'bg-slate-100 text-slate-500'
+                        ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
+                        : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
                     }`}
                   >
                     {column.title} ({tasksByColumn[column.id].length})
