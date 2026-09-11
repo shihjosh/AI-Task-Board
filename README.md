@@ -123,7 +123,7 @@ Toolbar 左側（與「議題看板／列表視圖／甘特圖」分頁同列）
 - 選擇的主題會存到瀏覽器 `localStorage`（key: `theme`），重新整理頁面後會維持上次選擇；未選過時預設為明亮模式。
 - 全站生效：議題看板、列表視圖、甘特圖、已完成頁（`/done`）、`TaskDrawer`（含留言、執行紀錄分頁）、搜尋框、標籤篩選面板皆會跟隨切換。
 - 技術實作：`src/contexts/ThemeContext.tsx` 提供 `ThemeProvider`/`useTheme()`，切換時對 `<html>` 加/移除 `dark` class；Tailwind CSS v4 透過 `src/index.css` 的 `@custom-variant dark (&:where(.dark, .dark *));` 讓 `dark:` utility class 依 class（而非 media query）生效。
-- 已知限制（非本次改動範圍）：`TaskDrawer` 的 Markdown 預覽區因專案未安裝 `@tailwindcss/typography` plugin，code block 與表格在明亮/黑暗模式下皆缺少框線與底色樣式，屬既有限制。
+- `TaskDrawer` 的 Markdown 預覽區已安裝 `@tailwindcss/typography` plugin（`src/index.css` 的 `@plugin "@tailwindcss/typography";`），標題、清單、code block、表格在明亮/黑暗模式下皆有正確的框線與底色樣式（`.prose.dark:prose-invert`）。
 
 ## API（Phase 2 起）
 
