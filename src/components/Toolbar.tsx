@@ -38,7 +38,7 @@ export default function Toolbar({
         <LayoutGrid size={18} className="text-slate-400" />
         <span className="text-sm font-medium text-slate-500">AI Task Board</span>
         <span className="text-slate-300">/</span>
-        <span className="text-sm font-semibold text-slate-800">codex-taskboard</span>
+        <span className="text-sm font-semibold text-slate-800">my-taskboard</span>
       </div>
 
       <div className="flex items-center gap-1 overflow-x-auto rounded-lg bg-slate-100 p-1">
