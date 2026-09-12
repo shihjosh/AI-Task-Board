@@ -25,6 +25,7 @@ const CREATABLE_FIELDS = [
   'description',
   'targetPath',
   'automationStatus',
+  'automationSkill',
   'dueDate',
 ]
 
