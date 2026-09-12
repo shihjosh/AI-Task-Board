@@ -26,7 +26,7 @@
 
 ---
 
-## Task 1：資料庫 schema 擴充 + repository 層擴充
+## Task 1：資料庫 schema 擴充 + repository 層擴充 ✅ 完成（commit c02df79..d6c9c8c，review clean）
 
 **Files:**
 - Modify: `server/db.mjs`
@@ -45,7 +45,7 @@
   - `updateAutomationRun(id, { status, output, error, worktreePath, worktreeBranch })` 簽名擴充，接受 `worktreePath`/`worktreeBranch`
   - `createTask`/`updateTask` 支援讀寫 `automationSkill` 欄位（比照現有 `targetPath` 的處理方式）
 
-- [ ] **Step 1: 在 `server/db.mjs` 新增四個欄位的 migration guard**
+- [x] **Step 1: 在 `server/db.mjs` 新增四個欄位的 migration guard**
 
 在既有 `hasDueDate` 判斷區塊之後（第 55 行 `}` 之後），加入：
 
@@ -74,7 +74,7 @@
   }
 ```
 
-- [ ] **Step 2: 驗證 migration 在新舊兩種資料庫檔案上都正確**
+- [x] **Step 2: 驗證 migration 在新舊兩種資料庫檔案上都正確**
 
 ```bash
 cp .data/taskboard.sqlite /tmp/taskboard.sqlite.pre-task1.bak 2>/dev/null || echo "no existing db yet, skip backup"
@@ -86,7 +86,7 @@ sqlite3 .data/taskboard.sqlite "PRAGMA table_info(automation_runs);" | grep -E "
 
 Expected: 四個欄位皆出現在對應的 `PRAGMA table_info` 輸出中，且若之前有資料，`SELECT COUNT(*) FROM tasks` 前後筆數不變。
 
-- [ ] **Step 3: 修改 `server/automationRunRepository.mjs`**
+- [x] **Step 3: 修改 `server/automationRunRepository.mjs`**
 
 `rowToRun` 函式（第 4-15 行）加入新欄位：
 
@@ -162,7 +162,7 @@ export function appendAutomationRunOutput(id, chunk) {
 }
 ```
 
-- [ ] **Step 4: 修改 `server/taskRepository.mjs` 支援 `automationSkill`**
+- [x] **Step 4: 修改 `server/taskRepository.mjs` 支援 `automationSkill`**
 
 `rowToTask`（第 4-22 行）加入一行：`automationSkill: row.automation_skill || undefined,`
 
@@ -170,7 +170,7 @@ export function appendAutomationRunOutput(id, chunk) {
 
 `updateTask` 的 `merged` 物件（第 64-78 行）加入 `automationSkill: patch.automationSkill ?? existing.automation_skill,`；UPDATE 語句（第 80-84 行）加入 `automation_skill=@automationSkill`
 
-- [ ] **Step 5: 修改 `src/types/task.ts`**
+- [x] **Step 5: 修改 `src/types/task.ts`**
 
 `Task` interface（第 19-34 行）加入：
 
@@ -186,7 +186,7 @@ export function appendAutomationRunOutput(id, chunk) {
   worktreeBranch?: string
 ```
 
-- [ ] **Step 6: 手動驗證 repository 層**
+- [x] **Step 6: 手動驗證 repository 層**
 
 ```bash
 node -e "
@@ -203,7 +203,7 @@ import('./server/automationRunRepository.mjs').then(async (m) => {
 
 Expected: 印出的 `created` 物件含 `skill: 'test-skill'`；`updated` 物件的 `output` 為 `'hello world'`、`worktreePath: '/tmp/wt'`、`worktreeBranch: 'task/abc'`。手動用 `sqlite3 .data/taskboard.sqlite "DELETE FROM automation_runs WHERE task_id = 'test-task-id'"` 清除測試資料。
 
-- [ ] **Step 7: 驗證與提交**
+- [x] **Step 7: 驗證與提交**
 
 ```bash
 npx tsc -b
@@ -216,7 +216,7 @@ Expected: `tsc -b` 與 `lint` 皆無新錯誤（既有的 3 個既知 warning �
 
 ---
 
-## Task 2：`GET /api/skills` endpoint
+## Task 2：`GET /api/skills` endpoint ✅ 完成（commit d6c9c8c..5e17c98，review clean）
 
 **Files:**
 - Create: `server/skillsRepository.mjs`
@@ -228,7 +228,7 @@ Expected: `tsc -b` 與 `lint` 皆無新錯誤（既有的 3 個既知 warning �
   - `skillsRepository.mjs` 匯出 `listAvailableSkills()`，回傳 `string[]`（skill 名稱清單，已排序、去重）
   - `GET /api/skills` 回傳 `{ skills: string[] }`
 
-- [ ] **Step 1: 建立 `server/skillsRepository.mjs`**
+- [x] **Step 1: 建立 `server/skillsRepository.mjs`**
 
 ```js
 import fs from 'node:fs'
@@ -263,7 +263,7 @@ export function listAvailableSkills() {
 }
 ```
 
-- [ ] **Step 2: 手動驗證掃描邏輯**
+- [x] **Step 2: 手動驗證掃描邏輯**
 
 ```bash
 node -e "import('./server/skillsRepository.mjs').then(m => console.log(m.listAvailableSkills()))"
@@ -271,7 +271,7 @@ node -e "import('./server/skillsRepository.mjs').then(m => console.log(m.listAva
 
 Expected: 印出一個字串陣列，內含目前環境已安裝的 skill 名稱（例如 `ai-task-board-ops`、`hermes-agent` 等），無重複、已排序。
 
-- [ ] **Step 3: 在 `server/index.mjs` 掛上 route**
+- [x] **Step 3: 在 `server/index.mjs` 掛上 route**
 
 在檔案頂部 import 區塊（第 8 行 `import { listAutomationRuns } ...` 之後）加入：
 
@@ -287,7 +287,7 @@ app.get('/api/skills', (req, res) => {
 })
 ```
 
-- [ ] **Step 4: 啟動 server 並用 curl 驗證 endpoint**
+- [x] **Step 4: 啟動 server 並用 curl 驗證 endpoint**
 
 ```bash
 node server/index.mjs &
@@ -298,7 +298,7 @@ kill %1
 
 Expected: 回傳 `{"skills":[...]}`，陣列內容與 Step 2 手動測試結果一致。
 
-- [ ] **Step 5: 驗證與提交**
+- [x] **Step 5: 驗證與提交**
 
 ```bash
 npx tsc -b
@@ -309,7 +309,7 @@ git -c user.name="josh" -c user.email="shihjosh@users.noreply.github.com" commit
 
 ---
 
-## Task 3：`automationRunner.mjs` 改用 `-w` + `-s` + 即時串流輸出
+## Task 3：`automationRunner.mjs` 改用 `-w` + `-s` + 即時串流輸出 ✅ 完成（commit 5e17c98..077be8a，review clean）
 
 **Files:**
 - Modify: `server/automationRunner.mjs`
@@ -318,7 +318,7 @@ git -c user.name="josh" -c user.email="shihjosh@users.noreply.github.com" commit
 - Consumes：Task 1 的 `appendAutomationRunOutput(id, chunk)`、`createAutomationRun(taskId, { prompt, skill })`、`updateAutomationRun(id, { status, output, error, worktreePath, worktreeBranch })`；`task.automationSkill`（Task 1 的 `Task` 欄位）
 - Produces：`triggerAutomation(task)` 簽名不變（呼叫端 `server/index.mjs` 不需修改）
 
-- [ ] **Step 1: 修改 import 與 `runOne` 函式**
+- [x] **Step 1: 修改 import 與 `runOne` 函式**
 
 第 1 行的 import 改為（新增 `spawnSync`）：
 
@@ -424,7 +424,7 @@ function pushWorktreeBranch(worktreeInfo) {
 }
 ```
 
-- [ ] **Step 2: 修改 `finishSuccess`/`finishFailed` 接受 worktree 資訊**
+- [x] **Step 2: 修改 `finishSuccess`/`finishFailed` 接受 worktree 資訊**
 
 第 98-108 行整段改為：
 
@@ -451,7 +451,7 @@ function finishFailed(task, run, reason, worktreeInfo = {}) {
 
 注意：`triggerAutomation` 函式內（第 124-142 行）呼叫 `finishFailed(task, run, ...)` 的兩處（`targetPath` 不存在的分支，第 126-131 行的 `updateAutomationRun` 是直接呼叫，非透過 `finishFailed`）維持原樣不用改，因為那個分支從未 spawn 過程序，沒有 worktree 資訊可言。
 
-- [ ] **Step 3: 驗證 `extractWorktreeInfo` 與 `pushWorktreeBranch` 的邏輯（無需真的 spawn hermes）**
+- [x] **Step 3: 驗證 `extractWorktreeInfo` 與 `pushWorktreeBranch` 的邏輯（無需真的 spawn hermes）**
 
 ```bash
 node -e "
@@ -481,7 +481,7 @@ rm -rf /tmp/push-test-repo
 
 Expected: `status` 非 `0`（因為沒有設定 `origin` remote），`stderr` 含類似 `'origin' does not appear to be a git repository` 的訊息，證實失敗會被 `pushWorktreeBranch` 正確捕捉為 `pushed: false` 而不是讓整個 `finishSuccess` 拋出例外。
 
-- [ ] **Step 4: 驗證失敗路徑（不會真的 spawn hermes，安全）**
+- [x] **Step 4: 驗證失敗路徑（不會真的 spawn hermes，安全）**
 
 ```bash
 node -e "
@@ -496,7 +496,7 @@ sqlite3 .data/taskboard.sqlite "DELETE FROM automation_runs WHERE task_id = 'tes
 
 Expected: `status = 'failed'`，`error` 含 `targetPath「/nonexistent/path」不存在或未設定`。清除測試資料。
 
-- [ ] **Step 5: 驗證與提交**
+- [x] **Step 5: 驗證與提交**
 
 ```bash
 npx tsc -b
@@ -507,7 +507,7 @@ git -c user.name="josh" -c user.email="shihjosh@users.noreply.github.com" commit
 
 ---
 
-## Task 4：`server/index.mjs` 白名單更新 + `CREATABLE_FIELDS`
+## Task 4：`server/index.mjs` 白名單更新 + `CREATABLE_FIELDS` ✅ 完成（commit 757b93c，controller-verified，review clean）
 
 **Files:**
 - Modify: `server/index.mjs`
@@ -516,7 +516,7 @@ git -c user.name="josh" -c user.email="shihjosh@users.noreply.github.com" commit
 - Consumes：Task 1 的 `Task.automationSkill`
 - Produces：POST/PATCH `/api/tasks` 現在會接受並持久化 `automationSkill` 欄位
 
-- [ ] **Step 1: 在 `CREATABLE_FIELDS` 加入 `automationSkill`**
+- [x] **Step 1: 在 `CREATABLE_FIELDS` 加入 `automationSkill`**
 
 第 15-28 行的 `CREATABLE_FIELDS` 陣列，在 `'automationStatus',` 之後加入一行：
 
@@ -524,7 +524,7 @@ git -c user.name="josh" -c user.email="shihjosh@users.noreply.github.com" commit
   'automationSkill',
 ```
 
-- [ ] **Step 2: curl 驗證欄位可寫入並回傳**
+- [x] **Step 2: curl 驗證欄位可寫入並回傳**
 
 ```bash
 node server/index.mjs &
@@ -535,7 +535,7 @@ kill %1
 
 Expected: 回傳的 `task` 物件中 `automationSkill` 為 `"ai-task-board-ops"`。手動用 `curl -X DELETE http://localhost:3001/api/tasks/<回傳的id>` 清除測試資料（需先重新啟動 server 才能再次呼叫 API）。
 
-- [ ] **Step 3: 驗證與提交**
+- [x] **Step 3: 驗證與提交**
 
 ```bash
 npx tsc -b
@@ -546,7 +546,7 @@ git -c user.name="josh" -c user.email="shihjosh@users.noreply.github.com" commit
 
 ---
 
-## Task 5：前端 —— Skill 選單 API client + TaskDrawer 整合 + AutomationRunList 輪詢
+## Task 5：前端 —— Skill 選單 API client + TaskDrawer 整合 + AutomationRunList 輪詢 ✅ 完成（commit 757b93c..266a122，review clean）
 
 **Files:**
 - Create: `src/lib/skillsApi.ts`
@@ -557,7 +557,7 @@ git -c user.name="josh" -c user.email="shihjosh@users.noreply.github.com" commit
 - Consumes：`GET /api/skills`（Task 2）、`Task.automationSkill`（Task 1）、`AutomationRun.skill/worktreePath/worktreeBranch`（Task 1）
 - Produces：`fetchAvailableSkills(): Promise<string[]>`（供 `TaskDrawer` 使用）
 
-- [ ] **Step 1: 建立 `src/lib/skillsApi.ts`**
+- [x] **Step 1: 建立 `src/lib/skillsApi.ts`**
 
 ```ts
 async function handle<T>(res: Response): Promise<T> {
@@ -575,7 +575,7 @@ export async function fetchAvailableSkills(): Promise<string[]> {
 }
 ```
 
-- [ ] **Step 2: 修改 `TaskDrawer.tsx` —— 加入 skill 下拉選單**
+- [x] **Step 2: 修改 `TaskDrawer.tsx` —— 加入 skill 下拉選單**
 
 `emptyFormState`（第 19-29 行）加入一行：`automationSkill: '' as string,`
 
@@ -621,7 +621,7 @@ export async function fetchAvailableSkills(): Promise<string[]> {
 
 需要在檔案頂部 import 區塊加入：`import { fetchAvailableSkills } from '../lib/skillsApi'`
 
-- [ ] **Step 3: 修改 `AutomationRunList.tsx` —— 對 running 狀態輪詢**
+- [x] **Step 3: 修改 `AutomationRunList.tsx` —— 對 running 狀態輪詢**
 
 在既有的 `useEffect`（第 26-29 行）之後，新增一個獨立的輪詢 `useEffect`：
 
@@ -646,7 +646,7 @@ export async function fetchAvailableSkills(): Promise<string[]> {
             )}
 ```
 
-- [ ] **Step 4: 驗證與提交**
+- [x] **Step 4: 驗證與提交**
 
 ```bash
 npx tsc -b
