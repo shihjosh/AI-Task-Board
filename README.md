@@ -73,14 +73,16 @@
   - 「執行紀錄」頁籤唯讀顯示該任務所有 Hermes 自動執行紀錄（見下方「Hermes Agent 自動化執行」章節），若有執行中的紀錄，頁籤旁會顯示小圓點提示
 - 新增任務（尚未建立）時不會顯示這兩組頁籤，需先建立任務後才能使用
 
-## Hermes Agent 自動化執行（Phase 4）
+## Hermes Agent 自動化執行（Phase 4，Worktree 隔離升級見下方）
 
-- 每張任務卡可選填「自動執行目錄」（`targetPath`，絕對路徑），指向本機某個專案/repo。
-- 當卡片被拖曳（或 PATCH）使 `columnId` 從其他狀態變為 `in_progress`，且該卡已填 `targetPath` 時，後端會在該目錄下背景 spawn 一個 `hermes chat -q` 子程序，根據卡片標題與描述實際動手執行任務。
+- 每張任務卡可選填「自動執行目錄」（`targetPath`，絕對路徑），指向本機某個專案/repo；也可選填「自動執行使用的 Skill」（`automationSkill`），對應 Hermes CLI 的 `-s` 參數，未選則由 Hermes agent 自行判斷要用哪個 skill。
+- 當卡片被拖曳（或 PATCH）使 `columnId` 從其他狀態變為 `in_progress`，且該卡已填 `targetPath` 時，後端會在該目錄下背景 spawn 一個 `hermes chat -q ... -w --cli [-s <skill>]` 子程序，根據卡片標題與描述實際動手執行任務。
+- **Git worktree 隔離**：`-w` 讓每次執行在該 repo 下自動建立獨立的 git worktree + 分支，不會在原始工作目錄留下未 commit 的變更或分支切換副作用。**此 worktree 會在 Hermes session 結束時被自動清除**（連同該分支的本機參照），因此後端無法在程序結束後才對該路徑執行 `git push`——push 改為寫進 prompt，指示 Hermes agent 在完成任務、commit 變更之後、結束對話之前，自己於 worktree 內執行 `git push -u origin <當前分支>`。若目標 repo 沒有設定 `origin` remote 或 push 失敗，agent 會在最終回覆中說明原因，`automationStatus` 仍視為 `done`（因為 agent 執行本身成功），使用者可從執行紀錄的輸出內容得知是否需要自己手動處理。**不會自動開 PR**，開 PR 與 merge 一律由使用者自行在 GitHub 網頁進行。
 - `automationStatus` 狀態機：`idle → running → done | failed`
   - `done`：執行成功（exit code 0），卡片自動移到「等你確認」（`review`）欄位。
   - `failed`：非 0 結束代碼、逾時，或 `targetPath` 無效／不存在，卡片停留在原欄位，**不會**自動移到 `review`。
-- 每次自動執行的完整過程（prompt、輸出、錯誤、開始/結束時間）都記錄在獨立的 `automation_runs` 資料表，透過 TaskDrawer 的「執行紀錄」頁籤查看，**不會**寫入留言（`comments`），避免與使用者手動留言混雜。
+- 每次自動執行的完整過程（prompt、輸出、錯誤、開始/結束時間、使用的 skill、偵測到的 worktree 路徑/分支名稱）都記錄在獨立的 `automation_runs` 資料表，透過 TaskDrawer 的「執行紀錄」頁籤查看，**不會**寫入留言（`comments`），避免與使用者手動留言混雜。
+- **即時輸出**：執行過程中的 stdout 會邊產生邊即時寫回資料庫（非等程序結束才一次性寫入）；TaskDrawer 執行紀錄頁籤只要偵測到任一筆紀錄仍是 `running` 狀態，就會每 2 秒自動輪詢刷新，接近即時顯示 Hermes 目前的輸出內容。
 - 執行中的卡片在看板上會顯示旋轉圖示與「Hermes 執行中」文字。
 - **重複觸發防護**：`automationStatus` 為 `running` 時，再次拖回 `in_progress`會被靜默忽略，不會產生第二個程序。
 - **逾時**：每次執行上限 15 分鐘，超過會被強制中止並視為失敗。
