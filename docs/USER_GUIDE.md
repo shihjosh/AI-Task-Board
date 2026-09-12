@@ -1,5 +1,7 @@
 # AI Task Board 操作手冊
 
+繁體中文 | [English](USER_GUIDE.en.md)
+
 這份手冊教你怎麼「使用」這個看板來管理任務——不需要懂程式碼。如果你要安裝或部署這個專案，請看 [README.md](../README.md)。
 
 ## 目錄

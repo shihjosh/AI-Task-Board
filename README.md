@@ -1,5 +1,7 @@
 # AI Task Board
 
+繁體中文 | [English](README.en.md)
+
 一個結合傳統 Kanban 看板與 AI Agent 自動執行能力的任務管理工具：可以用它排程、追蹤任務，也可以直接把某張任務卡交給 [Hermes Agent](https://github.com/NousResearch/hermes-agent) 在隔離的 git worktree 中自動動手完成。
 
 - 📋 三欄看板（等待認領／處理中／等你確認）+ 已完成頁面，支援拖拉、手機版
@@ -130,7 +132,8 @@ GET    /api/skills                          取得可用的 Hermes skill 名稱�
 ```
 AI-Task-Board/
 ├── docs/
-│   ├── USER_GUIDE.md          一般使用者操作手冊
+│   ├── USER_GUIDE.md            一般使用者操作手冊（繁中）
+│   ├── USER_GUIDE.en.md         一般使用者操作手冊（英文）
 │   ├── spec.md
 │   └── superpowers/            開發過程的 spec/plan 存檔
 ├── server/
