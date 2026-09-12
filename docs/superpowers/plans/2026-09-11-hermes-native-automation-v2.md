@@ -659,7 +659,7 @@ Expected: `tsc -b` 通過（`Task.automationSkill`/`AutomationRun.skill` 等新�
 
 ---
 
-## Task 6：端對端驗證 + README 更新
+## Task 6：端對端驗證 + README 更新 ✅ 完成（commit cb210b1, 8da9277；真實 spawn 端對端驗證發現 -w worktree 會在 session 結束時自動清除，原本設計的 post-exit spawnSync push 邏輯永遠會失敗，已修正為透過 prompt 指示 Hermes agent 自己在 session 內完成 push，並用真實 remote 重新驗證通過）
 
 **Files:**
 - Modify: `README.md`
@@ -667,13 +667,13 @@ Expected: `tsc -b` 通過（`Task.automationSkill`/`AutomationRun.skill` 等新�
 **Interfaces:**
 - Consumes：Task 1-5 全部（本 Task 純驗證與文件，不新增程式碼介面）
 
-- [ ] **Step 1: 瀏覽器實機驗證 —— skill 下拉選單**
+- [x] **Step 1: 瀏覽器實機驗證 —— skill 下拉選單**
 
 啟動 `npm run dev`，`browser_navigate` 開啟看板，開啟任一任務的 `TaskDrawer`，確認：
 1. 「自動執行使用的 Skill」下拉選單有選項（至少包含 `ai-task-board-ops`）
 2. 選一個 skill、填入合法的 `targetPath`、儲存後重新打開該任務，確認選單記住剛剛選的 skill
 
-- [ ] **Step 2: 端對端驗證 —— 真實 spawn（需要使用者明確同意，比照既有 Testing code that spawns the Hermes CLI 慣例）**
+- [x] **Step 2: 端對端驗證 —— 真實 spawn（需要使用者明確同意，比照既有 Testing code that spawns the Hermes CLI 慣例）**
 
 用 `clarify` 詢問使用者是否同意讓這次驗證真的 spawn 一個 `hermes chat -q ... -w --cli` 子程序（會在指定的 `targetPath` 建立一個真實的 git worktree）。取得同意後：
 
@@ -687,14 +687,14 @@ Expected: `tsc -b` 通過（`Task.automationSkill`/`AutomationRun.skill` 等新�
 8. 若設定了可寫入的測試 remote：確認該分支已出現在 remote 上（`git ls-remote origin <分支名稱>` 有輸出），且 `automationStatus` 為 `done`、`automation_runs.error` 為空。若刻意用「無 remote」情境測試：確認 `automationStatus` 仍為 `done`，但 `automation_runs.error` 含「push 失敗」相關訊息
 9. 清理：`git worktree remove <路徑> --force` 移除測試 worktree，若有推送到測試 remote 也記得刪除該分支，刪除 `/tmp/e2e-test-repo`，並用 `DELETE /api/tasks/:id` 刪除測試任務與其自動化紀錄
 
-- [ ] **Step 3: 更新 README**
+- [x] **Step 3: 更新 README**
 
 在「Hermes Agent 自動化執行（Phase 4）」章節（約第 76-90 行）中：
 1. 在「每次自動執行的完整過程...」那一行之後補充：即時輸出現在會邊執行邊寫入，TaskDrawer 執行紀錄頁籤對執行中的紀錄每 2 秒自動刷新一次
 2. 在「已知限制」那一行之前新增一段，說明現在改用 `hermes chat -q ... -w --cli [-s <skill>]`：`-w` 讓每次執行在該 repo 下建立獨立 git worktree + 分支，不會污染原始工作目錄；執行成功後會自動 `git push` 該分支到 origin（**不會自動開 PR**），由使用者自行決定何時在 GitHub 網頁開 PR、merge；若目標 repo 沒有設定 remote 或 push 失敗，`automationStatus` 仍為 `done`（agent 執行本身成功），但執行紀錄的 `error` 欄位會記錄 push 失敗原因，需要使用者自行手動 push
 3. 補充：每張任務卡可選填「自動執行使用的 Skill」，對應 `-s` 參數；下拉選單選項來自後端掃描 `~/.hermes/skills` 目錄，未選則由 Hermes agent 自行判斷要用哪個 skill（與 Phase 4 原始行為一致）
 
-- [ ] **Step 4: 最終提交**
+- [x] **Step 4: 最終提交**
 
 ```bash
 npx tsc -b
