@@ -1,7 +1,7 @@
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import { updateTask } from './taskRepository.mjs'
-import { createAutomationRun, updateAutomationRun } from './automationRunRepository.mjs'
+import { createAutomationRun, updateAutomationRun, appendAutomationRunOutput } from './automationRunRepository.mjs'
 
 const MAX_CONCURRENT = 1
 const TIMEOUT_MS = 15 * 60 * 1000 // 15 分鐘
@@ -47,11 +47,17 @@ function runOne(task) {
   updateTask(task.id, { automationStatus: 'running' })
 
   const prompt = buildPrompt(task)
-  const run = createAutomationRun(task.id, { prompt })
+  const skill = task.automationSkill?.trim() || undefined
+  const run = createAutomationRun(task.id, { prompt, skill })
+
+  const args = ['chat', '-q', prompt, '-w', '--cli']
+  if (skill) {
+    args.push('-s', skill)
+  }
 
   let child
   try {
-    child = spawn('hermes', ['chat', '-q', prompt, '--cli'], {
+    child = spawn('hermes', args, {
       cwd: task.targetPath,
       detached: true,
     })
@@ -70,7 +76,9 @@ function runOne(task) {
   }, TIMEOUT_MS)
 
   child.stdout.on('data', (chunk) => {
-    stdout += chunk.toString()
+    const text = chunk.toString()
+    stdout += text
+    appendAutomationRunOutput(run.id, text)
   })
   child.stderr.on('data', (chunk) => {
     stderr += chunk.toString()
@@ -83,26 +91,60 @@ function runOne(task) {
 
   child.on('exit', (code) => {
     clearTimeout(timer)
+    const worktreeInfo = extractWorktreeInfo(stdout)
     if (timedOut) {
-      finishFailed(task, run, `執行逾時（超過 ${TIMEOUT_MS / 60000} 分鐘），已強制中止`)
+      finishFailed(task, run, `執行逾時（超過 ${TIMEOUT_MS / 60000} 分鐘），已強制中止`, worktreeInfo)
       return
     }
     if (code === 0) {
-      finishSuccess(task, run, stdout)
+      finishSuccess(task, run, stdout, worktreeInfo)
     } else {
-      finishFailed(task, run, `Hermes 程序結束代碼非 0（exit code ${code}）：\n${stderr.slice(-2000)}`)
+      finishFailed(task, run, `Hermes 程序結束代碼非 0（exit code ${code}）：\n${stderr.slice(-2000)}`, worktreeInfo)
     }
   })
 }
 
-function finishSuccess(task, run, output) {
-  updateAutomationRun(run.id, { status: 'done', output })
+function extractWorktreeInfo(stdout) {
+  // Hermes -w 模式在輸出中會提及所建立的 worktree 路徑與分支名稱；
+  // 若未來 Hermes 版本改變輸出格式，此處抓不到時回傳空物件，不影響主流程。
+  const pathMatch = stdout.match(/worktree[:\s]+([^\s\n]+)/i)
+  const branchMatch = stdout.match(/branch[:\s]+([^\s\n]+)/i)
+  return {
+    worktreePath: pathMatch?.[1],
+    worktreeBranch: branchMatch?.[1],
+  }
+}
+
+function pushWorktreeBranch(worktreeInfo) {
+  if (!worktreeInfo.worktreePath || !worktreeInfo.worktreeBranch) {
+    return { pushed: false, reason: '未偵測到 worktree 路徑或分支名稱，略過 push' }
+  }
+  const result = spawnSync('git', ['push', '-u', 'origin', worktreeInfo.worktreeBranch], {
+    cwd: worktreeInfo.worktreePath,
+    encoding: 'utf-8',
+  })
+  if (result.error || result.status !== 0) {
+    const reason = result.error?.message || result.stderr || `git push 結束代碼 ${result.status}`
+    return { pushed: false, reason }
+  }
+  return { pushed: true }
+}
+
+function finishSuccess(task, run, output, worktreeInfo = {}) {
+  let error
+  if (worktreeInfo.worktreePath && worktreeInfo.worktreeBranch) {
+    const pushResult = pushWorktreeBranch(worktreeInfo)
+    if (!pushResult.pushed) {
+      error = `Hermes 執行成功，但 worktree 分支 push 失敗：${pushResult.reason}`
+    }
+  }
+  updateAutomationRun(run.id, { status: 'done', output, error, ...worktreeInfo })
   updateTask(task.id, { automationStatus: 'done', columnId: 'review' })
   onSlotFreed()
 }
 
-function finishFailed(task, run, reason) {
-  updateAutomationRun(run.id, { status: 'failed', error: reason })
+function finishFailed(task, run, reason, worktreeInfo = {}) {
+  updateAutomationRun(run.id, { status: 'failed', error: reason, ...worktreeInfo })
   updateTask(task.id, { automationStatus: 'failed' })
   onSlotFreed()
 }
