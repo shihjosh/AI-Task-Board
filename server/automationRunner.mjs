@@ -1,4 +1,4 @@
-import { spawn, spawnSync } from 'node:child_process'
+import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import { updateTask } from './taskRepository.mjs'
 import { createAutomationRun, updateAutomationRun, appendAutomationRunOutput } from './automationRunRepository.mjs'
@@ -30,6 +30,12 @@ function buildPrompt(task) {
     '',
     '請根據上述標題與描述實際動手執行任務（修改程式碼、執行指令等），完成後清楚說明做了哪些變更；',
     '若無法完成或被阻塞，請明確說明原因與卡住的地方。',
+    '',
+    '你目前在一個由 --worktree 建立的隔離 git worktree 中工作，此 worktree 會在你的 session 結束時被自動清除。',
+    '因此，在你完成任務並 commit 變更之後、結束整個對話之前，請務必執行以下指令把你所在的分支推送到 origin',
+    '（若該 repo 沒有設定 origin remote 或 push 失敗，請在最終回覆中明確說明失敗原因，不需要因此視為任務失敗）：',
+    '',
+    '  git push -u origin $(git branch --show-current)',
     '',
     '若上述任務描述包含明確的執行步驟（例如「Step 1」「Step 2」等清單），請在完成每一個步驟後，',
     '立即執行以下指令回報進度（將 <百分比整數> 換成實際數字，例如完成 2 個 step、共 5 個 step，則填 40）：',
@@ -105,40 +111,23 @@ function runOne(task) {
 }
 
 function extractWorktreeInfo(stdout) {
-  // Hermes -w 模式在輸出中會提及所建立的 worktree 路徑與分支名稱；
-  // 若未來 Hermes 版本改變輸出格式，此處抓不到時回傳空物件，不影響主流程。
-  const pathMatch = stdout.match(/worktree[:\s]+([^\s\n]+)/i)
-  const branchMatch = stdout.match(/branch[:\s]+([^\s\n]+)/i)
+  // Hermes -w 模式在輸出開頭會印出建立的 worktree 路徑與分支名稱，格式例如：
+  //   ✓ Worktree created: /path/to/repo/.worktrees/hermes-xxxxx
+  //     Branch: hermes/hermes-xxxxx
+  // 注意：該 worktree 會在 Hermes session 結束時被自動清除，此處記錄的資訊僅供
+  // automation_runs 顯示參考，不代表 worktree 目錄在程序結束後仍然存在——
+  // 因此後端不會、也不能對此路徑執行任何 git 操作（例如 push），push 已改為
+  // 在 buildPrompt() 裡指示 Hermes agent 自己在 session 結束前於 worktree 內完成。
+  const pathMatch = stdout.match(/Worktree created:\s*([^\s\n]+)/i)
+  const branchMatch = stdout.match(/Branch:\s*([^\s\n]+)/i)
   return {
     worktreePath: pathMatch?.[1],
     worktreeBranch: branchMatch?.[1],
   }
 }
 
-function pushWorktreeBranch(worktreeInfo) {
-  if (!worktreeInfo.worktreePath || !worktreeInfo.worktreeBranch) {
-    return { pushed: false, reason: '未偵測到 worktree 路徑或分支名稱，略過 push' }
-  }
-  const result = spawnSync('git', ['push', '-u', 'origin', worktreeInfo.worktreeBranch], {
-    cwd: worktreeInfo.worktreePath,
-    encoding: 'utf-8',
-  })
-  if (result.error || result.status !== 0) {
-    const reason = result.error?.message || result.stderr || `git push 結束代碼 ${result.status}`
-    return { pushed: false, reason }
-  }
-  return { pushed: true }
-}
-
 function finishSuccess(task, run, output, worktreeInfo = {}) {
-  let error
-  if (worktreeInfo.worktreePath && worktreeInfo.worktreeBranch) {
-    const pushResult = pushWorktreeBranch(worktreeInfo)
-    if (!pushResult.pushed) {
-      error = `Hermes 執行成功，但 worktree 分支 push 失敗：${pushResult.reason}`
-    }
-  }
-  updateAutomationRun(run.id, { status: 'done', output, error, ...worktreeInfo })
+  updateAutomationRun(run.id, { status: 'done', output, ...worktreeInfo })
   updateTask(task.id, { automationStatus: 'done', columnId: 'review' })
   onSlotFreed()
 }
