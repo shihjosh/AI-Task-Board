@@ -6,6 +6,7 @@ import { listTasks, createTask, updateTask, deleteTask } from './taskRepository.
 import { listComments, createComment, updateComment, deleteComment } from './commentRepository.mjs'
 import { triggerAutomation } from './automationRunner.mjs'
 import { listAutomationRuns } from './automationRunRepository.mjs'
+import { listAvailableSkills } from './skillsRepository.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const distDir = path.join(__dirname, '..', 'dist')
@@ -114,6 +115,10 @@ app.get('/api/tasks/:taskId/comments', (req, res) => {
 
 app.get('/api/tasks/:taskId/automation-runs', (req, res) => {
   res.json({ runs: listAutomationRuns(req.params.taskId) })
+})
+
+app.get('/api/skills', (req, res) => {
+  res.json({ skills: listAvailableSkills() })
 })
 
 app.post('/api/tasks/:taskId/comments', (req, res) => {
