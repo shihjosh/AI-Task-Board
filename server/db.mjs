@@ -54,6 +54,11 @@ export function getDb() {
     db.exec(`ALTER TABLE tasks ADD COLUMN due_date TEXT`)
   }
 
+  const hasAutomationSkill = taskColumns.some((col) => col.name === 'automation_skill')
+  if (!hasAutomationSkill) {
+    db.exec(`ALTER TABLE tasks ADD COLUMN automation_skill TEXT NOT NULL DEFAULT ''`)
+  }
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS comments (
       id TEXT PRIMARY KEY,
@@ -78,6 +83,20 @@ export function getDb() {
       FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
     )
   `)
+
+  const runColumns = db.prepare('PRAGMA table_info(automation_runs)').all()
+  const hasWorktreePath = runColumns.some((col) => col.name === 'worktree_path')
+  if (!hasWorktreePath) {
+    db.exec(`ALTER TABLE automation_runs ADD COLUMN worktree_path TEXT NOT NULL DEFAULT ''`)
+  }
+  const hasWorktreeBranch = runColumns.some((col) => col.name === 'worktree_branch')
+  if (!hasWorktreeBranch) {
+    db.exec(`ALTER TABLE automation_runs ADD COLUMN worktree_branch TEXT NOT NULL DEFAULT ''`)
+  }
+  const hasRunSkill = runColumns.some((col) => col.name === 'skill')
+  if (!hasRunSkill) {
+    db.exec(`ALTER TABLE automation_runs ADD COLUMN skill TEXT NOT NULL DEFAULT ''`)
+  }
 
   // SQLite 預設不強制外鍵約束，需要每個連線手動開啟才會啟用 CASCADE
   db.pragma('foreign_keys = ON')

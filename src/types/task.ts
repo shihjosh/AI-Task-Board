@@ -31,6 +31,7 @@ export interface Task {
   automationStatus: 'idle' | 'running' | 'done' | 'failed'
   createdAt: string
   dueDate?: string // 預計完成日期，YYYY-MM-DD 格式，選填，甘特圖使用
+  automationSkill?: string // 自動執行時要預載的 Hermes skill 名稱，選填
 }
 
 export interface Comment {
@@ -50,6 +51,9 @@ export interface AutomationRun {
   error?: string
   startedAt: string
   finishedAt?: string
+  skill?: string
+  worktreePath?: string
+  worktreeBranch?: string
 }
 
 export interface Column {
