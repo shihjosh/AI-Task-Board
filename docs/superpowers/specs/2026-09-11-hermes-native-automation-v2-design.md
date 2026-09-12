@@ -20,10 +20,13 @@
    ```
    `-w` 會在該 repo 內自動建立隔離的 git worktree + 專屬分支，執行完成後該分支保留在
    worktree 目錄下（不會自動 merge、不會自動開 PR）。
-2. **worktree 分支後續處理**：執行完成只需確保分支存在且可被使用者自行檢視/push/merge，
-   **不自動開 PR**（沿用既有「PR 由使用者自己在 GitHub 網頁開」的專案慣例）。
-   若 `-w` 建立的 worktree 分支尚未推到 remote，`automation_runs` 記錄裡要能讓使用者知道
-   分支名稱與 worktree 路徑，方便他自己去處理。
+2. **worktree 分支後續處理**：執行成功（`automationStatus: done`）後，`automationRunner.mjs`
+   自動對該 worktree 分支執行 `git push`（設定 upstream 到 origin），**但不自動開 PR**
+   （沿用既有「PR 由使用者自己在 GitHub 網頁開」的專案慣例），由使用者自行決定何時
+   merge。若目標 repo 沒有設定 remote，或 push 失敗（例如網路問題、權限問題），視為
+   非致命錯誤：仍標記 `automationStatus: done`（agent 執行本身成功），但在
+   `automation_runs.error` 記錄 push 失敗原因，讓使用者知道要自己手動 push。
+   `automation_runs` 記錄需保留分支名稱與 worktree 路徑，方便使用者查找。
 3. **Skill 選擇**：每張任務卡新增「自動執行使用的 skill」欄位（選填），前端在 TaskDrawer
    提供下拉選單。選項來源：後端新增 `GET /api/skills` endpoint，掃描
    `~/.hermes/skills/<category>/<name>/SKILL.md` 取得可用 skill 名稱清單（不 parse
