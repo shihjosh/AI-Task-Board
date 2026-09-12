@@ -5,6 +5,7 @@ import remarkGfm from 'remark-gfm'
 import type { Task, Priority, ColumnId, TagType } from '../types/task'
 import { TAG_OPTIONS, ASSIGNEE_OPTIONS, PRIORITY_OPTIONS, COLUMN_OPTIONS } from '../data/options'
 import { createTaskApi, updateTaskApi, deleteTaskApi } from '../lib/api'
+import { fetchAvailableSkills } from '../lib/skillsApi'
 import CommentList from './CommentList'
 import AutomationRunList from './AutomationRunList'
 
@@ -26,6 +27,7 @@ const emptyFormState = {
   description: '',
   targetPath: '',
   dueDate: '',
+  automationSkill: '' as string,
 }
 
 export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved }: TaskDrawerProps) {
@@ -34,6 +36,7 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
   const [error, setError] = useState<string | null>(null)
   const [descriptionTab, setDescriptionTab] = useState<'edit' | 'preview'>('edit')
   const [bottomTab, setBottomTab] = useState<'comments' | 'automation'>('comments')
+  const [availableSkills, setAvailableSkills] = useState<string[]>([])
 
   useEffect(() => {
     if (!isOpen) return
@@ -48,6 +51,7 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
         description: initialTask.description ?? '',
         targetPath: initialTask.targetPath ?? '',
         dueDate: initialTask.dueDate ?? '',
+        automationSkill: initialTask.automationSkill ?? '',
       })
     } else {
       setForm(emptyFormState)
@@ -56,6 +60,10 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
     setDescriptionTab('edit')
     setBottomTab('comments')
   }, [isOpen, mode, initialTask])
+
+  useEffect(() => {
+    fetchAvailableSkills().then(setAvailableSkills).catch(() => setAvailableSkills([]))
+  }, [])
 
   if (!isOpen) return null
 
@@ -95,6 +103,7 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
       commentCount: initialTask?.commentCount ?? 0,
       hasUnread: initialTask?.hasUnread ?? false,
       dueDate: form.dueDate || undefined,
+      automationSkill: form.automationSkill || undefined,
     }
   }
 
@@ -272,6 +281,24 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
               {initialTask.automationStatus === 'failed' && '失敗'}
             </span>
           )}
+        </label>
+
+        <label className="mb-6 block text-sm">
+          <span className="mb-1 block font-medium text-slate-600 dark:text-slate-300">
+            自動執行使用的 Skill（選填，未選則由 Hermes 自行判斷）
+          </span>
+          <select
+            value={form.automationSkill}
+            onChange={(e) => setForm((p) => ({ ...p, automationSkill: e.target.value }))}
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:focus:border-sky-500 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-sky-500"
+          >
+            <option value="">（不指定）</option>
+            {availableSkills.map((skill) => (
+              <option key={skill} value={skill}>
+                {skill}
+              </option>
+            ))}
+          </select>
         </label>
 
         <div className="mb-6">
