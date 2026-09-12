@@ -18,6 +18,7 @@ function rowToTask(row) {
     targetPath: row.target_path,
     automationStatus: row.automation_status,
     dueDate: row.due_date ?? undefined,
+    automationSkill: row.automation_skill || undefined,
   }
 }
 
@@ -33,8 +34,8 @@ export function createTask(input) {
   const id = input.id ?? randomUUID()
 
   db.prepare(
-    `INSERT INTO tasks (id, title, description, priority, tags, assignees, progress, comment_count, has_unread, column_id, created_at, updated_at, target_path, automation_status, due_date)
-     VALUES (@id, @title, @description, @priority, @tags, @assignees, @progress, @commentCount, @hasUnread, @columnId, @createdAt, @updatedAt, @targetPath, @automationStatus, @dueDate)`,
+    `INSERT INTO tasks (id, title, description, priority, tags, assignees, progress, comment_count, has_unread, column_id, created_at, updated_at, target_path, automation_status, due_date, automation_skill)
+     VALUES (@id, @title, @description, @priority, @tags, @assignees, @progress, @commentCount, @hasUnread, @columnId, @createdAt, @updatedAt, @targetPath, @automationStatus, @dueDate, @automationSkill)`,
   ).run({
     id,
     title: input.title,
@@ -51,6 +52,7 @@ export function createTask(input) {
     targetPath: input.targetPath ?? '',
     automationStatus: input.automationStatus ?? 'idle',
     dueDate: input.dueDate ?? null,
+    automationSkill: input.automationSkill ?? '',
   })
 
   return rowToTask(db.prepare('SELECT * FROM tasks WHERE id = ?').get(id))
@@ -75,12 +77,13 @@ export function updateTask(id, patch) {
     targetPath: patch.targetPath ?? existing.target_path,
     automationStatus: patch.automationStatus ?? existing.automation_status,
     dueDate: patch.dueDate !== undefined ? patch.dueDate : existing.due_date,
+    automationSkill: patch.automationSkill ?? existing.automation_skill,
   }
 
   db.prepare(
     `UPDATE tasks SET title=@title, description=@description, priority=@priority, tags=@tags, assignees=@assignees,
      progress=@progress, comment_count=@commentCount, has_unread=@hasUnread,
-     column_id=@columnId, updated_at=@updatedAt, target_path=@targetPath, automation_status=@automationStatus, due_date=@dueDate WHERE id=@id`,
+     column_id=@columnId, updated_at=@updatedAt, target_path=@targetPath, automation_status=@automationStatus, due_date=@dueDate, automation_skill=@automationSkill WHERE id=@id`,
   ).run({ ...merged, id })
 
   return rowToTask(db.prepare('SELECT * FROM tasks WHERE id = ?').get(id))

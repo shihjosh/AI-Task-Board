@@ -28,6 +28,14 @@ export default function AutomationRunList({ taskId }: AutomationRunListProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [taskId])
 
+  useEffect(() => {
+    const hasRunning = runs.some((r) => r.status === 'running')
+    if (!hasRunning) return
+    const interval = setInterval(load, 2000)
+    return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runs])
+
   function load() {
     setIsLoading(true)
     fetchAutomationRuns(taskId)
@@ -65,6 +73,13 @@ export default function AutomationRunList({ taskId }: AutomationRunListProps) {
                 {run.finishedAt ? ` ～ ${formatTimestamp(run.finishedAt)}` : ''}
               </span>
             </div>
+            {(run.skill || run.worktreeBranch) && (
+              <p className="mb-1 text-xs text-slate-400 dark:text-slate-500">
+                {run.skill && `skill: ${run.skill}`}
+                {run.skill && run.worktreeBranch && ' · '}
+                {run.worktreeBranch && `worktree branch: ${run.worktreeBranch}`}
+              </p>
+            )}
             {run.error && <p className="whitespace-pre-wrap text-red-600 dark:text-red-400">{run.error}</p>}
             {run.output && (
               <details className="mt-1">
