@@ -23,7 +23,7 @@
 
 ## Task 清單
 
-- [ ] Task 1：在 `server/index.mjs` 加入 Basic Auth middleware
+- [x] Task 1：在 `server/index.mjs` 加入 Basic Auth middleware
   - 讀取 `process.env.AUTH_USER` / `process.env.AUTH_PASS`
   - 若兩者皆未設定：放行並印一次警告（僅開機時印一次，不要每個
     request 都印）
@@ -34,17 +34,17 @@
   - 帳密比對使用 `crypto.timingSafeEqual`（注意兩個 Buffer 長度需相同，
     否則要先判斷長度避免丟例外）
 
-- [ ] Task 2：Docker / 環境變數配置
+- [x] Task 2：Docker / 環境變數配置
   - `docker-compose.yml` 新增 `env_file: .env`
   - 新增 `.env.example`，內容為 `AUTH_USER=` / `AUTH_PASS=` 附註解說明
   - 確認 `.env` 已在 `.gitignore`（若沒有則加入）
 
-- [ ] Task 3：文件更新
+- [x] Task 3：文件更新
   - README.md / README.en.md 補充「首次部署請設定 `.env` 帳密」的
     安裝步驟
   - 提醒使用者密碼建議用高強度亂數字串
 
-- [ ] Task 4：驗證
+- [x] Task 4：驗證
   - 本機啟動時不設 `AUTH_USER`/`AUTH_PASS` → 確認可正常存取（開發
     模式不受影響）且有印出警告 log
   - 設定 `AUTH_USER`/`AUTH_PASS` 後：
@@ -54,4 +54,4 @@
   - `docker compose build && docker compose up` 起服務後，用 curl 驗證
     上述行為在容器內同樣成立
 
-- [ ] Task 5：Plan checkbox 全部打勾後單獨 commit
+- [x] Task 5：Plan checkbox 全部打勾後單獨 commit
