@@ -12,6 +12,8 @@
 
 完整操作說明另見 **[docs/USER_GUIDE.md](docs/USER_GUIDE.md)**（給不需要懂程式碼的一般使用者）。本檔案聚焦在安裝、開發、部署。
 
+![AI Task Board 看板畫面](docs/images/task_board.webp)
+
 ---
 
 ## 安裝

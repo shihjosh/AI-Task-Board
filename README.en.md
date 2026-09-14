@@ -12,6 +12,8 @@ A task management tool that combines a traditional Kanban board with AI agent au
 
 For the full walkthrough, see **[docs/USER_GUIDE.en.md](docs/USER_GUIDE.en.md)** (written for non-technical users). This file focuses on install, development, and deployment.
 
+![AI Task Board screenshot](docs/images/task_board.webp)
+
 ---
 
 ## Installation
