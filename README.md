@@ -50,11 +50,26 @@ npm run dev
 
 ### 用 Docker 部署
 
+**⚠️ 部署前請先設定登入帳密。** 這個服務預設不對外做任何身份驗證，一旦部署到
+非 localhost 的環境（公網、內網共用主機等），任何知道網址的人都能讀寫所有
+任務資料。請先建立 `.env`：
+
+```bash
+cp .env.example .env
+# 編輯 .env，設定 AUTH_USER 與高強度密碼 AUTH_PASS（建議：openssl rand -base64 24）
+```
+
+若 `.env` 中的 `AUTH_USER` / `AUTH_PASS` 留空，伺服器會停用驗證並在啟動 log
+印出警告——僅適合在完全本機、無對外風險的開發情境使用。
+
 ```bash
 docker compose up -d --build
 ```
 
-服務啟動後可於 `http://localhost:8088` 存取（前端頁面與 `/api/*` 由同一個 port 提供，單一 Node service，不需要額外 nginx）。SQLite 資料庫存放在 named volume `taskboard-data:/app/.data`，container 重啟/重建後資料不會遺失。
+服務啟動後可於 `http://localhost:8088` 存取，瀏覽器會跳出帳號密碼輸入框
+（HTTP Basic Auth）。前端頁面與 `/api/*` 由同一個 port 提供，單一 Node
+service，不需要額外 nginx。SQLite 資料庫存放在 named volume
+`taskboard-data:/app/.data`，container 重啟/重建後資料不會遺失。
 
 **首次啟動後灌入種子資料：**
 
