@@ -5,6 +5,9 @@ services:
       dockerfile: Dockerfile
     image: ai-task-board:latest
     container_name: ai-task-board
+    env_file:
+      - path: .env
+        required: false
     ports:
       - "8088:8088"
     volumes:
