@@ -167,4 +167,4 @@ AI-Task-Board/
 
 ## 授權
 
-Private project.
+本專案採用 [MIT License](./LICENSE) 授權。

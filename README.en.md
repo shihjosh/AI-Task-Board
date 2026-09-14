@@ -166,4 +166,4 @@ Board design inspired by [dashi-taskboard](https://github.com/chuspeeism/dashi-t
 
 ## License
 
-Private project.
+This project is licensed under the [MIT License](./LICENSE).
