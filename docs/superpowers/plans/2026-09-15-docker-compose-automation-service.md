@@ -110,7 +110,7 @@ Nous Research 官方 `nousresearch/hermes-agent` image，taskboard 透過 HTTP �
   - `automation` 不對外曝露 port（不加 `ports:` 區塊），只給同 network 內
     的 `taskboard` 呼叫
 
-- [ ] Task 4：更新 `.env.example` 與 README
+- [x] Task 4：更新 `.env.example` 與 README
   - `.env.example` 加入註解說明 `AUTOMATION_URL` / `TASKBOARD_URL` 為
     docker compose 內部使用，本機非 docker 開發模式不需設定（沿用
     `automationRunner.mjs` 的預設值）
