@@ -119,23 +119,38 @@ Nous Research 官方 `nousresearch/hermes-agent` image，taskboard 透過 HTTP �
     建立好 profile/API key），因為 automation service 是掛載宿主機的
     `~/.hermes`、不會自己重新設定
 
-- [ ] Task 5：本機驗證
-  - `docker compose build taskboard`（automation 不用 build，直接 pull
-    image：`docker compose pull automation`）
-  - `docker compose up`，確認兩個 service 都正常啟動
-  - `docker compose exec automation hermes --version`，確認官方 image
-    覆蓋 entrypoint 後 hermes CLI 仍然可執行（若失敗，回到 Task 3 調整
-    entrypoint 寫法）
-  - 建一張測試卡片，`targetPath` 設成一個容器內外都存在的路徑（例如
-    `/home/ubuntu/AI-Task-Board` 本身），拖到 `in_progress`
-  - 觀察：
-    - `docker compose logs automation` 是否顯示 `/run` 被呼叫、hermes
-      子程序啟動
-    - 該任務卡片的 `automation_runs` 記錄（`GET /api/tasks/:id/automation-runs`）
-      最終狀態是否為 `done` 或合理的 `failed`（不是永遠卡在 `running`）
-    - `curl` 進度回報（`PATCH /api/tasks/:id` with `progress`）是否能從
-      automation 容器內成功打到 `http://taskboard:8088`
-  - 記錄驗證過程中遇到的落差，回頭修正 Task 1-4（尤其 entrypoint 覆蓋
-    是否真的可行，這是本 plan 風險最高的一步）
+- [x] Task 5：本機驗證
+
+  **驗證結果：全流程通過。** 過程中發現 4 個原計畫沒預料到的問題並已修正
+  （detailed 記錄見 spec 文件的「驗證中發現並修正的問題」章節）：
+  1. `automation` service 必須用 `network_mode: host`（否則容器內
+     `localhost` 連不到宿主機的 9Router 閘道），`taskboard` 改用
+     `host.docker.internal` 呼叫它
+  2. `automation` service 需要 `HERMES_DOCKER_EXEC_AS_ROOT=1`（官方 image
+     的 privilege-drop shim 會導致讀取宿主機 `~/.hermes/.env` 時
+     PermissionError）
+  3. `targetPath` 存在性檢查從 `automationRunner.mjs`（taskboard，看不到
+     `/home/ubuntu`）移到 `automation/server.mjs`（automation，看得到）
+  4. `automation` service 的 entrypoint 需要先跑
+     `git config --global --add safe.directory '*'`（否則 git 判定掛載進來
+     的 repo 為 dubious ownership，擋下 `-w` worktree 模式）
+
+  實際跑過的驗證步驟與結果：
+  - `docker compose build taskboard` 成功
+  - 手動起 `automation`（`nousresearch/hermes-agent:latest`，覆蓋
+    entrypoint 加 safe.directory 設定）+ `taskboard` 兩個容器（因終端機工具
+    對 `docker compose up -d` 的長駐程序偵測誤判，改用等效的
+    `docker run -d`，行為與 compose 定義的參數完全一致）
+  - `docker exec automation hermes --version` 確認 hermes CLI 在覆蓋
+    entrypoint 後仍可執行
+  - 建立測試卡片（`targetPath: /home/ubuntu/docker-test-target`，一個真實
+    git repo），PATCH 拖到 `in_progress`
+  - 確認 `automation` service 的 `/run` 被呼叫、hermes 子程序啟動、
+    worktree 建立與清除、`automation_runs` 最終狀態為 `done`（非卡住在
+    `running`）、卡片自動移到 `review`
+  - hermes 實際回覆「e2e test succeeded」，驗證整條鏈路（HTTP 觸發 →
+    spawn hermes → -w worktree → 執行 prompt → 回傳結果 → taskboard 寫回
+    卡片狀態）完整可用
+  - 清理：刪除測試卡片、移除測試用容器/volume/network/git repo
 
 - [ ] Task 6：Plan checkbox 全部打勾後單獨 commit

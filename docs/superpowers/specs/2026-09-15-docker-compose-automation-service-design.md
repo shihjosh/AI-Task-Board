@@ -81,6 +81,48 @@ volumes:
 toolchain 等），直接跟著官方 image tag 升級即可。付出的代價是 image 體積由官方
 決定（本來就不小，因為要支援瀏覽器自動化等功能），但不需要我們自己維護。
 
+## 驗證中發現並修正的問題（實作與計畫不同的地方）
+
+執行 Task 5 本機驗證時，發現原計畫沒有預料到的 3 個實質問題，均已修正：
+
+1. **`network_mode: host` 是必要的，不是可選優化。** 宿主機 `~/.hermes/config.yaml`
+   的 model `base_url` 通常寫死 `http://localhost:<port>`（本例是本機 9Router
+   閘道）。容器若用一般 bridge network，容器內的 `localhost` 是指容器自己，
+   連不到宿主機的閘道服務，`hermes chat` 會直接連線失敗。改用
+   `network_mode: host` 後容器共用宿主機網路 namespace，`localhost` 直接可用，
+   不需要改寫 `config.yaml`。代價：`network_mode: host` 與 compose 的
+   `networks:`/`ports:` 互斥（`automation` 因此不再與 `taskboard`/`postgres`
+   同一個 `default` network），且僅支援 Linux（本專案的使用情境符合）。
+   `taskboard` 改用 `host.docker.internal`（搭配 `extra_hosts:
+   host-gateway`）去呼叫使用 host network 的 `automation`。
+
+2. **`HERMES_DOCKER_EXEC_AS_ROOT=1` 是必要的。** 官方 image 的
+   `/opt/hermes/bin/hermes` 是一個 privilege-drop shim：以 root 執行時會自動
+   降權到內建的 `hermes` 使用者（UID 10000）。但掛進去的是宿主機 `ubuntu`
+   使用者（UID 1000）的 `~/.hermes`，UID 不對齊會導致 `hermes` 讀取
+   `~/.hermes/.env` 時噴 `PermissionError`。設這個環境變數讓 shim 維持以
+   root 執行、對齊掛載檔案的擁有者。
+
+3. **`targetPath` 存在性檢查必須搬到 automation service，不能留在 taskboard。**
+   原 Task 2 沒注意到：`taskboard` 容器本身沒有掛載 `/home/ubuntu`（只有
+   `automation` 容器有掛），所以 `automationRunner.mjs` 原本在
+   `triggerAutomation()` 裡對 `task.targetPath` 做的 `fs.existsSync()` 檢查
+   在容器化後永遠回傳 false、每次都直接失敗。已將此檢查移到
+   `automation/server.mjs` 的 `/run` handler 內（它能看到 `/home/ubuntu`），
+   `automationRunner.mjs` 不再檢查路徑是否存在，只檢查是否有填。
+
+4. **git `safe.directory` 保護會擋下 `-w` worktree 模式。** 容器內以 root
+   身份操作掛載進來、屬於宿主機 `ubuntu` 使用者（不同 UID）的 git repo，
+   git 會判定為「dubious ownership」並拒絕操作。`automation` service 的
+   `entrypoint` 因此改成先執行
+   `git config --global --add safe.directory '*'` 再啟動
+   `automation/server.mjs`。
+
+以上 4 點已同步反映在 `docker-compose.yml` 的註解與下方 Task 3/Task 5 的
+勾選狀態中；本文件的「需要新增/修改的檔案」與 Task 清單保留原樣（歷史記錄），
+實際最終行為以 `docker-compose.yml`、`automation/server.mjs`、
+`server/automationRunner.mjs` 現狀為準。
+
 ## 需要新增/修改的檔案（規劃，尚未動工）
 
 - 修改 `docker-compose.yml`：新增 `automation` service

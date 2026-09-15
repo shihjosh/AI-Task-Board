@@ -1,4 +1,3 @@
-import fs from 'node:fs'
 import { updateTask } from './taskRepository.mjs'
 import { createAutomationRun, updateAutomationRun, appendAutomationRunOutput } from './automationRunRepository.mjs'
 
@@ -156,7 +155,7 @@ function onSlotFreed() {
 }
 
 export async function triggerAutomation(task) {
-  if (!task.targetPath || !fs.existsSync(task.targetPath)) {
+  if (!task.targetPath) {
     const run = await createAutomationRun(task.id, { prompt: buildPrompt(task) })
     await updateAutomationRun(run.id, {
       status: 'failed',

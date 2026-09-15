@@ -1,4 +1,5 @@
 import http from 'node:http'
+import fs from 'node:fs'
 import { spawn } from 'node:child_process'
 
 const PORT = process.env.PORT ?? 3100
@@ -99,6 +100,18 @@ const server = http.createServer(async (req, res) => {
     if (!prompt || !cwd) {
       res.writeHead(400, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ error: 'prompt and cwd are required' }))
+      return
+    }
+    if (!fs.existsSync(cwd)) {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(
+        JSON.stringify({
+          exitCode: null,
+          stdout: '',
+          stderr: `cwd「${cwd}」在 automation service 容器內不存在（請確認 targetPath 是否掛在 /home/ubuntu 底下）`,
+          timedOut: false,
+        }),
+      )
       return
     }
 
