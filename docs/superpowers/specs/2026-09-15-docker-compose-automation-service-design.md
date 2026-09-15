@@ -111,14 +111,26 @@ toolchain 等），直接跟著官方 image tag 升級即可。付出的代價�
    `automation/server.mjs` 的 `/run` handler 內（它能看到 `/home/ubuntu`），
    `automationRunner.mjs` 不再檢查路徑是否存在，只檢查是否有填。
 
-4. **git `safe.directory` 保護會擋下 `-w` worktree 模式。** 容器內以 root
+4. git `safe.directory` 保護會擋下 `-w` worktree 模式。容器內以 root
    身份操作掛載進來、屬於宿主機 `ubuntu` 使用者（不同 UID）的 git repo，
    git 會判定為「dubious ownership」並拒絕操作。`automation` service 的
    `entrypoint` 因此改成先執行
    `git config --global --add safe.directory '*'` 再啟動
    `automation/server.mjs`。
 
-以上 4 點已同步反映在 `docker-compose.yml` 的註解與下方 Task 3/Task 5 的
+5. **忘記本機開發模式（`npm run dev`）的相容性——Task 2 原本讓
+   `automationRunner.mjs` 無條件改成 HTTP 呼叫，導致本機開發模式下自動化
+   功能直接壞掉。** 本機開發模式沒有 `AUTOMATION_URL` 環境變數、也沒有
+   `automation` service 在跑，`fetch` 一定連線失敗。已改回讓
+   `automationRunner.mjs` 支援兩種模式：`AUTOMATION_URL` 未設定（本機
+   `npm run dev` 預設）→ 沿用原本的 `spawn('hermes', ...)` 直接執行；
+   `AUTOMATION_URL` 有設定（`docker-compose.yml` 的 `taskboard` service
+   會設）→ 打 HTTP 給 automation service。`targetPath` 存在性檢查同理：
+   本機模式（看得到檔案系統）用 `fs.existsSync()`，docker 模式（看不到）
+   交給 automation service 檢查。已用假 hermes 執行檔驗證本機模式的
+   spawn 路徑行為與 docker 化前一致。
+
+以上 5 點已同步反映在 `docker-compose.yml` 的註解與下方 Task 3/Task 5 的
 勾選狀態中；本文件的「需要新增/修改的檔案」與 Task 清單保留原樣（歷史記錄），
 實際最終行為以 `docker-compose.yml`、`automation/server.mjs`、
 `server/automationRunner.mjs` 現狀為準。
