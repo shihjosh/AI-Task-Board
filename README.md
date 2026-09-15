@@ -79,6 +79,12 @@ docker compose exec taskboard node server/seed.mjs
 
 > `npm run db:seed`（本機開發模式用）跟這個指令不能混用——本機模式寫入主機上的 `.data/taskboard.sqlite`，Docker 模式的資料庫檔案在 container 的 volume 裡，必須用 `docker compose exec` 讓 seed script 在容器內執行才能寫進同一份資料庫。此指令是冪等的，已有資料時重跑不會重複灌入。
 
+> **本機開發模式（`npm run dev` / `npm start`）不受影響**：`automationRunner.mjs`
+> 是雙模式設計，未設定 `AUTOMATION_URL` 時會直接 `spawn` 呼叫本機安裝的
+> `hermes` CLI，行為與加入 Docker automation 功能之前完全相同。只有 Docker
+> compose 模式（`docker-compose.yml` 的 `taskboard` service 有設定
+> `AUTOMATION_URL`）才會改成呼叫下方的 `automation` service。
+>
 > **Docker 模式下的 Hermes Agent 自動化執行功能**：需要額外啟用 `automation`
 > service（拉取 Nous Research 官方 `nousresearch/hermes-agent` image，掛載
 > `/home/ubuntu` 與宿主機的 `~/.hermes`），詳見下方「Docker 模式啟用自動化執行
@@ -95,6 +101,20 @@ docker compose exec taskboard node server/seed.mjs
   目錄）
 - 宿主機的 `~/.hermes`（讀寫掛載——hermes 執行時需要在這裡寫入 session/skills
   快取，因此必須是讀寫，不能唯讀）
+
+`automation` service 還設定了兩個本機驗證後確認必要的項目，皆已內建在
+`docker-compose.yml` 裡，不需要手動處理：
+- **`network_mode: host`**：讓容器內的 `localhost` 直接等於宿主機的
+  `localhost`，才能連到宿主機 `~/.hermes/config.yaml` 裡設定的本機模型閘道
+  （例如自架的 9Router）。因此 `taskboard` 是透過 `host.docker.internal`
+  （而非 compose service name）呼叫 `automation`。這個模式僅支援 Linux。
+- **`HERMES_DOCKER_EXEC_AS_ROOT=1`**：官方 image 預設會把以 root 執行的
+  `hermes` 指令自動降權到內建的 `hermes` 使用者（UID 10000），但掛載進來的
+  `~/.hermes` 屬於宿主機使用者（通常 UID 1000），UID 不一致會導致讀取
+  `~/.hermes/.env` 時發生權限錯誤，故關閉此降權行為。
+- entrypoint 啟動時會先執行 `git config --global --add safe.directory '*'`，
+  避免 git 因為掛載進來的 repo 擁有者 UID 與容器內執行者不同，判定為
+  「dubious ownership」而拒絕操作（會擋下 `-w` worktree 模式）。
 
 **前置需求**：宿主機必須先跑過 `hermes setup` 完成過一次設定（profile、
 API key 等），因為 `automation` service 只是掛載既有的 `~/.hermes`，不會
@@ -113,9 +133,12 @@ docker compose up -d --build
 **注意事項與限制**：
 - 僅限本機開發機使用。`automation` service 掛載整個 `/home/ubuntu` 目錄，
   容器內能看到宿主機 home 目錄下的所有檔案，不建議部署到共用主機或正式環境。
-- 卡片的 `targetPath` 欄位填入的路徑，必須是容器內外都存在的絕對路徑（因為
-  掛載方式是 bind mount 到相同路徑，例如 `/home/ubuntu/AI-Task-Board`）。
-- 詳細架構決策見
+- 卡片的 `targetPath` 欄位填入的路徑，必須是 `/home/ubuntu` 底下、容器內外
+  都存在的絕對路徑（因為掛載方式是把整個 `/home/ubuntu` bind mount 到容器內
+  相同路徑，例如 `/home/ubuntu/AI-Task-Board`）。
+- 已完整驗證過端到端流程（建卡 → 拖到 in_progress → automation service 觸發
+  hermes chat -w → worktree 建立/清除 → 卡片自動移到 review），詳細架構決策
+  與驗證中發現的問題見
   `docs/superpowers/specs/2026-09-15-docker-compose-automation-service-design.md`。
 
 ### 切換到 PostgreSQL（選用）
