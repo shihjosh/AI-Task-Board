@@ -50,11 +50,29 @@ To stop: press `Ctrl+C` in the terminal running `npm run dev`, or terminate the 
 
 ### Deploy with Docker
 
+**⚠️ Set up login credentials before deploying.** This service has no
+built-in authentication by default — once deployed anywhere beyond
+localhost (public internet, shared internal host, etc.), anyone who knows
+the URL can read and write all task data. Create `.env` first:
+
+```bash
+cp .env.example .env
+# Edit .env and set AUTH_USER and a strong AUTH_PASS (e.g. openssl rand -base64 24)
+```
+
+If `AUTH_USER` / `AUTH_PASS` are left blank, the server disables auth and
+prints a startup warning — suitable only for fully local, non-exposed
+development.
+
 ```bash
 docker compose up -d --build
 ```
 
-Once running, access it at `http://localhost:8088` (both the frontend and `/api/*` are served from the same port by a single Node service — no extra nginx needed). The SQLite database lives in the named volume `taskboard-data:/app/.data`, so data survives container restarts/rebuilds.
+Once running, access it at `http://localhost:8088` — your browser will
+prompt for the username/password (HTTP Basic Auth). Both the frontend and
+`/api/*` are served from the same port by a single Node service — no extra
+nginx needed. The SQLite database lives in the named volume
+`taskboard-data:/app/.data`, so data survives container restarts/rebuilds.
 
 **Seed data after first startup:**
 

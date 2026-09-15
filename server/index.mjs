@@ -1,6 +1,7 @@
 import express from 'express'
 import path from 'node:path'
 import fs from 'node:fs'
+import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { listTasks, createTask, updateTask, deleteTask } from './taskRepository.mjs'
 import { listComments, createComment, updateComment, deleteComment } from './commentRepository.mjs'
@@ -67,8 +68,61 @@ function validateTaskFields(body) {
 
 const MAX_COMMENT_LENGTH = 5000
 
+function timingSafeStringEqual(a, b) {
+  const bufA = Buffer.from(a, 'utf8')
+  const bufB = Buffer.from(b, 'utf8')
+  if (bufA.length !== bufB.length) {
+    // Still run a timingSafeEqual against a same-length buffer to avoid
+    // leaking length information via early-return timing differences.
+    crypto.timingSafeEqual(bufA, bufA)
+    return false
+  }
+  return crypto.timingSafeEqual(bufA, bufB)
+}
+
+function createBasicAuthMiddleware() {
+  const expectedUser = process.env.AUTH_USER
+  const expectedPass = process.env.AUTH_PASS
+
+  if (!expectedUser && !expectedPass) {
+    console.warn(
+      '[auth] AUTH_USER / AUTH_PASS 未設定，Basic Auth 保護已停用（僅限本機開發使用，切勿在對外環境這樣部署）。',
+    )
+    return (req, res, next) => next()
+  }
+
+  return (req, res, next) => {
+    const header = req.headers.authorization ?? ''
+    const [scheme, encoded] = header.split(' ')
+
+    if (scheme === 'Basic' && encoded) {
+      let decoded = ''
+      try {
+        decoded = Buffer.from(encoded, 'base64').toString('utf8')
+      } catch {
+        decoded = ''
+      }
+      const separatorIndex = decoded.indexOf(':')
+      if (separatorIndex !== -1) {
+        const user = decoded.slice(0, separatorIndex)
+        const pass = decoded.slice(separatorIndex + 1)
+        if (
+          timingSafeStringEqual(user, expectedUser ?? '') &&
+          timingSafeStringEqual(pass, expectedPass ?? '')
+        ) {
+          return next()
+        }
+      }
+    }
+
+    res.set('WWW-Authenticate', 'Basic realm="AI Task Board"')
+    return res.status(401).json({ error: 'unauthorized' })
+  }
+}
+
 const app = express()
 app.use(express.json({ limit: '1mb' }))
+app.use(createBasicAuthMiddleware())
 
 app.get('/api/tasks', (req, res) => {
   res.json({ tasks: listTasks() })

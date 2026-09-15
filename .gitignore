@@ -17,6 +17,11 @@ dist-ssr
 .data/*.sqlite-shm
 .data/*.sqlite-wal
 
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
