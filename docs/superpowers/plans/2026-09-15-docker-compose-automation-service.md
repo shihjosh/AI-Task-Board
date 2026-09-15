@@ -39,7 +39,7 @@ Nous Research 官方 `nousresearch/hermes-agent` image，taskboard 透過 HTTP �
 
 ## Task 清單
 
-- [ ] Task 1：設計並實作 automation service 的 HTTP 觸發層
+- [x] Task 1：設計並實作 automation service 的 HTTP 觸發層
   - 建立 `automation/server.mjs`：用 Node 內建 `http` module（不額外裝
     express，保持這個小 service 精簡），監聽 `process.env.PORT`（預設
     `3100`）
