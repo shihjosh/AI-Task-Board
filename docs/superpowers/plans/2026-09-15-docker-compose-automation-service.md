@@ -153,4 +153,4 @@ Nous Research 官方 `nousresearch/hermes-agent` image，taskboard 透過 HTTP �
     卡片狀態）完整可用
   - 清理：刪除測試卡片、移除測試用容器/volume/network/git repo
 
-- [ ] Task 6：Plan checkbox 全部打勾後單獨 commit
+- [x] Task 6：Plan checkbox 全部打勾後單獨 commit
