@@ -236,7 +236,7 @@ GET    /api/skills                          取得可用的 Hermes skill 名稱�
 
 **前端**：React + Vite + TypeScript + Tailwind CSS、react-router-dom、@dnd-kit/core（拖拉）、lucide-react（圖示）、react-markdown + remark-gfm（Markdown 渲染）
 
-**後端**：Node.js + Express（`/api/*` REST + serve 前端靜態檔，單一 server）、SQLite（better-sqlite3），資料庫檔案於 `.data/taskboard.sqlite`
+**後端**：Node.js + Express（`/api/*` REST + serve 前端靜態檔，單一 server）；資料庫預設 SQLite（better-sqlite3，檔案於 `.data/taskboard.sqlite`），亦可選用 PostgreSQL（`pg`，見上方「切換到 PostgreSQL」章節），透過統一的 async 資料層（`server/db/`）切換
 
 ## 專案結構
 
@@ -249,7 +249,10 @@ AI-Task-Board/
 │   └── superpowers/            開發過程的 spec/plan 存檔
 ├── server/
 │   ├── index.mjs               Express app 與所有 route
-│   ├── db.mjs                  SQLite schema 與 migration
+│   ├── db/
+│   │   ├── index.mjs            依 DB_DRIVER 選擇驅動的統一 async 查詢介面
+│   │   ├── sqlite.mjs           SQLite schema 與 migration（預設驅動）
+│   │   └── postgres.mjs         PostgreSQL schema 與 migration（選用驅動）
 │   ├── taskRepository.mjs
 │   ├── commentRepository.mjs
 │   ├── automationRunner.mjs    Hermes agent spawn 邏輯
