@@ -54,7 +54,7 @@ Nous Research 官方 `nousresearch/hermes-agent` image，taskboard 透過 HTTP �
   - 加一個 `GET /health` 回 `200 {"status":"ok"}`，供 compose healthcheck
     使用（見 Task 3）
 
-- [ ] Task 2：修改 `automationRunner.mjs` 改用 HTTP 呼叫
+- [x] Task 2：修改 `automationRunner.mjs` 改用 HTTP 呼叫
   - 移除 `import { spawn } from 'node:child_process'`（此檔案不再自己
     spawn，改由 automation service 負責）
   - 新增 `const AUTOMATION_URL = process.env.AUTOMATION_URL ?? 'http://localhost:3100'`
