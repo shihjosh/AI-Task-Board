@@ -82,7 +82,7 @@ Nous Research 官方 `nousresearch/hermes-agent` image，taskboard 透過 HTTP �
     改成使用 `taskboardUrl` 變數，在 docker compose 環境下設
     `TASKBOARD_URL=http://taskboard:8088`
 
-- [ ] Task 3：`docker-compose.yml` 新增 `automation` service
+- [x] Task 3：`docker-compose.yml` 新增 `automation` service
   - 新增 service：
     ```yaml
     automation:

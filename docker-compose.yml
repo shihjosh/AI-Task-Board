@@ -8,10 +8,30 @@ services:
     env_file:
       - path: .env
         required: false
+    environment:
+      AUTOMATION_URL: http://automation:3100
+      TASKBOARD_URL: http://taskboard:8088
     ports:
       - "8088:8088"
     volumes:
       - taskboard-data:/app/.data
+    restart: unless-stopped
+
+  # 可選：Automation 服務，接上本機的 Hermes Agent（官方 image），讓卡片
+  # 拖到 in_progress 時能真的觸發 hermes chat 執行任務。詳見
+  # docs/superpowers/specs/2026-09-15-docker-compose-automation-service-design.md
+  # 與 docs/superpowers/plans/2026-09-15-docker-compose-automation-service.md。
+  # 僅限本機開發機使用，不建議在正式環境部署（掛載整個 /home/ubuntu 與
+  # ~/.hermes，風險僅在單人開發機上可接受）。
+  automation:
+    image: nousresearch/hermes-agent:latest
+    container_name: ai-task-board-automation
+    entrypoint: ["node", "/home/ubuntu/AI-Task-Board/automation/server.mjs"]
+    environment:
+      PORT: "3100"
+    volumes:
+      - /home/ubuntu:/home/ubuntu
+      - ${HOME}/.hermes:/opt/data
     restart: unless-stopped
 
   # 可選：PostgreSQL 服務。預設不會被 taskboard 使用，僅供想切換到
