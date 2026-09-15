@@ -116,7 +116,77 @@ needed. To switch to PostgreSQL instead:
 If `DB_DRIVER` is unset (or set to `sqlite`), behavior is unchanged from
 before.
 
-> **Known limitation**: The Hermes Agent automation feature (below) requires the `hermes` CLI to be installed and directly callable **on the host running the API server**. The Docker container does not currently have `hermes` installed, so automation is unavailable in Docker deployments — it only works when the API server is run directly on a host with `npm run dev` / `npm start`.
+> **Local dev mode (`npm run dev` / `npm start`) is unaffected**:
+> `automationRunner.mjs` runs in dual mode — when `AUTOMATION_URL` is unset
+> it directly `spawn`s the locally installed `hermes` CLI, identical to the
+> behavior before Docker automation support was added. Only Docker Compose
+> mode (when the `taskboard` service in `docker-compose.yml` has
+> `AUTOMATION_URL` set) switches to calling the `automation` service below.
+>
+> **Hermes Agent automation in Docker mode**: requires enabling the extra
+> `automation` service (pulls the official Nous Research
+> `nousresearch/hermes-agent` image, mounts `/home/ubuntu` and the host's
+> `~/.hermes`) — see "Enabling automation in Docker mode" below. If that
+> service isn't running, triggering automation on a card drag to
+> `in_progress` simply fails with a connection error; the rest of the board
+> is unaffected.
+
+### Enabling automation in Docker mode (optional)
+
+`docker-compose.yml` includes an `automation` service so Docker-mode
+`taskboard` can also trigger real Hermes Agent runs (not just local
+`npm run dev`). This service uses the official `nousresearch/hermes-agent`
+image directly and mounts:
+- The entire `/home/ubuntu` (so automation can reach whatever project
+  directory a card's `targetPath` points to)
+- The host's `~/.hermes` (read-write — hermes needs to write session/skills
+  cache here, so it cannot be mounted read-only)
+
+The `automation` service also sets two things confirmed necessary during
+local verification, already baked into `docker-compose.yml` — no manual
+setup needed:
+- **`network_mode: host`**: makes the container's `localhost` resolve to
+  the host's `localhost`, so it can reach a local model gateway configured
+  in the host's `~/.hermes/config.yaml` (e.g. a self-hosted 9Router). This
+  is why `taskboard` calls `automation` via `host.docker.internal` instead
+  of the Compose service name. Linux-only.
+- **`HERMES_DOCKER_EXEC_AS_ROOT=1`**: the official image's privilege-drop
+  shim normally drops root-executed `hermes` commands to an internal
+  `hermes` user (UID 10000), but the mounted `~/.hermes` belongs to the
+  host user (typically UID 1000) — the UID mismatch causes a permission
+  error reading `~/.hermes/.env`, so this drop is disabled.
+- The entrypoint runs `git config --global --add safe.directory '*'` at
+  startup, avoiding git's "dubious ownership" rejection when operating on
+  mounted repos owned by a different UID than the container's (which would
+  otherwise block `-w` worktree mode).
+
+**Prerequisite**: the host must have already completed `hermes setup`
+(profile, API keys, etc.) — the `automation` service only mounts the
+existing `~/.hermes`, it does not run setup itself.
+
+Start it:
+
+```bash
+docker compose up -d --build
+```
+
+`automation` is not gated behind a Compose `profiles` flag, so it starts
+along with `taskboard` by default. To skip it and save resources, start
+only `taskboard`: `docker compose up -d --build taskboard`.
+
+**Caveats and limitations**:
+- Local dev machines only. The `automation` service mounts the entire
+  `/home/ubuntu` directory, so the container can see everything under the
+  host's home directory — not recommended for shared hosts or production.
+- A card's `targetPath` must be an absolute path under `/home/ubuntu` that
+  exists both inside and outside the container (the mount is a bind mount
+  of the whole `/home/ubuntu` to the same path in the container, e.g.
+  `/home/ubuntu/AI-Task-Board`).
+- Verified end-to-end (create card → drag to in_progress → automation
+  service triggers `hermes chat -w` → worktree created/cleaned up → card
+  auto-moves to review). See
+  `docs/superpowers/specs/2026-09-15-docker-compose-automation-service-design.md`
+  for the full design rationale and issues found during verification.
 
 ---
 
@@ -142,7 +212,7 @@ This is the project's core differentiator: hand a task card to an AI agent to ac
 3. The backend spawns `hermes chat` inside that directory using an isolated **git worktree** — the agent actually edits code, runs commands, then commits and pushes its branch to `origin` when done (**it does not open a PR automatically** — opening a PR and merging is always done by you on GitHub).
 4. Output streams live to the **"Runs"** tab in task details, auto-refreshing every 2 seconds while running. On completion the card automatically moves to "Review" (success) or stays in place (failure).
 
-**Limits**: Only 1 automation run executes system-wide at a time (others queue, sorted by priority); each run is capped at 15 minutes; and it's only available on hosts with the `hermes` CLI installed (see the Docker limitation above).
+**Limits**: Only 1 automation run executes system-wide at a time (others queue, sorted by priority); each run is capped at 15 minutes; and the `hermes` CLI must be reachable — either installed locally (`npm run dev` / `npm start`) or via the `automation` service in Docker mode (see "Enabling automation in Docker mode" above).
 
 For full details and walkthroughs, see **[docs/USER_GUIDE.en.md](docs/USER_GUIDE.en.md)**.
 
