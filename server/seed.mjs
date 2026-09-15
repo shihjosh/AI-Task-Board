@@ -11,15 +11,19 @@ const seedTasks = [
   { id: 'LOCAL-27', title: '匯出看板資料為 CSV', priority: 'low', tags: [{ type: 'issue', label: 'Issue' }], assignees: [{ id: 'u1', name: 'Josh', avatarColor: 'bg-purple-500', initials: 'JS' }], commentCount: 0, columnId: 'review' },
 ]
 
-function seed() {
-  if (listTasks().length > 0) {
+async function seed() {
+  const existing = await listTasks()
+  if (existing.length > 0) {
     console.log('Tasks table already has data, skipping seed.')
     return
   }
   for (const task of seedTasks) {
-    createTask(task)
+    await createTask(task)
   }
   console.log(`Seeded ${seedTasks.length} tasks.`)
 }
 
-seed()
+seed().catch((err) => {
+  console.error('Seed failed:', err)
+  process.exit(1)
+})

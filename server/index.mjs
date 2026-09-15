@@ -124,91 +124,130 @@ const app = express()
 app.use(express.json({ limit: '1mb' }))
 app.use(createBasicAuthMiddleware())
 
-app.get('/api/tasks', (req, res) => {
-  res.json({ tasks: listTasks() })
-})
-
-app.post('/api/tasks', (req, res) => {
-  const { title, priority, columnId } = req.body ?? {}
-  if (!title || !priority || !columnId) {
-    return res.status(400).json({ error: 'title, priority, and columnId are required' })
-  }
-  const validationError = validateTaskFields(req.body ?? {})
-  if (validationError) {
-    return res.status(400).json({ error: validationError })
-  }
-  const task = createTask(pickFields(req.body, CREATABLE_FIELDS))
-  res.status(201).json({ task })
-})
-
-app.patch('/api/tasks/:id', (req, res) => {
-  const validationError = validateTaskFields(req.body ?? {})
-  if (validationError) {
-    return res.status(400).json({ error: validationError })
-  }
-  const existing = listTasks().find((t) => t.id === req.params.id)
-  const task = updateTask(req.params.id, pickFields(req.body, CREATABLE_FIELDS))
-  if (!task) return res.status(404).json({ error: 'not_found' })
-  res.json({ task })
-
-  const enteringInProgress =
-    existing && existing.columnId !== 'in_progress' && task.columnId === 'in_progress'
-  if (enteringInProgress) {
-    triggerAutomation(task)
+app.get('/api/tasks', async (req, res, next) => {
+  try {
+    res.json({ tasks: await listTasks() })
+  } catch (err) {
+    next(err)
   }
 })
 
-app.delete('/api/tasks/:id', (req, res) => {
-  const ok = deleteTask(req.params.id)
-  if (!ok) return res.status(404).json({ error: 'not_found' })
-  res.status(204).end()
+app.post('/api/tasks', async (req, res, next) => {
+  try {
+    const { title, priority, columnId } = req.body ?? {}
+    if (!title || !priority || !columnId) {
+      return res.status(400).json({ error: 'title, priority, and columnId are required' })
+    }
+    const validationError = validateTaskFields(req.body ?? {})
+    if (validationError) {
+      return res.status(400).json({ error: validationError })
+    }
+    const task = await createTask(pickFields(req.body, CREATABLE_FIELDS))
+    res.status(201).json({ task })
+  } catch (err) {
+    next(err)
+  }
 })
 
-app.get('/api/tasks/:taskId/comments', (req, res) => {
-  res.json({ comments: listComments(req.params.taskId) })
+app.patch('/api/tasks/:id', async (req, res, next) => {
+  try {
+    const validationError = validateTaskFields(req.body ?? {})
+    if (validationError) {
+      return res.status(400).json({ error: validationError })
+    }
+    const tasks = await listTasks()
+    const existing = tasks.find((t) => t.id === req.params.id)
+    const task = await updateTask(req.params.id, pickFields(req.body, CREATABLE_FIELDS))
+    if (!task) return res.status(404).json({ error: 'not_found' })
+    res.json({ task })
+
+    const enteringInProgress =
+      existing && existing.columnId !== 'in_progress' && task.columnId === 'in_progress'
+    if (enteringInProgress) {
+      triggerAutomation(task).catch((err) => {
+        console.error('triggerAutomation failed:', err)
+      })
+    }
+  } catch (err) {
+    next(err)
+  }
 })
 
-app.get('/api/tasks/:taskId/automation-runs', (req, res) => {
-  res.json({ runs: listAutomationRuns(req.params.taskId) })
+app.delete('/api/tasks/:id', async (req, res, next) => {
+  try {
+    const ok = await deleteTask(req.params.id)
+    if (!ok) return res.status(404).json({ error: 'not_found' })
+    res.status(204).end()
+  } catch (err) {
+    next(err)
+  }
+})
+
+app.get('/api/tasks/:taskId/comments', async (req, res, next) => {
+  try {
+    res.json({ comments: await listComments(req.params.taskId) })
+  } catch (err) {
+    next(err)
+  }
+})
+
+app.get('/api/tasks/:taskId/automation-runs', async (req, res, next) => {
+  try {
+    res.json({ runs: await listAutomationRuns(req.params.taskId) })
+  } catch (err) {
+    next(err)
+  }
 })
 
 app.get('/api/skills', (req, res) => {
   res.json({ skills: listAvailableSkills() })
 })
 
-app.post('/api/tasks/:taskId/comments', (req, res) => {
-  const content = (req.body?.content ?? '').trim()
-  if (!content) {
-    return res.status(400).json({ error: 'content is required' })
+app.post('/api/tasks/:taskId/comments', async (req, res, next) => {
+  try {
+    const content = (req.body?.content ?? '').trim()
+    if (!content) {
+      return res.status(400).json({ error: 'content is required' })
+    }
+    if (content.length > MAX_COMMENT_LENGTH) {
+      return res
+        .status(400)
+        .json({ error: `content must be ${MAX_COMMENT_LENGTH} characters or fewer` })
+    }
+    const comment = await createComment(req.params.taskId, content)
+    res.status(201).json({ comment })
+  } catch (err) {
+    next(err)
   }
-  if (content.length > MAX_COMMENT_LENGTH) {
-    return res
-      .status(400)
-      .json({ error: `content must be ${MAX_COMMENT_LENGTH} characters or fewer` })
-  }
-  const comment = createComment(req.params.taskId, content)
-  res.status(201).json({ comment })
 })
 
-app.patch('/api/comments/:id', (req, res) => {
-  const content = (req.body?.content ?? '').trim()
-  if (!content) {
-    return res.status(400).json({ error: 'content is required' })
+app.patch('/api/comments/:id', async (req, res, next) => {
+  try {
+    const content = (req.body?.content ?? '').trim()
+    if (!content) {
+      return res.status(400).json({ error: 'content is required' })
+    }
+    if (content.length > MAX_COMMENT_LENGTH) {
+      return res
+        .status(400)
+        .json({ error: `content must be ${MAX_COMMENT_LENGTH} characters or fewer` })
+    }
+    const comment = await updateComment(req.params.id, content)
+    if (!comment) return res.status(404).json({ error: 'not_found' })
+    res.json({ comment })
+  } catch (err) {
+    next(err)
   }
-  if (content.length > MAX_COMMENT_LENGTH) {
-    return res
-      .status(400)
-      .json({ error: `content must be ${MAX_COMMENT_LENGTH} characters or fewer` })
-  }
-  const comment = updateComment(req.params.id, content)
-  if (!comment) return res.status(404).json({ error: 'not_found' })
-  res.json({ comment })
 })
 
-app.delete('/api/comments/:id', (req, res) => {
-  const ok = deleteComment(req.params.id)
-  if (!ok) return res.status(404).json({ error: 'not_found' })
-  res.status(204).end()
+app.delete('/api/comments/:id', async (req, res, next) => {
+  try {
+    const ok = await deleteComment(req.params.id)
+    if (!ok) return res.status(404).json({ error: 'not_found' })
+    res.status(204).end()
+  } catch (err) {
+    next(err)
+  }
 })
 
 if (fs.existsSync(distDir)) {

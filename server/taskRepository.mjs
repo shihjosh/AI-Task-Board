@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { getDb } from './db.mjs'
+import * as db from './db/index.mjs'
 
 function rowToTask(row) {
   return {
@@ -22,45 +22,44 @@ function rowToTask(row) {
   }
 }
 
-export function listTasks() {
-  const db = getDb()
-  const rows = db.prepare('SELECT * FROM tasks ORDER BY created_at ASC').all()
+export async function listTasks() {
+  const rows = await db.all('SELECT * FROM tasks ORDER BY created_at ASC')
   return rows.map(rowToTask)
 }
 
-export function createTask(input) {
-  const db = getDb()
+export async function createTask(input) {
   const now = new Date().toISOString()
   const id = input.id ?? randomUUID()
 
-  db.prepare(
+  await db.run(
     `INSERT INTO tasks (id, title, description, priority, tags, assignees, progress, comment_count, has_unread, column_id, created_at, updated_at, target_path, automation_status, due_date, automation_skill)
-     VALUES (@id, @title, @description, @priority, @tags, @assignees, @progress, @commentCount, @hasUnread, @columnId, @createdAt, @updatedAt, @targetPath, @automationStatus, @dueDate, @automationSkill)`,
-  ).run({
-    id,
-    title: input.title,
-    description: input.description ?? '',
-    priority: input.priority,
-    tags: JSON.stringify(input.tags ?? []),
-    assignees: JSON.stringify(input.assignees ?? []),
-    progress: input.progress ?? null,
-    commentCount: input.commentCount ?? 0,
-    hasUnread: input.hasUnread ? 1 : 0,
-    columnId: input.columnId,
-    createdAt: now,
-    updatedAt: now,
-    targetPath: input.targetPath ?? '',
-    automationStatus: input.automationStatus ?? 'idle',
-    dueDate: input.dueDate ?? null,
-    automationSkill: input.automationSkill ?? '',
-  })
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      input.title,
+      input.description ?? '',
+      input.priority,
+      JSON.stringify(input.tags ?? []),
+      JSON.stringify(input.assignees ?? []),
+      input.progress ?? null,
+      input.commentCount ?? 0,
+      input.hasUnread ? 1 : 0,
+      input.columnId,
+      now,
+      now,
+      input.targetPath ?? '',
+      input.automationStatus ?? 'idle',
+      input.dueDate ?? null,
+      input.automationSkill ?? '',
+    ],
+  )
 
-  return rowToTask(db.prepare('SELECT * FROM tasks WHERE id = ?').get(id))
+  const row = await db.get('SELECT * FROM tasks WHERE id = ?', [id])
+  return rowToTask(row)
 }
 
-export function updateTask(id, patch) {
-  const db = getDb()
-  const existing = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id)
+export async function updateTask(id, patch) {
+  const existing = await db.get('SELECT * FROM tasks WHERE id = ?', [id])
   if (!existing) return null
 
   const merged = {
@@ -80,17 +79,34 @@ export function updateTask(id, patch) {
     automationSkill: patch.automationSkill ?? existing.automation_skill,
   }
 
-  db.prepare(
-    `UPDATE tasks SET title=@title, description=@description, priority=@priority, tags=@tags, assignees=@assignees,
-     progress=@progress, comment_count=@commentCount, has_unread=@hasUnread,
-     column_id=@columnId, updated_at=@updatedAt, target_path=@targetPath, automation_status=@automationStatus, due_date=@dueDate, automation_skill=@automationSkill WHERE id=@id`,
-  ).run({ ...merged, id })
+  await db.run(
+    `UPDATE tasks SET title=?, description=?, priority=?, tags=?, assignees=?,
+     progress=?, comment_count=?, has_unread=?,
+     column_id=?, updated_at=?, target_path=?, automation_status=?, due_date=?, automation_skill=? WHERE id=?`,
+    [
+      merged.title,
+      merged.description,
+      merged.priority,
+      merged.tags,
+      merged.assignees,
+      merged.progress,
+      merged.commentCount,
+      merged.hasUnread,
+      merged.columnId,
+      merged.updatedAt,
+      merged.targetPath,
+      merged.automationStatus,
+      merged.dueDate,
+      merged.automationSkill,
+      id,
+    ],
+  )
 
-  return rowToTask(db.prepare('SELECT * FROM tasks WHERE id = ?').get(id))
+  const row = await db.get('SELECT * FROM tasks WHERE id = ?', [id])
+  return rowToTask(row)
 }
 
-export function deleteTask(id) {
-  const db = getDb()
-  const result = db.prepare('DELETE FROM tasks WHERE id = ?').run(id)
+export async function deleteTask(id) {
+  const result = await db.run('DELETE FROM tasks WHERE id = ?', [id])
   return result.changes > 0
 }

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { getDb } from './db.mjs'
+import * as db from './db/index.mjs'
 
 function rowToComment(row) {
   return {
@@ -11,36 +11,35 @@ function rowToComment(row) {
   }
 }
 
-export function listComments(taskId) {
-  const db = getDb()
-  const rows = db
-    .prepare('SELECT * FROM comments WHERE task_id = ? ORDER BY created_at ASC')
-    .all(taskId)
+export async function listComments(taskId) {
+  const rows = await db.all('SELECT * FROM comments WHERE task_id = ? ORDER BY created_at ASC', [
+    taskId,
+  ])
   return rows.map(rowToComment)
 }
 
-export function createComment(taskId, content) {
-  const db = getDb()
+export async function createComment(taskId, content) {
   const now = new Date().toISOString()
   const id = randomUUID()
-  db.prepare(
+  await db.run(
     `INSERT INTO comments (id, task_id, content, created_at, updated_at)
-     VALUES (@id, @taskId, @content, @createdAt, @updatedAt)`,
-  ).run({ id, taskId, content, createdAt: now, updatedAt: now })
-  return rowToComment(db.prepare('SELECT * FROM comments WHERE id = ?').get(id))
+     VALUES (?, ?, ?, ?, ?)`,
+    [id, taskId, content, now, now],
+  )
+  const row = await db.get('SELECT * FROM comments WHERE id = ?', [id])
+  return rowToComment(row)
 }
 
-export function updateComment(id, content) {
-  const db = getDb()
-  const existing = db.prepare('SELECT * FROM comments WHERE id = ?').get(id)
+export async function updateComment(id, content) {
+  const existing = await db.get('SELECT * FROM comments WHERE id = ?', [id])
   if (!existing) return null
   const now = new Date().toISOString()
-  db.prepare('UPDATE comments SET content = ?, updated_at = ? WHERE id = ?').run(content, now, id)
-  return rowToComment(db.prepare('SELECT * FROM comments WHERE id = ?').get(id))
+  await db.run('UPDATE comments SET content = ?, updated_at = ? WHERE id = ?', [content, now, id])
+  const row = await db.get('SELECT * FROM comments WHERE id = ?', [id])
+  return rowToComment(row)
 }
 
-export function deleteComment(id) {
-  const db = getDb()
-  const result = db.prepare('DELETE FROM comments WHERE id = ?').run(id)
+export async function deleteComment(id) {
+  const result = await db.run('DELETE FROM comments WHERE id = ?', [id])
   return result.changes > 0
 }

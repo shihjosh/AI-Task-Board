@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { getDb } from './db.mjs'
+import * as db from './db/index.mjs'
 
 function rowToRun(row) {
   return {
@@ -17,52 +17,53 @@ function rowToRun(row) {
   }
 }
 
-export function listAutomationRuns(taskId) {
-  const db = getDb()
-  const rows = db
-    .prepare('SELECT * FROM automation_runs WHERE task_id = ? ORDER BY started_at ASC')
-    .all(taskId)
+export async function listAutomationRuns(taskId) {
+  const rows = await db.all(
+    'SELECT * FROM automation_runs WHERE task_id = ? ORDER BY started_at ASC',
+    [taskId],
+  )
   return rows.map(rowToRun)
 }
 
-export function createAutomationRun(taskId, { prompt, skill }) {
-  const db = getDb()
+export async function createAutomationRun(taskId, { prompt, skill }) {
   const id = randomUUID()
   const startedAt = new Date().toISOString()
-  db.prepare(
+  await db.run(
     `INSERT INTO automation_runs (id, task_id, status, prompt, output, error, started_at, finished_at, skill, worktree_path, worktree_branch)
-     VALUES (@id, @taskId, 'running', @prompt, '', NULL, @startedAt, NULL, @skill, '', '')`,
-  ).run({ id, taskId, prompt, startedAt, skill: skill ?? '' })
-  return rowToRun(db.prepare('SELECT * FROM automation_runs WHERE id = ?').get(id))
+     VALUES (?, ?, 'running', ?, '', NULL, ?, NULL, ?, '', '')`,
+    [id, taskId, prompt, startedAt, skill ?? ''],
+  )
+  const row = await db.get('SELECT * FROM automation_runs WHERE id = ?', [id])
+  return rowToRun(row)
 }
 
-export function updateAutomationRun(id, { status, output, error, worktreePath, worktreeBranch }) {
-  const db = getDb()
-  const existing = db.prepare('SELECT * FROM automation_runs WHERE id = ?').get(id)
+export async function updateAutomationRun(id, { status, output, error, worktreePath, worktreeBranch }) {
+  const existing = await db.get('SELECT * FROM automation_runs WHERE id = ?', [id])
   if (!existing) return null
   const finishedAt = new Date().toISOString()
-  db.prepare(
-    `UPDATE automation_runs SET status = @status, output = @output, error = @error, finished_at = @finishedAt,
-     worktree_path = @worktreePath, worktree_branch = @worktreeBranch
-     WHERE id = @id`,
-  ).run({
-    id,
-    status,
-    output: output ?? existing.output,
-    error: error ?? null,
-    finishedAt,
-    worktreePath: worktreePath ?? existing.worktree_path,
-    worktreeBranch: worktreeBranch ?? existing.worktree_branch,
-  })
-  return rowToRun(db.prepare('SELECT * FROM automation_runs WHERE id = ?').get(id))
+  await db.run(
+    `UPDATE automation_runs SET status = ?, output = ?, error = ?, finished_at = ?,
+     worktree_path = ?, worktree_branch = ?
+     WHERE id = ?`,
+    [
+      status,
+      output ?? existing.output,
+      error ?? null,
+      finishedAt,
+      worktreePath ?? existing.worktree_path,
+      worktreeBranch ?? existing.worktree_branch,
+      id,
+    ],
+  )
+  const row = await db.get('SELECT * FROM automation_runs WHERE id = ?', [id])
+  return rowToRun(row)
 }
 
-export function appendAutomationRunOutput(id, chunk) {
-  const db = getDb()
-  const existing = db.prepare('SELECT output FROM automation_runs WHERE id = ?').get(id)
+export async function appendAutomationRunOutput(id, chunk) {
+  const existing = await db.get('SELECT output FROM automation_runs WHERE id = ?', [id])
   if (!existing) return
-  db.prepare('UPDATE automation_runs SET output = @output WHERE id = @id').run({
+  await db.run('UPDATE automation_runs SET output = ? WHERE id = ?', [
+    existing.output + chunk,
     id,
-    output: existing.output + chunk,
-  })
+  ])
 }
