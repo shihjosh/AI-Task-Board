@@ -48,13 +48,13 @@ function buildPrompt(task) {
   ].join('\n')
 }
 
-function runOne(task) {
+async function runOne(task) {
   runningCount += 1
-  updateTask(task.id, { automationStatus: 'running' })
+  await updateTask(task.id, { automationStatus: 'running' })
 
   const prompt = buildPrompt(task)
   const skill = task.automationSkill?.trim() || undefined
-  const run = createAutomationRun(task.id, { prompt, skill })
+  const run = await createAutomationRun(task.id, { prompt, skill })
 
   const args = ['chat', '-q', prompt, '-w', '--cli']
   if (skill) {
@@ -68,7 +68,7 @@ function runOne(task) {
       detached: true,
     })
   } catch (err) {
-    finishFailed(task, run, `無法啟動 Hermes 程序：${err.message}`)
+    await finishFailed(task, run, `無法啟動 Hermes 程序：${err.message}`)
     return
   }
 
@@ -84,7 +84,9 @@ function runOne(task) {
   child.stdout.on('data', (chunk) => {
     const text = chunk.toString()
     stdout += text
-    appendAutomationRunOutput(run.id, text)
+    appendAutomationRunOutput(run.id, text).catch((err) => {
+      console.error('appendAutomationRunOutput failed:', err)
+    })
   })
   child.stderr.on('data', (chunk) => {
     stderr += chunk.toString()
@@ -92,21 +94,38 @@ function runOne(task) {
 
   child.on('error', (err) => {
     clearTimeout(timer)
-    finishFailed(task, run, `無法啟動 Hermes 程序：${err.message}`)
+    finishFailed(task, run, `無法啟動 Hermes 程序：${err.message}`).catch((e) => {
+      console.error('finishFailed failed:', e)
+    })
   })
 
   child.on('exit', (code) => {
     clearTimeout(timer)
     const worktreeInfo = extractWorktreeInfo(stdout)
-    if (timedOut) {
-      finishFailed(task, run, `執行逾時（超過 ${TIMEOUT_MS / 60000} 分鐘），已強制中止`, worktreeInfo)
-      return
+    const handleExit = async () => {
+      if (timedOut) {
+        await finishFailed(
+          task,
+          run,
+          `執行逾時（超過 ${TIMEOUT_MS / 60000} 分鐘），已強制中止`,
+          worktreeInfo,
+        )
+        return
+      }
+      if (code === 0) {
+        await finishSuccess(task, run, stdout, worktreeInfo)
+      } else {
+        await finishFailed(
+          task,
+          run,
+          `Hermes 程序結束代碼非 0（exit code ${code}）：\n${stderr.slice(-2000)}`,
+          worktreeInfo,
+        )
+      }
     }
-    if (code === 0) {
-      finishSuccess(task, run, stdout, worktreeInfo)
-    } else {
-      finishFailed(task, run, `Hermes 程序結束代碼非 0（exit code ${code}）：\n${stderr.slice(-2000)}`, worktreeInfo)
-    }
+    handleExit().catch((err) => {
+      console.error('automation run exit handling failed:', err)
+    })
   })
 }
 
@@ -126,15 +145,15 @@ function extractWorktreeInfo(stdout) {
   }
 }
 
-function finishSuccess(task, run, output, worktreeInfo = {}) {
-  updateAutomationRun(run.id, { status: 'done', output, ...worktreeInfo })
-  updateTask(task.id, { automationStatus: 'done', columnId: 'review' })
+async function finishSuccess(task, run, output, worktreeInfo = {}) {
+  await updateAutomationRun(run.id, { status: 'done', output, ...worktreeInfo })
+  await updateTask(task.id, { automationStatus: 'done', columnId: 'review' })
   onSlotFreed()
 }
 
-function finishFailed(task, run, reason, worktreeInfo = {}) {
-  updateAutomationRun(run.id, { status: 'failed', error: reason, ...worktreeInfo })
-  updateTask(task.id, { automationStatus: 'failed' })
+async function finishFailed(task, run, reason, worktreeInfo = {}) {
+  await updateAutomationRun(run.id, { status: 'failed', error: reason, ...worktreeInfo })
+  await updateTask(task.id, { automationStatus: 'failed' })
   onSlotFreed()
 }
 
@@ -149,17 +168,19 @@ function onSlotFreed() {
     }
   }
   const [next] = queue.splice(bestIndex, 1)
-  runOne(next)
+  runOne(next).catch((err) => {
+    console.error('runOne failed:', err)
+  })
 }
 
-export function triggerAutomation(task) {
+export async function triggerAutomation(task) {
   if (!task.targetPath || !fs.existsSync(task.targetPath)) {
-    const run = createAutomationRun(task.id, { prompt: buildPrompt(task) })
-    updateAutomationRun(run.id, {
+    const run = await createAutomationRun(task.id, { prompt: buildPrompt(task) })
+    await updateAutomationRun(run.id, {
       status: 'failed',
       error: `targetPath「${task.targetPath}」不存在或未設定`,
     })
-    updateTask(task.id, { automationStatus: 'failed' })
+    await updateTask(task.id, { automationStatus: 'failed' })
     return
   }
   if (task.automationStatus === 'running') {
@@ -169,5 +190,5 @@ export function triggerAutomation(task) {
     queue.push(task)
     return
   }
-  runOne(task)
+  await runOne(task)
 }

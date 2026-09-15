@@ -14,5 +14,28 @@ services:
       - taskboard-data:/app/.data
     restart: unless-stopped
 
+  # 可選：PostgreSQL 服務。預設不會被 taskboard 使用，僅供想切換到
+  # Postgres 的情境本機測試方便。啟用方式：
+  #   1. `docker compose up postgres` 先啟動這個服務
+  #   2. 在 .env 設定：
+  #        DB_DRIVER=postgres
+  #        DATABASE_URL=postgres://taskboard:taskboard@postgres:5432/taskboard
+  #      （POSTGRES_USER/POSTGRES_PASSWORD/POSTGRES_DB 需與下方一致）
+  #   3. `docker compose up taskboard` 或一起 `docker compose up`
+  # 若不需要 Postgres，忽略這個 service 即可，不影響現有 SQLite 使用方式。
+  postgres:
+    image: postgres:16-alpine
+    container_name: ai-task-board-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-taskboard}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-taskboard}
+      POSTGRES_DB: ${POSTGRES_DB:-taskboard}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
 volumes:
   taskboard-data:
+  postgres-data:

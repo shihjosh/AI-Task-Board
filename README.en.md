@@ -82,6 +82,40 @@ docker compose exec taskboard node server/seed.mjs
 
 > `npm run db:seed` (used in local dev mode) cannot be used interchangeably with the command above — local mode writes to `.data/taskboard.sqlite` on the host, while the Docker database file lives inside the container's volume. You must run the seed script *inside* the container via `docker compose exec` so it writes to the same database. This command is idempotent — re-running it when data already exists just prints `Tasks table already has data, skipping seed.` and does nothing.
 
+### Switching to PostgreSQL (optional)
+
+The default database is SQLite (`.data/taskboard.sqlite`) — no extra setup
+needed. To switch to PostgreSQL instead:
+
+1. Set in `.env`:
+
+   ```bash
+   DB_DRIVER=postgres
+   DATABASE_URL=postgres://taskboard:taskboard@postgres:5432/taskboard
+   ```
+
+   (If pointing at an external/existing Postgres, just replace
+   `DATABASE_URL` with that database's connection string — you don't need
+   the built-in postgres service below.)
+
+2. To use the Postgres service built into `docker-compose.yml` for local
+   testing:
+
+   ```bash
+   docker compose up -d postgres
+   docker compose up -d --build taskboard
+   ```
+
+   `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` can be adjusted in
+   `.env`; they must match the credentials/database name in `DATABASE_URL`.
+
+3. Tables and columns are created/checked automatically on server startup
+   (same behavior as the SQLite version) — no manual migration needed.
+   `npm run db:seed` writes to whichever database `DB_DRIVER` points to.
+
+If `DB_DRIVER` is unset (or set to `sqlite`), behavior is unchanged from
+before.
+
 > **Known limitation**: The Hermes Agent automation feature (below) requires the `hermes` CLI to be installed and directly callable **on the host running the API server**. The Docker container does not currently have `hermes` installed, so automation is unavailable in Docker deployments — it only works when the API server is run directly on a host with `npm run dev` / `npm start`.
 
 ---

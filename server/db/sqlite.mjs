@@ -4,19 +4,17 @@ import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const dataDir = path.join(__dirname, '..', '.data')
+const dataDir = path.join(__dirname, '..', '..', '.data')
 const dbPath = path.join(dataDir, 'taskboard.sqlite')
 
 let db
 
-export function getDb() {
-  if (db) return db
-
+function initDb() {
   fs.mkdirSync(dataDir, { recursive: true })
-  db = new Database(dbPath)
-  db.pragma('journal_mode = WAL')
+  const conn = new Database(dbPath)
+  conn.pragma('journal_mode = WAL')
 
-  db.exec(`
+  conn.exec(`
     CREATE TABLE IF NOT EXISTS tasks (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
@@ -33,33 +31,33 @@ export function getDb() {
   `)
 
   // Migration：舊資料庫檔案可能沒有 description 欄位，用 PRAGMA 檢查後補上
-  const taskColumns = db.prepare('PRAGMA table_info(tasks)').all()
+  const taskColumns = conn.prepare('PRAGMA table_info(tasks)').all()
   const hasDescription = taskColumns.some((col) => col.name === 'description')
   if (!hasDescription) {
-    db.exec(`ALTER TABLE tasks ADD COLUMN description TEXT NOT NULL DEFAULT ''`)
+    conn.exec(`ALTER TABLE tasks ADD COLUMN description TEXT NOT NULL DEFAULT ''`)
   }
 
   const hasTargetPath = taskColumns.some((col) => col.name === 'target_path')
   if (!hasTargetPath) {
-    db.exec(`ALTER TABLE tasks ADD COLUMN target_path TEXT NOT NULL DEFAULT ''`)
+    conn.exec(`ALTER TABLE tasks ADD COLUMN target_path TEXT NOT NULL DEFAULT ''`)
   }
 
   const hasAutomationStatus = taskColumns.some((col) => col.name === 'automation_status')
   if (!hasAutomationStatus) {
-    db.exec(`ALTER TABLE tasks ADD COLUMN automation_status TEXT NOT NULL DEFAULT 'idle'`)
+    conn.exec(`ALTER TABLE tasks ADD COLUMN automation_status TEXT NOT NULL DEFAULT 'idle'`)
   }
 
   const hasDueDate = taskColumns.some((col) => col.name === 'due_date')
   if (!hasDueDate) {
-    db.exec(`ALTER TABLE tasks ADD COLUMN due_date TEXT`)
+    conn.exec(`ALTER TABLE tasks ADD COLUMN due_date TEXT`)
   }
 
   const hasAutomationSkill = taskColumns.some((col) => col.name === 'automation_skill')
   if (!hasAutomationSkill) {
-    db.exec(`ALTER TABLE tasks ADD COLUMN automation_skill TEXT NOT NULL DEFAULT ''`)
+    conn.exec(`ALTER TABLE tasks ADD COLUMN automation_skill TEXT NOT NULL DEFAULT ''`)
   }
 
-  db.exec(`
+  conn.exec(`
     CREATE TABLE IF NOT EXISTS comments (
       id TEXT PRIMARY KEY,
       task_id TEXT NOT NULL,
@@ -70,7 +68,7 @@ export function getDb() {
     )
   `)
 
-  db.exec(`
+  conn.exec(`
     CREATE TABLE IF NOT EXISTS automation_runs (
       id TEXT PRIMARY KEY,
       task_id TEXT NOT NULL,
@@ -84,22 +82,32 @@ export function getDb() {
     )
   `)
 
-  const runColumns = db.prepare('PRAGMA table_info(automation_runs)').all()
+  const runColumns = conn.prepare('PRAGMA table_info(automation_runs)').all()
   const hasWorktreePath = runColumns.some((col) => col.name === 'worktree_path')
   if (!hasWorktreePath) {
-    db.exec(`ALTER TABLE automation_runs ADD COLUMN worktree_path TEXT NOT NULL DEFAULT ''`)
+    conn.exec(`ALTER TABLE automation_runs ADD COLUMN worktree_path TEXT NOT NULL DEFAULT ''`)
   }
   const hasWorktreeBranch = runColumns.some((col) => col.name === 'worktree_branch')
   if (!hasWorktreeBranch) {
-    db.exec(`ALTER TABLE automation_runs ADD COLUMN worktree_branch TEXT NOT NULL DEFAULT ''`)
+    conn.exec(`ALTER TABLE automation_runs ADD COLUMN worktree_branch TEXT NOT NULL DEFAULT ''`)
   }
   const hasRunSkill = runColumns.some((col) => col.name === 'skill')
   if (!hasRunSkill) {
-    db.exec(`ALTER TABLE automation_runs ADD COLUMN skill TEXT NOT NULL DEFAULT ''`)
+    conn.exec(`ALTER TABLE automation_runs ADD COLUMN skill TEXT NOT NULL DEFAULT ''`)
   }
 
   // SQLite 預設不強制外鍵約束，需要每個連線手動開啟才會啟用 CASCADE
-  db.pragma('foreign_keys = ON')
+  conn.pragma('foreign_keys = ON')
 
+  return conn
+}
+
+// SQLite 底層是同步 API，這裡包一層 async 只是為了跟 postgres 驅動介面一致，
+// 呼叫端不需要知道底下是同步還是非同步實作。
+export async function getDb() {
+  if (db) return db
+  db = initDb()
   return db
 }
+
+export const placeholderStyle = 'question'

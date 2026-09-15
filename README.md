@@ -81,6 +81,37 @@ docker compose exec taskboard node server/seed.mjs
 
 > **已知限制**：Hermes Agent 自動化執行功能（見下方）需要在**執行 API server 的主機**上安裝並可直接呼叫 `hermes` CLI。目前 Docker 部署的 container 內沒有安裝 `hermes`，因此 Docker 模式下無法使用自動化執行功能，僅適用於直接在主機上用 `npm run dev` / `npm start` 執行 API server 的情境。
 
+### 切換到 PostgreSQL（選用）
+
+預設資料庫是 SQLite（`.data/taskboard.sqlite`），不需要任何額外設定。若想改用
+PostgreSQL：
+
+1. 在 `.env` 設定：
+
+   ```bash
+   DB_DRIVER=postgres
+   DATABASE_URL=postgres://taskboard:taskboard@postgres:5432/taskboard
+   ```
+
+   （若接外部/現有的 Postgres，把 `DATABASE_URL` 換成該資料庫的連線字串即可，
+   不需要用到下方的內建 postgres service）
+
+2. 若要用 `docker-compose.yml` 內建的 Postgres 服務做本機測試：
+
+   ```bash
+   docker compose up -d postgres
+   docker compose up -d --build taskboard
+   ```
+
+   `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` 可在 `.env` 中調整，
+   需與 `DATABASE_URL` 中的帳密/資料庫名稱一致。
+
+3. Table 與欄位會在伺服器啟動時自動建立/檢查（跟 SQLite 版行為一致），
+   不需要手動跑 migration。`npm run db:seed` 會依 `DB_DRIVER` 自動寫入
+   對應的資料庫。
+
+若未設定 `DB_DRIVER`（或設為 `sqlite`），行為與過去完全相同。
+
 ---
 
 ## 使用
