@@ -886,28 +886,28 @@ git commit -m "feat: TaskDrawer shows interrupted status with retry/abandon acti
 **Files:**
 - Modify: 本 plan 檔案本身（`docs/superpowers/plans/2026-09-16-automation-crash-recovery.md`）
 
-- [ ] **Step 1: 執行完整後端測試**
+- [x] **Step 1: 執行完整後端測試**
 
 Run: `node --test test/`
 Expected: 全部 PASS（Task 1、Task 3 新增的測試檔都涵蓋在內）
 
-- [ ] **Step 2: 執行完整前端測試**
+- [x] **Step 2: 執行完整前端測試**
 
 Run: `npm test`
 Expected: 全部 PASS（Task 5、Task 6、Task 8 新增的測試檔都涵蓋在內）
 
-- [ ] **Step 3: 執行 typecheck**
+- [x] **Step 3: 執行 typecheck**
 
 Run: `npx tsc -b`
 Expected: 成功（無錯誤輸出）
 
-- [ ] **Step 4: 執行 lint**
+- [x] **Step 4: 執行 lint**
 
 Run: `npx oxlint`
 Expected: 無新增錯誤（若既有程式碼本來就有 warning，確認本次新增的檔案
 沒有引入新的 error/warning）
 
-- [ ] **Step 5: 手動端到端驗證恢復流程**
+- [x] **Step 5: 手動端到端驗證恢復流程**
 
 ```bash
 # 1. 啟動 server（背景）
@@ -949,7 +949,7 @@ Expected: 第 5 步的啟動 log 印出
 `runsRecovered` 預期為 0，`tasksRecovered` 預期為 1）；第 6 步確認
 `automationStatus` 欄位值為 `"interrupted"`
 
-- [ ] **Step 6: 手動驗證 retry-automation API**
+- [x] **Step 6: 手動驗證 retry-automation API**
 
 延續上一步（若已清理，重跑第 1-3 步重建一個 interrupted 任務，把
 `automationStatus` PATCH 為 `interrupted` 而非 `running`），然後：
@@ -963,14 +963,14 @@ Expected: 回應 202，因為這筆測試任務沒有設定真實存在的 `targ
 `automationStatus` 最終會變成 `failed`（這是既有 `triggerAutomation` 邏輯、
 非本次改動範圍），確認這個既有錯誤處理路徑沒有被破壞即可
 
-- [ ] **Step 7: 清理手動驗證留下的測試資料**
+- [x] **Step 7: 清理手動驗證留下的測試資料**
 
 ```bash
 curl -s -X DELETE http://localhost:3001/api/tasks/$TASK_ID
 rm -f /tmp/task.json
 ```
 
-- [ ] **Step 8: Plan checkbox 全部打勾後單獨 commit**
+- [x] **Step 8: Plan checkbox 全部打勾後單獨 commit**
 
 把本 plan 檔案裡所有 `- [ ]` 改成 `- [x]`，然後：
 
