@@ -43,7 +43,7 @@ better-sqlite3、Express 5、React 19 + TypeScript、新增 vitest +
   better-sqlite3 Database 實例，回傳
   `{ tasksRecovered: number, runsRecovered: number }`
 
-- [ ] **Step 1: 寫失敗的測試**
+- [x] **Step 1: 寫失敗的測試**
 
 建立 `test/db.recover.test.mjs`：
 
@@ -141,13 +141,13 @@ test('recoverInterruptedRuns is a no-op when nothing is running', () => {
 })
 ```
 
-- [ ] **Step 2: 執行測試確認失敗**
+- [x] **Step 2: 執行測試確認失敗**
 
 Run: `node --test test/db.recover.test.mjs`
 Expected: FAIL，錯誤訊息類似
 `recoverInterruptedRuns is not a function`（因為還沒實作，也還沒 export）
 
-- [ ] **Step 3: 在 `server/db.mjs` 實作 `recoverInterruptedRuns`**
+- [x] **Step 3: 在 `server/db.mjs` 實作 `recoverInterruptedRuns`**
 
 在 `server/db.mjs` 檔案最後（`export function getDb()` 之後）新增：
 
@@ -176,12 +176,12 @@ export function recoverInterruptedRuns(db) {
 }
 ```
 
-- [ ] **Step 4: 執行測試確認通過**
+- [x] **Step 4: 執行測試確認通過**
 
 Run: `node --test test/db.recover.test.mjs`
 Expected: PASS，兩個測試都綠燈
 
-- [ ] **Step 5: 在 `server/index.mjs` 啟動流程中呼叫恢復函式**
+- [x] **Step 5: 在 `server/index.mjs` 啟動流程中呼叫恢復函式**
 
 修改 `server/index.mjs` 的 import 區塊，加入：
 
@@ -201,7 +201,7 @@ if (recovery.tasksRecovered > 0 || recovery.runsRecovered > 0) {
 }
 ```
 
-- [ ] **Step 6: 手動驗證整合行為**
+- [x] **Step 6: 手動驗證整合行為**
 
 Run:
 ```bash
@@ -219,7 +219,7 @@ Expected: 印出 `API server listening on port 3001`，且若 `.data/taskboard.s
 裡本來就沒有 running 資料，不印出 `[startup]` 那行（因為 `tasksRecovered` 和
 `runsRecovered` 都是 0）
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add server/db.mjs server/index.mjs test/db.recover.test.mjs
@@ -237,7 +237,7 @@ git commit -m "feat: recover orphaned running automation status on server startu
 - Produces: `Task.automationStatus` 與 `AutomationRun.status` 的 union type
   都新增 `'interrupted'`，供 Task 3、4 使用
 
-- [ ] **Step 1: 修改 `src/types/task.ts`**
+- [x] **Step 1: 修改 `src/types/task.ts`**
 
 ```ts
 // 第 31 行，原本：
@@ -253,7 +253,7 @@ status: 'running' | 'done' | 'failed'
 status: 'running' | 'done' | 'failed' | 'interrupted'
 ```
 
-- [ ] **Step 2: 執行 typecheck，確認錯誤範圍符合預期**
+- [x] **Step 2: 執行 typecheck，確認錯誤範圍符合預期**
 
 Run: `npx tsc -b`
 Expected: **會報一個、且僅一個 TS7053 錯誤**，來源是
@@ -270,7 +270,7 @@ Expected: **會報一個、且僅一個 TS7053 錯誤**，來源是
 一個 TS7053 錯誤即符合預期，可以放心繼續下一步；若出現其他檔案或其他
 錯誤類型，才需要停下來回報。
 
-- [ ] **Step 3: Commit（即使 tsc -b 顯示上述已知的、將由 Task 5 修正的錯誤）**
+- [x] **Step 3: Commit（即使 tsc -b 顯示上述已知的、將由 Task 5 修正的錯誤）**
 
 ```bash
 git add src/types/task.ts
