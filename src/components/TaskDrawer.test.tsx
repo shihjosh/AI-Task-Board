@@ -55,4 +55,36 @@ describe('TaskDrawer interrupted state', () => {
     )
     expect(screen.queryByRole('button', { name: '重新執行' })).not.toBeInTheDocument()
   })
+
+  it('shows an amber dot on the automation tab for interrupted status, not the running blue dot', async () => {
+    render(
+      <TaskDrawer
+        isOpen={true}
+        mode="edit"
+        initialTask={interruptedTask}
+        onClose={() => {}}
+        onSaved={() => {}}
+      />,
+    )
+    const automationTab = await screen.findByRole('button', { name: /執行紀錄/ })
+    const dot = automationTab.querySelector('span')
+    expect(dot).toHaveClass('bg-amber-500')
+    expect(dot).not.toHaveClass('bg-sky-500')
+  })
+
+  it('shows a sky-blue dot on the automation tab for running status, not amber', async () => {
+    render(
+      <TaskDrawer
+        isOpen={true}
+        mode="edit"
+        initialTask={{ ...interruptedTask, automationStatus: 'running' }}
+        onClose={() => {}}
+        onSaved={() => {}}
+      />,
+    )
+    const automationTab = await screen.findByRole('button', { name: /執行紀錄/ })
+    const dot = automationTab.querySelector('span')
+    expect(dot).toHaveClass('bg-sky-500')
+    expect(dot).not.toHaveClass('bg-amber-500')
+  })
 })

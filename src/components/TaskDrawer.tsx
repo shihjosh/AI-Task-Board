@@ -419,8 +419,11 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
                 }`}
               >
                 執行紀錄
-                {(initialTask.automationStatus === 'running' || initialTask.automationStatus === 'interrupted') && (
+                {initialTask.automationStatus === 'running' && (
                   <span className="h-1.5 w-1.5 rounded-full bg-sky-500 dark:bg-sky-400" />
+                )}
+                {initialTask.automationStatus === 'interrupted' && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500 dark:bg-amber-400" />
                 )}
               </button>
             </div>
