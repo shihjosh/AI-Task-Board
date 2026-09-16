@@ -291,7 +291,7 @@ git commit -m "feat: add interrupted to automationStatus and AutomationRun statu
 - Produces: `POST /api/tasks/:id/retry-automation` — 成功回應
   `202 { task }`；task 不存在回應 `404 { error: 'not_found' }`
 
-- [ ] **Step 1: 寫失敗的 API 測試**
+- [x] **Step 1: 寫失敗的 API 測試**
 
 這個 API 會呼叫 `triggerAutomation` 進而 `spawn('hermes', ...)`，測試環境
 不應該真的啟動 hermes。測試策略：測試「task 不存在回 404」與「task 存在時
@@ -337,14 +337,14 @@ test('POST /api/tasks/:id/retry-automation returns 404 for missing task', async 
 })
 ```
 
-- [ ] **Step 2: 執行測試確認失敗**
+- [x] **Step 2: 執行測試確認失敗**
 
 Run: `node --test test/index.retryAutomation.test.mjs`
 Expected: FAIL——此時 `server/app.mjs` 還不存在（目前 `server/index.mjs`
 直接在檔案底部呼叫 `app.listen()`，沒有把 `app` 匯出成獨立模組可供測試
 import）
 
-- [ ] **Step 3: 把 `server/index.mjs` 拆成 `server/app.mjs`（可測試）+ `server/index.mjs`（啟動進入點）**
+- [x] **Step 3: 把 `server/index.mjs` 拆成 `server/app.mjs`（可測試）+ `server/index.mjs`（啟動進入點）**
 
 建立 `server/app.mjs`：把現有 `server/index.mjs` 從第 1 行到
 `app.use((err, req, res, next) => {...})` 錯誤處理 middleware 為止的內容
@@ -386,12 +386,12 @@ app.listen(port, () => {
 （這一步同時完成 Task 1 Step 5 原本規劃放在 `index.mjs` 的恢復呼叫——
 拆檔後改放在新的精簡 `index.mjs`，`app.mjs` 保持純粹只定義 routes）
 
-- [ ] **Step 4: 執行測試確認通過**
+- [x] **Step 4: 執行測試確認通過**
 
 Run: `node --test test/index.retryAutomation.test.mjs`
 Expected: PASS
 
-- [ ] **Step 5: 手動驗證既有功能沒有回歸**
+- [x] **Step 5: 手動驗證既有功能沒有回歸**
 
 Run: `npm run dev:server`（背景執行或另開一個 terminal），然後：
 ```bash
@@ -400,7 +400,7 @@ curl -s http://localhost:3001/api/tasks | head -c 200
 Expected: 回傳 JSON 格式的 tasks 列表（跟拆檔前行為一致），確認
 `server/index.mjs` → `server/app.mjs` 的拆分沒有破壞既有 API
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add server/app.mjs server/index.mjs test/index.retryAutomation.test.mjs
