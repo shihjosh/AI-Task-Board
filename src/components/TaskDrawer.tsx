@@ -4,7 +4,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { Task, Priority, ColumnId, TagType } from '../types/task'
 import { TAG_OPTIONS, ASSIGNEE_OPTIONS, PRIORITY_OPTIONS, COLUMN_OPTIONS } from '../data/options'
-import { createTaskApi, updateTaskApi, deleteTaskApi } from '../lib/api'
+import { createTaskApi, updateTaskApi, deleteTaskApi, retryAutomationApi } from '../lib/api'
 import { fetchAvailableSkills } from '../lib/skillsApi'
 import CommentList from './CommentList'
 import AutomationRunList from './AutomationRunList'
@@ -146,6 +146,34 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
     }
   }
 
+  async function handleRetryAutomation() {
+    if (!initialTask) return
+    setIsSubmitting(true)
+    setError(null)
+    try {
+      await retryAutomationApi(initialTask.id)
+      onSaved()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '重新執行失敗')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  async function handleAbandonAutomation() {
+    if (!initialTask) return
+    setIsSubmitting(true)
+    setError(null)
+    try {
+      await updateTaskApi(initialTask.id, { automationStatus: 'failed' })
+      onSaved()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '操作失敗')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/30 dark:bg-black/50" onClick={onClose} />
@@ -279,7 +307,28 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
               {initialTask.automationStatus === 'running' && '執行中'}
               {initialTask.automationStatus === 'done' && '已完成'}
               {initialTask.automationStatus === 'failed' && '失敗'}
+              {initialTask.automationStatus === 'interrupted' && '執行中斷'}
             </span>
+          )}
+          {mode === 'edit' && initialTask?.automationStatus === 'interrupted' && (
+            <div className="mt-2 flex gap-2">
+              <button
+                type="button"
+                onClick={handleRetryAutomation}
+                disabled={isSubmitting}
+                className="rounded-md bg-sky-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-sky-500 disabled:opacity-50"
+              >
+                重新執行
+              </button>
+              <button
+                type="button"
+                onClick={handleAbandonAutomation}
+                disabled={isSubmitting}
+                className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+              >
+                放棄
+              </button>
+            </div>
           )}
         </label>
 
@@ -370,7 +419,7 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
                 }`}
               >
                 執行紀錄
-                {initialTask.automationStatus === 'running' && (
+                {(initialTask.automationStatus === 'running' || initialTask.automationStatus === 'interrupted') && (
                   <span className="h-1.5 w-1.5 rounded-full bg-sky-500 dark:bg-sky-400" />
                 )}
               </button>
