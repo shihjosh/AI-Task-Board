@@ -107,22 +107,30 @@ export function getDb() {
 export function recoverInterruptedRuns(db) {
   const now = new Date().toISOString()
 
-  const runsResult = db
-    .prepare(
-      `UPDATE automation_runs
-       SET status = 'interrupted',
-           error = '伺服器重啟或程序中斷，執行狀態不明（原本狀態：running）',
-           finished_at = ?
-       WHERE status = 'running'`,
-    )
-    .run(now)
+  // 用 better-sqlite3 原生的同步 transaction 包覆兩個 UPDATE，避免第一個
+  // 成功、第二個因故失敗（例如 DB 檔案被鎖）時留下「run 已標記 interrupted
+  // 但 task 仍是 running」的不一致狀態——這個函式操作的就是同一個 db 連線，
+  // 不經過 server/db/index.mjs 那層抽象，因此可以直接用 db.transaction()。
+  const recover = db.transaction(() => {
+    const runsResult = db
+      .prepare(
+        `UPDATE automation_runs
+         SET status = 'interrupted',
+             error = '伺服器重啟或程序中斷，執行狀態不明（原本狀態：running）',
+             finished_at = ?
+         WHERE status = 'running'`,
+      )
+      .run(now)
 
-  const tasksResult = db
-    .prepare(`UPDATE tasks SET automation_status = 'interrupted' WHERE automation_status = 'running'`)
-    .run()
+    const tasksResult = db
+      .prepare(`UPDATE tasks SET automation_status = 'interrupted' WHERE automation_status = 'running'`)
+      .run()
 
-  return {
-    tasksRecovered: tasksResult.changes,
-    runsRecovered: runsResult.changes,
-  }
+    return {
+      tasksRecovered: tasksResult.changes,
+      runsRecovered: runsResult.changes,
+    }
+  })
+
+  return recover()
 }
