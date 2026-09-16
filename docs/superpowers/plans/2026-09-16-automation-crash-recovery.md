@@ -713,13 +713,13 @@ git commit -m "feat: add retryAutomationApi client function"
 **Interfaces:**
 - Consumes: `retryAutomationApi`（Task 7 產出）、`updateTaskApi`（既有）
 
-- [ ] **Step 1: 修改 import（第 7 行）**
+- [x] **Step 1: 修改 import（第 7 行）**
 
 ```ts
 import { createTaskApi, updateTaskApi, deleteTaskApi, retryAutomationApi } from '../lib/api'
 ```
 
-- [ ] **Step 2: 狀態文字新增 interrupted 分支（第 276-283 行）**
+- [x] **Step 2: 狀態文字新增 interrupted 分支（第 276-283 行）**
 
 ```tsx
 {mode === 'edit' && initialTask?.automationStatus && initialTask.automationStatus !== 'idle' && (
@@ -733,7 +733,7 @@ import { createTaskApi, updateTaskApi, deleteTaskApi, retryAutomationApi } from 
 )}
 ```
 
-- [ ] **Step 3: 執行紀錄分頁小圓點涵蓋 interrupted（第 373-375 行）**
+- [x] **Step 3: 執行紀錄分頁小圓點涵蓋 interrupted（第 373-375 行）**
 
 ```tsx
 {(initialTask.automationStatus === 'running' || initialTask.automationStatus === 'interrupted') && (
@@ -741,7 +741,7 @@ import { createTaskApi, updateTaskApi, deleteTaskApi, retryAutomationApi } from 
 )}
 ```
 
-- [ ] **Step 4: 新增「重新執行」「放棄」按鈕與對應 handler**
+- [x] **Step 4: 新增「重新執行」「放棄」按鈕與對應 handler**
 
 在 `handleDelete` 函式（第 133-147 行）之後新增兩個 handler：
 
@@ -801,12 +801,12 @@ async function handleAbandonAutomation() {
 )}
 ```
 
-- [ ] **Step 5: 執行 typecheck**
+- [x] **Step 5: 執行 typecheck**
 
 Run: `npx tsc -b`
 Expected: 成功（無錯誤輸出）
 
-- [ ] **Step 6: 手動驗證（vitest 對這個大型 form component 只做輕量煙霧測試）**
+- [x] **Step 6: 手動驗證（vitest 對這個大型 form component 只做輕量煙霧測試）**
 
 建立 `src/components/TaskDrawer.test.tsx`：
 
@@ -872,7 +872,7 @@ describe('TaskDrawer interrupted state', () => {
 Run: `npm test -- TaskDrawer`
 Expected: PASS，兩個測試都綠燈
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/components/TaskDrawer.tsx src/components/TaskDrawer.test.tsx
