@@ -103,3 +103,26 @@ export function getDb() {
 
   return db
 }
+
+export function recoverInterruptedRuns(db) {
+  const now = new Date().toISOString()
+
+  const runsResult = db
+    .prepare(
+      `UPDATE automation_runs
+       SET status = 'interrupted',
+           error = '伺服器重啟或程序中斷，執行狀態不明（原本狀態：running）',
+           finished_at = ?
+       WHERE status = 'running'`,
+    )
+    .run(now)
+
+  const tasksResult = db
+    .prepare(`UPDATE tasks SET automation_status = 'interrupted' WHERE automation_status = 'running'`)
+    .run()
+
+  return {
+    tasksRecovered: tasksResult.changes,
+    runsRecovered: runsResult.changes,
+  }
+}

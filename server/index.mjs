@@ -8,6 +8,7 @@ import { listComments, createComment, updateComment, deleteComment } from './com
 import { triggerAutomation } from './automationRunner.mjs'
 import { listAutomationRuns } from './automationRunRepository.mjs'
 import { listAvailableSkills } from './skillsRepository.mjs'
+import { getDb, recoverInterruptedRuns } from './db.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const distDir = path.join(__dirname, '..', 'dist')
@@ -225,6 +226,14 @@ app.use((err, req, res, next) => {
   console.error('Unhandled error in API request:', err)
   res.status(500).json({ error: 'internal_server_error' })
 })
+
+const recovery = recoverInterruptedRuns(getDb())
+if (recovery.tasksRecovered > 0 || recovery.runsRecovered > 0) {
+  console.log(
+    `[startup] 偵測到 ${recovery.tasksRecovered} 筆任務、${recovery.runsRecovered} 筆執行紀錄` +
+      `處於中斷的 running 狀態，已標記為 interrupted`,
+  )
+}
 
 const port = process.env.PORT ?? 3001
 app.listen(port, () => {
