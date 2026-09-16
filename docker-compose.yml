@@ -8,11 +8,80 @@ services:
     env_file:
       - path: .env
         required: false
+    environment:
+      # automation service 用 network_mode: host 執行（驗證發現：容器內
+      # hermes CLI 讀取的 config.yaml base_url 寫死 http://localhost:PORT，
+      # 只有 host network 才能讓「容器的 localhost」等於「宿主機的
+      # localhost」連到 9Router 之類的本機服務，見下方 automation service
+      # 的說明），因此 taskboard 要透過 host.docker.internal 呼叫它。
+      AUTOMATION_URL: http://host.docker.internal:3100
+      TASKBOARD_URL: http://taskboard:8088
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "8088:8088"
     volumes:
       - taskboard-data:/app/.data
     restart: unless-stopped
 
+  # 可選：Automation 服務，接上本機的 Hermes Agent（官方 image），讓卡片
+  # 拖到 in_progress 時能真的觸發 hermes chat 執行任務。詳見
+  # docs/superpowers/specs/2026-09-15-docker-compose-automation-service-design.md
+  # 與 docs/superpowers/plans/2026-09-15-docker-compose-automation-service.md。
+  # 僅限本機開發機使用，不建議在正式環境部署（掛載整個 /home/ubuntu 與
+  # ~/.hermes，風險僅在單人開發機上可接受）。
+  #
+  # network_mode: host（本機驗證時發現必要）：宿主機 ~/.hermes/config.yaml
+  # 裡的 model base_url 通常寫死 http://localhost:<port>（例如本機的
+  # 9Router 閘道），若容器用一般 bridge network，容器內的 localhost 是
+  # 容器自己、連不到宿主機的服務，hermes chat 會直接連線失敗。
+  # network_mode: host 讓容器共用宿主機的網路 namespace，容器內
+  # localhost 直接等於宿主機 localhost，不需要另外改寫 config.yaml。
+  # 代價：network_mode: host 與 networks:/ports: 互斥（見下方註解）、且
+  # 僅支援 Linux（macOS/Windows Docker Desktop 無法直接生效)——本專案的
+  # 使用情境是 Linux 開發機，可接受。
+  #
+  # HERMES_DOCKER_EXEC_AS_ROOT=1（本機驗證時發現必要）：官方 image 的
+  # /opt/hermes/bin/hermes 是一個 privilege-drop shim，預設會把以 root
+  # 身份執行的 hermes 指令自動降權到內建的 hermes 使用者（UID 10000）。
+  # 但這裡掛載的是宿主機 ubuntu 使用者（UID 1000）的 ~/.hermes，UID 不同
+  # 導致 hermes 讀不到 ~/.hermes/.env（PermissionError），需要設這個環境
+  # 變數讓 shim 維持以 root 執行、對齊掛載進來的檔案擁有者。
+  automation:
+    image: nousresearch/hermes-agent:latest
+    container_name: ai-task-board-automation
+    entrypoint: ["sh", "-c", "git config --global --add safe.directory '*' && exec node /home/ubuntu/AI-Task-Board/automation/server.mjs"]
+    network_mode: host
+    environment:
+      PORT: "3100"
+      HERMES_DOCKER_EXEC_AS_ROOT: "1"
+    volumes:
+      - /home/ubuntu:/home/ubuntu
+      - ${HOME}/.hermes:/opt/data
+    restart: unless-stopped
+
+  # 可選：PostgreSQL 服務。預設不會被 taskboard 使用，僅供想切換到
+  # Postgres 的情境本機測試方便。啟用方式：
+  #   1. `docker compose up postgres` 先啟動這個服務
+  #   2. 在 .env 設定：
+  #        DB_DRIVER=postgres
+  #        DATABASE_URL=postgres://taskboard:taskboard@postgres:5432/taskboard
+  #      （POSTGRES_USER/POSTGRES_PASSWORD/POSTGRES_DB 需與下方一致）
+  #   3. `docker compose up taskboard` 或一起 `docker compose up`
+  # 若不需要 Postgres，忽略這個 service 即可，不影響現有 SQLite 使用方式。
+  postgres:
+    image: postgres:16-alpine
+    container_name: ai-task-board-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-taskboard}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-taskboard}
+      POSTGRES_DB: ${POSTGRES_DB:-taskboard}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
 volumes:
   taskboard-data:
+  postgres-data:

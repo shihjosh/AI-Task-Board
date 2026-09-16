@@ -1,10 +1,17 @@
-import { spawn } from 'node:child_process'
 import fs from 'node:fs'
+import { spawn } from 'node:child_process'
 import { updateTask } from './taskRepository.mjs'
 import { createAutomationRun, updateAutomationRun, appendAutomationRunOutput } from './automationRunRepository.mjs'
 
 const MAX_CONCURRENT = 1
 const TIMEOUT_MS = 15 * 60 * 1000 // 15 分鐘
+
+// 本機開發模式（npm run dev / npm start）：不設定 AUTOMATION_URL，
+// automationRunner 自己 spawn('hermes', ...)，行為與 docker 化之前完全相同。
+// Docker compose 模式：docker-compose.yml 的 taskboard service 會設定
+// AUTOMATION_URL（指向 automation service），改成打 HTTP 給它，由它負責
+// spawn hermes（詳見 automation/server.mjs）。
+const AUTOMATION_URL = process.env.AUTOMATION_URL
 
 let runningCount = 0
 const queue = []
@@ -22,6 +29,7 @@ function priorityRank(task) {
 function buildPrompt(task) {
   const description = task.description?.trim() ? task.description : '（無描述）'
   const port = process.env.PORT ?? 3001
+  const taskboardUrl = process.env.TASKBOARD_URL ?? `http://localhost:${port}`
   return [
     `任務標題：${task.title}`,
     '',
@@ -40,7 +48,7 @@ function buildPrompt(task) {
     '若上述任務描述包含明確的執行步驟（例如「Step 1」「Step 2」等清單），請在完成每一個步驟後，',
     '立即執行以下指令回報進度（將 <百分比整數> 換成實際數字，例如完成 2 個 step、共 5 個 step，則填 40）：',
     '',
-    `curl -s -X PATCH http://localhost:${port}/api/tasks/${task.id} \\`,
+    `curl -s -X PATCH ${taskboardUrl}/api/tasks/${task.id} \\`,
     `  -H 'Content-Type: application/json' \\`,
     `  -d '{"progress": <百分比整數>}'`,
     '',
@@ -48,66 +56,113 @@ function buildPrompt(task) {
   ].join('\n')
 }
 
-function runOne(task) {
+// 本機開發模式：直接 spawn('hermes', ...)，回傳格式與 HTTP 模式的
+// automation/server.mjs 回應一致（{ exitCode, stdout, stderr, timedOut }），
+// 讓下方 runOne() 的後續處理邏輯不需要區分兩種模式。
+function runViaSpawn({ prompt, cwd, skill }) {
+  return new Promise((resolve) => {
+    const args = ['chat', '-q', prompt, '-w', '--cli']
+    if (skill) {
+      args.push('-s', skill)
+    }
+
+    let child
+    try {
+      child = spawn('hermes', args, { cwd, detached: true })
+    } catch (err) {
+      resolve({ exitCode: null, stdout: '', stderr: `無法啟動 Hermes 程序：${err.message}`, timedOut: false })
+      return
+    }
+
+    let stdout = ''
+    let stderr = ''
+    let timedOut = false
+
+    const timer = setTimeout(() => {
+      timedOut = true
+      child.kill('SIGTERM')
+    }, TIMEOUT_MS)
+
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk.toString()
+    })
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk.toString()
+    })
+
+    child.on('error', (err) => {
+      clearTimeout(timer)
+      resolve({ exitCode: null, stdout, stderr: `${stderr}\n無法啟動 Hermes 程序：${err.message}`, timedOut })
+    })
+
+    child.on('exit', (code) => {
+      clearTimeout(timer)
+      resolve({ exitCode: code, stdout, stderr, timedOut })
+    })
+  })
+}
+
+// Docker compose 模式：打 HTTP 給 automation service，由它負責 spawn hermes。
+async function runViaHttp({ prompt, cwd, skill }) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS + 5000)
+  try {
+    const response = await fetch(`${AUTOMATION_URL}/run`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, cwd, skill }),
+      signal: controller.signal,
+    })
+    if (!response.ok) {
+      return { exitCode: null, stdout: '', stderr: `automation service 回應非 2xx（HTTP ${response.status}）`, timedOut: false }
+    }
+    return await response.json()
+  } catch (err) {
+    return { exitCode: null, stdout: '', stderr: `無法連線 automation service：${err.message}`, timedOut: false }
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+async function runOne(task) {
   runningCount += 1
-  updateTask(task.id, { automationStatus: 'running' })
+  await updateTask(task.id, { automationStatus: 'running' })
 
   const prompt = buildPrompt(task)
   const skill = task.automationSkill?.trim() || undefined
-  const run = createAutomationRun(task.id, { prompt, skill })
+  const run = await createAutomationRun(task.id, { prompt, skill })
 
-  const args = ['chat', '-q', prompt, '-w', '--cli']
-  if (skill) {
-    args.push('-s', skill)
+  const result = AUTOMATION_URL
+    ? await runViaHttp({ prompt, cwd: task.targetPath, skill })
+    : await runViaSpawn({ prompt, cwd: task.targetPath, skill })
+
+  if (result.stdout) {
+    await appendAutomationRunOutput(run.id, result.stdout).catch((err) => {
+      console.error('appendAutomationRunOutput failed:', err)
+    })
   }
 
-  let child
-  try {
-    child = spawn('hermes', args, {
-      cwd: task.targetPath,
-      detached: true,
-    })
-  } catch (err) {
-    finishFailed(task, run, `無法啟動 Hermes 程序：${err.message}`)
+  const worktreeInfo = extractWorktreeInfo(result.stdout ?? '')
+
+  if (result.timedOut) {
+    await finishFailed(
+      task,
+      run,
+      `執行逾時（超過 ${TIMEOUT_MS / 60000} 分鐘），已強制中止`,
+      worktreeInfo,
+    )
     return
   }
-
-  let stdout = ''
-  let stderr = ''
-  let timedOut = false
-
-  const timer = setTimeout(() => {
-    timedOut = true
-    child.kill('SIGTERM')
-  }, TIMEOUT_MS)
-
-  child.stdout.on('data', (chunk) => {
-    const text = chunk.toString()
-    stdout += text
-    appendAutomationRunOutput(run.id, text)
-  })
-  child.stderr.on('data', (chunk) => {
-    stderr += chunk.toString()
-  })
-
-  child.on('error', (err) => {
-    clearTimeout(timer)
-    finishFailed(task, run, `無法啟動 Hermes 程序：${err.message}`)
-  })
-
-  child.on('exit', (code) => {
-    clearTimeout(timer)
-    const worktreeInfo = extractWorktreeInfo(stdout)
-    if (timedOut) {
-      finishFailed(task, run, `執行逾時（超過 ${TIMEOUT_MS / 60000} 分鐘），已強制中止`, worktreeInfo)
-      return
-    }
-    if (code === 0) {
-      finishSuccess(task, run, stdout, worktreeInfo)
-    } else {
-      finishFailed(task, run, `Hermes 程序結束代碼非 0（exit code ${code}）：\n${stderr.slice(-2000)}`, worktreeInfo)
-    }
-  })
+  if (result.exitCode === 0) {
+    await finishSuccess(task, run, result.stdout ?? '', worktreeInfo)
+  } else {
+    await finishFailed(
+      task,
+      run,
+      `Hermes 程序結束代碼非 0（exit code ${result.exitCode}）：\n${(result.stderr ?? '').slice(-2000)}`,
+      worktreeInfo,
+    )
+  }
 }
 
 function extractWorktreeInfo(stdout) {
@@ -126,15 +181,15 @@ function extractWorktreeInfo(stdout) {
   }
 }
 
-function finishSuccess(task, run, output, worktreeInfo = {}) {
-  updateAutomationRun(run.id, { status: 'done', output, ...worktreeInfo })
-  updateTask(task.id, { automationStatus: 'done', columnId: 'review' })
+async function finishSuccess(task, run, output, worktreeInfo = {}) {
+  await updateAutomationRun(run.id, { status: 'done', output, ...worktreeInfo })
+  await updateTask(task.id, { automationStatus: 'done', columnId: 'review' })
   onSlotFreed()
 }
 
-function finishFailed(task, run, reason, worktreeInfo = {}) {
-  updateAutomationRun(run.id, { status: 'failed', error: reason, ...worktreeInfo })
-  updateTask(task.id, { automationStatus: 'failed' })
+async function finishFailed(task, run, reason, worktreeInfo = {}) {
+  await updateAutomationRun(run.id, { status: 'failed', error: reason, ...worktreeInfo })
+  await updateTask(task.id, { automationStatus: 'failed' })
   onSlotFreed()
 }
 
@@ -149,17 +204,23 @@ function onSlotFreed() {
     }
   }
   const [next] = queue.splice(bestIndex, 1)
-  runOne(next)
+  runOne(next).catch((err) => {
+    console.error('runOne failed:', err)
+  })
 }
 
-export function triggerAutomation(task) {
-  if (!task.targetPath || !fs.existsSync(task.targetPath)) {
-    const run = createAutomationRun(task.id, { prompt: buildPrompt(task) })
-    updateAutomationRun(run.id, {
+export async function triggerAutomation(task) {
+  // 本機開發模式（無 AUTOMATION_URL）：taskboard 自己直接看得到宿主機檔案系統，
+  // 可以檢查路徑是否存在。Docker compose 模式：taskboard container 沒有掛載
+  // 專案目錄，這個檢查交給看得到的 automation service 在 /run handler 內做。
+  const pathMissing = !task.targetPath || (!AUTOMATION_URL && !fs.existsSync(task.targetPath))
+  if (pathMissing) {
+    const run = await createAutomationRun(task.id, { prompt: buildPrompt(task) })
+    await updateAutomationRun(run.id, {
       status: 'failed',
       error: `targetPath「${task.targetPath}」不存在或未設定`,
     })
-    updateTask(task.id, { automationStatus: 'failed' })
+    await updateTask(task.id, { automationStatus: 'failed' })
     return
   }
   if (task.automationStatus === 'running') {
@@ -169,5 +230,5 @@ export function triggerAutomation(task) {
     queue.push(task)
     return
   }
-  runOne(task)
+  await runOne(task)
 }

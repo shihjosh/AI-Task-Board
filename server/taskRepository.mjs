@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { getDb } from './db.mjs'
+import * as db from './db/index.mjs'
 
 function rowToTask(row) {
   return {
@@ -22,45 +22,44 @@ function rowToTask(row) {
   }
 }
 
-export function listTasks() {
-  const db = getDb()
-  const rows = db.prepare('SELECT * FROM tasks ORDER BY created_at ASC').all()
+export async function listTasks() {
+  const rows = await db.all('SELECT * FROM tasks ORDER BY created_at ASC')
   return rows.map(rowToTask)
 }
 
-export function createTask(input) {
-  const db = getDb()
+export async function createTask(input) {
   const now = new Date().toISOString()
   const id = input.id ?? randomUUID()
 
-  db.prepare(
+  await db.run(
     `INSERT INTO tasks (id, title, description, priority, tags, assignees, progress, comment_count, has_unread, column_id, created_at, updated_at, target_path, automation_status, due_date, automation_skill)
-     VALUES (@id, @title, @description, @priority, @tags, @assignees, @progress, @commentCount, @hasUnread, @columnId, @createdAt, @updatedAt, @targetPath, @automationStatus, @dueDate, @automationSkill)`,
-  ).run({
-    id,
-    title: input.title,
-    description: input.description ?? '',
-    priority: input.priority,
-    tags: JSON.stringify(input.tags ?? []),
-    assignees: JSON.stringify(input.assignees ?? []),
-    progress: input.progress ?? null,
-    commentCount: input.commentCount ?? 0,
-    hasUnread: input.hasUnread ? 1 : 0,
-    columnId: input.columnId,
-    createdAt: now,
-    updatedAt: now,
-    targetPath: input.targetPath ?? '',
-    automationStatus: input.automationStatus ?? 'idle',
-    dueDate: input.dueDate ?? null,
-    automationSkill: input.automationSkill ?? '',
-  })
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      input.title,
+      input.description ?? '',
+      input.priority,
+      JSON.stringify(input.tags ?? []),
+      JSON.stringify(input.assignees ?? []),
+      input.progress ?? null,
+      input.commentCount ?? 0,
+      input.hasUnread ? 1 : 0,
+      input.columnId,
+      now,
+      now,
+      input.targetPath ?? '',
+      input.automationStatus ?? 'idle',
+      input.dueDate ?? null,
+      input.automationSkill ?? '',
+    ],
+  )
 
-  return rowToTask(db.prepare('SELECT * FROM tasks WHERE id = ?').get(id))
+  const row = await db.get('SELECT * FROM tasks WHERE id = ?', [id])
+  return rowToTask(row)
 }
 
-export function updateTask(id, patch) {
-  const db = getDb()
-  const existing = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id)
+export async function updateTask(id, patch) {
+  const existing = await db.get('SELECT * FROM tasks WHERE id = ?', [id])
   if (!existing) return null
 
   const merged = {
@@ -80,17 +79,66 @@ export function updateTask(id, patch) {
     automationSkill: patch.automationSkill ?? existing.automation_skill,
   }
 
-  db.prepare(
-    `UPDATE tasks SET title=@title, description=@description, priority=@priority, tags=@tags, assignees=@assignees,
-     progress=@progress, comment_count=@commentCount, has_unread=@hasUnread,
-     column_id=@columnId, updated_at=@updatedAt, target_path=@targetPath, automation_status=@automationStatus, due_date=@dueDate, automation_skill=@automationSkill WHERE id=@id`,
-  ).run({ ...merged, id })
+  await db.run(
+    `UPDATE tasks SET title=?, description=?, priority=?, tags=?, assignees=?,
+     progress=?, comment_count=?, has_unread=?,
+     column_id=?, updated_at=?, target_path=?, automation_status=?, due_date=?, automation_skill=? WHERE id=?`,
+    [
+      merged.title,
+      merged.description,
+      merged.priority,
+      merged.tags,
+      merged.assignees,
+      merged.progress,
+      merged.commentCount,
+      merged.hasUnread,
+      merged.columnId,
+      merged.updatedAt,
+      merged.targetPath,
+      merged.automationStatus,
+      merged.dueDate,
+      merged.automationSkill,
+      id,
+    ],
+  )
 
-  return rowToTask(db.prepare('SELECT * FROM tasks WHERE id = ?').get(id))
+  const row = await db.get('SELECT * FROM tasks WHERE id = ?', [id])
+  return rowToTask(row)
 }
 
-export function deleteTask(id) {
-  const db = getDb()
-  const result = db.prepare('DELETE FROM tasks WHERE id = ?').run(id)
+export async function deleteTask(id) {
+  const result = await db.run('DELETE FROM tasks WHERE id = ?', [id])
   return result.changes > 0
+}
+
+// Server 啟動時呼叫一次：把資料庫裡殘留的 automation_status='running' 標記為
+// interrupted。這個併發控制（automationRunner.mjs 的 runningCount/queue）只存在
+// 單一 Node process 記憶體中，server 重啟後這些記憶體狀態全部歸零，但資料庫裡
+// 對應的 automation_status 仍停留在 running，永遠不會自己更新——因此只要偵測到
+// running，就一定是舊 process 遺留下來的孤兒，不需要額外確認該 process 是否還活著。
+//
+// 兩個 UPDATE（automation_runs 與 tasks）各自獨立執行、不包在同一個 transaction
+// 裡：server/db/index.mjs 的統一介面（all/get/run）同時支援 sqlite 與 postgres
+// 兩種驅動，並未暴露跨驅動一致的 transaction API，貿然引入單一驅動特有的
+// transaction 寫法會破壞這層抽象的可替換性。
+export async function recoverInterruptedRuns() {
+  const now = new Date().toISOString()
+
+  const runsResult = await db.run(
+    `UPDATE automation_runs
+     SET status = 'interrupted',
+         error = '伺服器重啟或程序中斷，執行狀態不明（原本狀態：running）',
+         finished_at = ?
+     WHERE status = 'running'`,
+    [now],
+  )
+
+  const tasksResult = await db.run(
+    `UPDATE tasks SET automation_status = 'interrupted' WHERE automation_status = 'running'`,
+  )
+
+  return {
+    tasksRecovered: tasksResult.changes,
+    runsRecovered: runsResult.changes,
+  }
 }
