@@ -979,7 +979,7 @@ git add docs/superpowers/plans/2026-09-16-automation-crash-recovery.md
 git commit -m "docs: mark all tasks complete in automation-crash-recovery plan"
 ```
 
-- [ ] **Step 9: Push 分支（不開 PR，由使用者自行在 GitHub 網頁手動開）**
+- [x] **Step 9: Push 分支（不開 PR，由使用者自行在 GitHub 網頁手動開）**
 
 ```bash
 git push -u origin feature/automation-crash-recovery
