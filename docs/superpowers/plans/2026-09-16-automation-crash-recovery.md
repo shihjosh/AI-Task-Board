@@ -420,13 +420,13 @@ git commit -m "feat: split app.mjs from index.mjs, add POST /api/tasks/:id/retry
 - Produces: `npm test` 指令可執行 vitest；後續 Task 5 的
   `AutomationRunList.test.tsx` 依賴這裡建立的設定
 
-- [ ] **Step 1: 安裝套件**
+- [x] **Step 1: 安裝套件**
 
 ```bash
 npm install --save-dev vitest@^5.0.1 @testing-library/react@^16.3.3 @testing-library/jest-dom@^7.0.1 jsdom@^30.0.1
 ```
 
-- [ ] **Step 2: 建立 `vitest.config.ts`**
+- [x] **Step 2: 建立 `vitest.config.ts`**
 
 ```ts
 import { defineConfig } from 'vitest/config'
@@ -448,13 +448,13 @@ export default defineConfig({
 })
 ```
 
-- [ ] **Step 3: 建立 `src/test/setup.ts`**
+- [x] **Step 3: 建立 `src/test/setup.ts`**
 
 ```ts
 import '@testing-library/jest-dom/vitest'
 ```
 
-- [ ] **Step 4: 在 `package.json` 新增 test script**
+- [x] **Step 4: 在 `package.json` 新增 test script**
 
 ```json
 "scripts": {
@@ -463,7 +463,7 @@ import '@testing-library/jest-dom/vitest'
 ```
 （加在現有 `"db:seed": "node server/seed.mjs"` 那行之後）
 
-- [ ] **Step 5: 寫一個煙霧測試確認設定正確**
+- [x] **Step 5: 寫一個煙霧測試確認設定正確**
 
 建立 `src/test/smoke.test.tsx`：
 
@@ -479,18 +479,18 @@ describe('vitest setup smoke test', () => {
 })
 ```
 
-- [ ] **Step 6: 執行確認通過**
+- [x] **Step 6: 執行確認通過**
 
 Run: `npm test`
 Expected: PASS，1 個測試通過
 
-- [ ] **Step 7: 刪除煙霧測試檔案（僅用於驗證設定，不留在 repo）**
+- [x] **Step 7: 刪除煙霧測試檔案（僅用於驗證設定，不留在 repo）**
 
 ```bash
 rm src/test/smoke.test.tsx
 ```
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add package.json package-lock.json vitest.config.ts src/test/setup.ts
