@@ -591,7 +591,7 @@ git commit -m "fix: AutomationRunList renders interrupted status instead of cras
 **Interfaces:**
 - Consumes: `Task.automationStatus`（Task 2 已擴充）
 
-- [ ] **Step 1: 修改 import（第 1 行）**
+- [x] **Step 1: 修改 import（第 1 行）**
 
 ```ts
 import { MessageSquare, AlertTriangle, GitPullRequest, Code2, CircleDot, Loader2 } from 'lucide-react'
@@ -600,7 +600,7 @@ import { MessageSquare, AlertTriangle, GitPullRequest, Code2, CircleDot, Loader2
 `AlertTriangle` 已經有 import（原本用在 `tagIcon.bug`），不需要新增 import，
 確認這點後跳過此步驟的實際修改。
 
-- [ ] **Step 2: 在既有 running 區塊後新增 interrupted 分支**
+- [x] **Step 2: 在既有 running 區塊後新增 interrupted 分支**
 
 修改 `src/components/TaskCard.tsx` 第 66-71 行區塊，在其後新增：
 
@@ -620,7 +620,7 @@ import { MessageSquare, AlertTriangle, GitPullRequest, Code2, CircleDot, Loader2
 )}
 ```
 
-- [ ] **Step 3: 寫渲染測試**
+- [x] **Step 3: 寫渲染測試**
 
 建立 `src/components/TaskCard.test.tsx`：
 
@@ -656,12 +656,12 @@ describe('TaskCard', () => {
 })
 ```
 
-- [ ] **Step 4: 執行測試確認通過**
+- [x] **Step 4: 執行測試確認通過**
 
 Run: `npm test -- TaskCard`
 Expected: PASS，兩個測試都綠燈
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/components/TaskCard.tsx src/components/TaskCard.test.tsx
