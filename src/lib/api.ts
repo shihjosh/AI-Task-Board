@@ -41,3 +41,9 @@ export async function deleteTaskApi(id: string): Promise<void> {
   const res = await fetch(`${BASE}/${id}`, { method: 'DELETE' })
   await handle<void>(res)
 }
+
+export async function retryAutomationApi(id: string): Promise<Task> {
+  const res = await fetch(`${BASE}/${id}/retry-automation`, { method: 'POST' })
+  const data = await handle<{ task: Task }>(res)
+  return data.task
+}
