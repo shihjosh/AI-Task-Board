@@ -110,3 +110,35 @@ export async function deleteTask(id) {
   const result = await db.run('DELETE FROM tasks WHERE id = ?', [id])
   return result.changes > 0
 }
+
+// Server 啟動時呼叫一次：把資料庫裡殘留的 automation_status='running' 標記為
+// interrupted。這個併發控制（automationRunner.mjs 的 runningCount/queue）只存在
+// 單一 Node process 記憶體中，server 重啟後這些記憶體狀態全部歸零，但資料庫裡
+// 對應的 automation_status 仍停留在 running，永遠不會自己更新——因此只要偵測到
+// running，就一定是舊 process 遺留下來的孤兒，不需要額外確認該 process 是否還活著。
+//
+// 兩個 UPDATE（automation_runs 與 tasks）各自獨立執行、不包在同一個 transaction
+// 裡：server/db/index.mjs 的統一介面（all/get/run）同時支援 sqlite 與 postgres
+// 兩種驅動，並未暴露跨驅動一致的 transaction API，貿然引入單一驅動特有的
+// transaction 寫法會破壞這層抽象的可替換性。
+export async function recoverInterruptedRuns() {
+  const now = new Date().toISOString()
+
+  const runsResult = await db.run(
+    `UPDATE automation_runs
+     SET status = 'interrupted',
+         error = '伺服器重啟或程序中斷，執行狀態不明（原本狀態：running）',
+         finished_at = ?
+     WHERE status = 'running'`,
+    [now],
+  )
+
+  const tasksResult = await db.run(
+    `UPDATE tasks SET automation_status = 'interrupted' WHERE automation_status = 'running'`,
+  )
+
+  return {
+    tasksRecovered: tasksResult.changes,
+    runsRecovered: runsResult.changes,
+  }
+}
