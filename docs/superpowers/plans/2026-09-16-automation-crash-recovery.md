@@ -679,7 +679,7 @@ git commit -m "feat: TaskCard shows interrupted badge for interrupted automation
 - Produces: `export async function retryAutomationApi(id: string): Promise<Task>`
   ——供 Task 8 的 `TaskDrawer.tsx` 呼叫
 
-- [ ] **Step 1: 在 `src/lib/api.ts` 新增函式**
+- [x] **Step 1: 在 `src/lib/api.ts` 新增函式**
 
 在既有 `deleteTaskApi` 之後新增：
 
@@ -691,12 +691,12 @@ export async function retryAutomationApi(id: string): Promise<Task> {
 }
 ```
 
-- [ ] **Step 2: 執行 typecheck**
+- [x] **Step 2: 執行 typecheck**
 
 Run: `npx tsc -b`
 Expected: 成功（無錯誤輸出）
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/lib/api.ts
