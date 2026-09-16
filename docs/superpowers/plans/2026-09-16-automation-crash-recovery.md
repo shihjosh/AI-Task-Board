@@ -253,15 +253,24 @@ status: 'running' | 'done' | 'failed'
 status: 'running' | 'done' | 'failed' | 'interrupted'
 ```
 
-- [ ] **Step 2: 執行 typecheck 確認沒有新增錯誤**
+- [ ] **Step 2: 執行 typecheck，確認錯誤範圍符合預期**
 
 Run: `npx tsc -b`
-Expected: 成功（無錯誤輸出）。這一步的目的是確認目前引用這兩個 union type
-的地方（`TaskCard.tsx`、`TaskDrawer.tsx`、`AutomationRunList.tsx`）在只加
-新值、沒有窮舉檢查的情況下不會報型別錯——它們目前都是用 `===` 個別比對，
-不是 switch-exhaustive pattern，所以只加值不會壞。
+Expected: **會報一個、且僅一個 TS7053 錯誤**，來源是
+`src/components/AutomationRunList.tsx` 的 `statusConfig[run.status]`
+（第 62 行附近）。原因：`TaskCard.tsx`、`TaskDrawer.tsx` 都是用 `===`
+個別比對 status，容許新增列舉值不報錯；但 `AutomationRunList.tsx` 是用
+`statusConfig` 物件做 index lookup（`const config = statusConfig[run.status]`），
+目前只定義了 `running`/`done`/`failed` 三個 key，型別新增 `interrupted`
+後，TypeScript 會正確地標出這個既有查表缺漏——這正是 spec 裡指出的
+「若不修正會導致執行期白屏崩潰」的同一個 bug，將在 Task 5 修正
+`statusConfig`（新增 `interrupted` key）後解決。
 
-- [ ] **Step 3: Commit**
+**確認方式**：錯誤訊息只涉及 `AutomationRunList.tsx` 這一個檔案、
+一個 TS7053 錯誤即符合預期，可以放心繼續下一步；若出現其他檔案或其他
+錯誤類型，才需要停下來回報。
+
+- [ ] **Step 3: Commit（即使 tsc -b 顯示上述已知的、將由 Task 5 修正的錯誤）**
 
 ```bash
 git add src/types/task.ts
