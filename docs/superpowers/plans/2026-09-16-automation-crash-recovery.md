@@ -509,7 +509,7 @@ git commit -m "chore: add vitest + testing-library frontend test infrastructure"
 - Consumes: `AutomationRun.status`（Task 2 已擴充為含 `'interrupted'`）
 - Produces: 無新增匯出，`statusConfig` 內部物件新增一個 key
 
-- [ ] **Step 1: 寫失敗的測試（重現目前會白屏崩潰的既有 bug）**
+- [x] **Step 1: 寫失敗的測試（重現目前會白屏崩潰的既有 bug）**
 
 建立 `src/components/AutomationRunList.test.tsx`：
 
@@ -545,14 +545,14 @@ describe('AutomationRunList', () => {
 })
 ```
 
-- [ ] **Step 2: 執行測試確認失敗**
+- [x] **Step 2: 執行測試確認失敗**
 
 Run: `npm test -- AutomationRunList`
 Expected: FAIL——`statusConfig` 目前沒有 `interrupted` key，
 `config.icon`/`config.label` 存取 `undefined` 會拋出 TypeError，
 測試會顯示 component render 拋出例外（這正是 spec 中指出的既有 bug）
 
-- [ ] **Step 3: 修正 `src/components/AutomationRunList.tsx`**
+- [x] **Step 3: 修正 `src/components/AutomationRunList.tsx`**
 
 修改 import（第 2 行）：
 ```ts
@@ -569,12 +569,12 @@ const statusConfig = {
 } as const
 ```
 
-- [ ] **Step 4: 執行測試確認通過**
+- [x] **Step 4: 執行測試確認通過**
 
 Run: `npm test -- AutomationRunList`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/components/AutomationRunList.tsx src/components/AutomationRunList.test.tsx
