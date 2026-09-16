@@ -70,6 +70,13 @@ export default function TaskCard({
         </div>
       )}
 
+      {task.automationStatus === 'interrupted' && (
+        <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+          <AlertTriangle size={12} />
+          執行中斷
+        </div>
+      )}
+
       <div className="mb-3 flex flex-wrap gap-1.5">
         <span
           className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium ${priorityStyles[task.priority]}`}
