@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Loader2, CheckCircle2, XCircle } from 'lucide-react'
+import { Loader2, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react'
 import type { AutomationRun } from '../types/task'
 import { fetchAutomationRuns } from '../lib/automationRunsApi'
 
@@ -16,6 +16,7 @@ const statusConfig = {
   running: { icon: Loader2, label: '執行中', className: 'text-sky-600 dark:text-sky-400', spin: true },
   done: { icon: CheckCircle2, label: '已完成', className: 'text-emerald-600 dark:text-emerald-400', spin: false },
   failed: { icon: XCircle, label: '失敗', className: 'text-red-600 dark:text-red-400', spin: false },
+  interrupted: { icon: AlertTriangle, label: '已中斷', className: 'text-amber-600 dark:text-amber-400', spin: false },
 } as const
 
 export default function AutomationRunList({ taskId }: AutomationRunListProps) {
