@@ -1,7 +1,21 @@
 import fs from 'node:fs'
 import { spawn } from 'node:child_process'
 import { updateTask } from './taskRepository.mjs'
-import { createAutomationRun, updateAutomationRun, appendAutomationRunOutput } from './automationRunRepository.mjs'
+import {
+  createAutomationRun as _createAutomationRun,
+  updateAutomationRun,
+  appendAutomationRunOutput,
+} from './automationRunRepository.mjs'
+
+// 測試專用：讓測試能注入一個會拋錯的 createAutomationRun 替身，以確定性地模擬
+// DB 寫入失敗（例如驗證 triggerAutomation 佇列分支的 try/catch 復原邏輯），
+// 不需要依賴真實的 DB 層錯誤注入點（server/db/index.mjs 未暴露測試專用的失敗
+// 模擬介面）。傳入 null/undefined 會還原成真正的實作。
+let createAutomationRun = _createAutomationRun
+
+export function __setCreateAutomationRunForTest(fn) {
+  createAutomationRun = fn ?? _createAutomationRun
+}
 
 const MAX_CONCURRENT = 1
 const TIMEOUT_MS = 15 * 60 * 1000 // 15 分鐘
@@ -235,12 +249,25 @@ export async function triggerAutomation(task) {
   }
   if (runningCount >= MAX_CONCURRENT) {
     await updateTask(task.id, { automationStatus: 'queued' })
-    const run = await createAutomationRun(task.id, {
-      prompt: buildPrompt(task),
-      skill: task.automationSkill?.trim() || undefined,
-      status: 'queued',
-    })
-    queue.push({ task, run })
+    try {
+      const run = await createAutomationRun(task.id, {
+        prompt: buildPrompt(task),
+        skill: task.automationSkill?.trim() || undefined,
+        status: 'queued',
+      })
+      queue.push({ task, run })
+    } catch (err) {
+      // createAutomationRun 失敗（例如 DB 寫入錯誤）時，task 已經被標記為
+      // 'queued' 但沒有對應的 automation_runs 紀錄、也沒有被 push 進 queue，
+      // 會永遠卡在 'queued' 狀態、UI 無法復原。這裡把它復原成 'idle'（佇列
+      // 進場失敗，不是執行失敗，語意上比 'failed' 更貼切：使用者可以重新
+      // 觸發自動化），並把錯誤往外拋，讓呼叫端既有的
+      // `.catch(err => console.error(...))`（server/app.mjs）繼續記錄。
+      await updateTask(task.id, { automationStatus: 'idle' }).catch((recoverErr) => {
+        console.error('failed to recover task automationStatus after queue-push failure:', recoverErr)
+      })
+      throw err
+    }
     return
   }
   await runOne(task)
