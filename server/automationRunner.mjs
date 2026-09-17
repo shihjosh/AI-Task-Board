@@ -20,6 +20,13 @@ export function getQueueDepth() {
   return queue.length
 }
 
+// 測試專用：直接覆寫模組級 runningCount，讓測試能確定性地模擬「已有任務在跑」
+// 的併發狀態，不需要依賴真實 async 時序（setImmediate race）。Task 4 的測試
+// 也會用到同樣機制模擬併發，請勿改名或移除。
+export function __setRunningCountForTest(n) {
+  runningCount = n
+}
+
 const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 }
 
 function priorityRank(task) {
@@ -227,7 +234,13 @@ export async function triggerAutomation(task) {
     return
   }
   if (runningCount >= MAX_CONCURRENT) {
-    queue.push(task)
+    await updateTask(task.id, { automationStatus: 'queued' })
+    const run = await createAutomationRun(task.id, {
+      prompt: buildPrompt(task),
+      skill: task.automationSkill?.trim() || undefined,
+      status: 'queued',
+    })
+    queue.push({ task, run })
     return
   }
   await runOne(task)
