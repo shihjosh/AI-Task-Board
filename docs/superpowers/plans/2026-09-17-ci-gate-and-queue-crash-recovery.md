@@ -248,7 +248,7 @@ git commit -m "docs: check off Task 2 in plan"
 - Consumes: `updateTask(id, patch)`（`server/taskRepository.mjs:61`，`patch.automationStatus` 可傳 `'queued'`）。
 - Produces: `queue` 陣列（`server/automationRunner.mjs:17` 的模組級變數）元素格式從裸 `task` 改為 `{ task, run }`，供 Task 4 的 `onSlotFreed()`/`runOne()` 使用。
 
-- [ ] **Step 1: 讓 `createAutomationRun` 支援自訂初始 status**
+- [x] **Step 1: 讓 `createAutomationRun` 支援自訂初始 status**
 
 `server/automationRunRepository.mjs:28-38`，目前簽章是：
 
@@ -282,7 +282,7 @@ export async function createAutomationRun(taskId, { prompt, skill, status = 'run
 }
 ```
 
-- [ ] **Step 2: 寫佇列標記的失敗測試**
+- [x] **Step 2: 寫佇列標記的失敗測試**
 
 建立 `test/automationRunner.queue.test.mjs`：
 
@@ -348,7 +348,7 @@ test('triggerAutomation marks a queued task and creates a queued automation_runs
 })
 ```
 
-- [ ] **Step 3: 執行測試確認失敗**
+- [x] **Step 3: 執行測試確認失敗**
 
 Run: `node --test test/automationRunner.queue.test.mjs`
 Expected: FAIL（`recheckedQueued.automationStatus` 目前仍是 `'idle'`，因為 `triggerAutomation` 還沒有寫入 queued 標記邏輯）。
@@ -365,7 +365,7 @@ __setRunningCountForTest(0) // 測試結束前重置，避免污染同進程內�
 
 這個測試輔助函式必須明確加註解說明僅供測試使用，並在 Step 5 實作 Task 4 時保留（後續 Task 4 的測試也會用到同樣機制模擬併發）。
 
-- [ ] **Step 4: 修改 `triggerAutomation` 實作**
+- [x] **Step 4: 修改 `triggerAutomation` 實作**
 
 `server/automationRunner.mjs:212-234`，目前的佇列分支：
 
@@ -395,24 +395,24 @@ __setRunningCountForTest(0) // 測試結束前重置，避免污染同進程內�
 
 （此處先只改動 `triggerAutomation`，`queue.push({ task, run })` 產生的新元素格式會讓 Task 4 的 `onSlotFreed()` 需要跟著調整——這是預期的，Task 4 會處理。在 Task 4 完成前，本 Task 先讓 `test/automationRunner.queue.test.mjs` 的斷言通過即可；`onSlotFreed()` 讀取 `queue` 陣列元素當作裸 task 使用的地方會在型別上不再相符，但因為 JS 沒有靜態型別檢查，不會導致本 Task 的測試失敗，只會在被排隊的任務真正被取出執行時行為錯誤——這正是 Task 4 要修的部分。）
 
-- [ ] **Step 5: 執行測試確認通過**
+- [x] **Step 5: 執行測試確認通過**
 
 Run: `node --test test/automationRunner.queue.test.mjs`
 Expected: PASS。
 
-- [ ] **Step 6: 執行既有後端測試確認無回歸**
+- [x] **Step 6: 執行既有後端測試確認無回歸**
 
 Run: `node --test "test/**/*.test.mjs"`
 Expected: 全部 PASS（含 Task 1 的 CI 已涵蓋的既有兩個測試檔）。
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add server/automationRunRepository.mjs server/automationRunner.mjs test/automationRunner.queue.test.mjs
 git commit -m "feat: mark task as queued and create queued automation_runs record when queued"
 ```
 
-- [ ] **Step 8: 打勾本 Task 並 commit**
+- [x] **Step 8: 打勾本 Task 並 commit**
 
 ```bash
 git add docs/superpowers/plans/2026-09-17-ci-gate-and-queue-crash-recovery.md
