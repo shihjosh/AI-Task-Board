@@ -53,6 +53,38 @@ test('recoverInterruptedRuns marks running tasks and runs as interrupted', async
   }
 })
 
+test('recoverInterruptedRuns marks queued tasks and runs as interrupted', async () => {
+  const queuedTask = await createTask({
+    title: 'queued task',
+    priority: 'medium',
+    columnId: 'in_progress',
+    automationStatus: 'queued',
+  })
+
+  const queuedRun = await createAutomationRun(queuedTask.id, {
+    prompt: 'waiting in line',
+    status: 'queued',
+  })
+
+  try {
+    const result = await recoverInterruptedRuns()
+
+    assert.equal(result.tasksRecovered >= 1, true)
+    assert.equal(result.runsRecovered >= 1, true)
+
+    const tasks = await listTasks()
+    const recoveredQueued = tasks.find((t) => t.id === queuedTask.id)
+    assert.equal(recoveredQueued.automationStatus, 'interrupted')
+
+    const runs = await listAutomationRuns(queuedTask.id)
+    const recoveredRun = runs.find((r) => r.id === queuedRun.id)
+    assert.equal(recoveredRun.status, 'interrupted')
+    assert.match(recoveredRun.error, /伺服器重啟或程序中斷/)
+  } finally {
+    await deleteTask(queuedTask.id)
+  }
+})
+
 test('recoverInterruptedRuns is a no-op when nothing is running', async () => {
   const idleTask = await createTask({
     title: 'idle task for no-op check',
