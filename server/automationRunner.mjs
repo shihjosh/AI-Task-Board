@@ -1,5 +1,5 @@
 import fs from 'node:fs'
-import { spawn } from 'node:child_process'
+import { spawn as _spawn } from 'node:child_process'
 import { updateTask } from './taskRepository.mjs'
 import {
   createAutomationRun as _createAutomationRun,
@@ -15,6 +15,16 @@ let createAutomationRun = _createAutomationRun
 
 export function __setCreateAutomationRunForTest(fn) {
   createAutomationRun = fn ?? _createAutomationRun
+}
+
+// 測試專用：讓測試能注入一個假的 spawn 實作，取代 node:child_process 的真實
+// spawn，確定性地模擬 child process 的 exit/error 事件，不需要依賴真的
+// hermes CLI 是否存在於 PATH 上，也不會有任何機會啟動真實的子程序、建立
+// worktree。傳入 null/undefined 會還原成真正的實作。
+let spawn = _spawn
+
+export function __setSpawnForTest(fn) {
+  spawn = fn ?? _spawn
 }
 
 const MAX_CONCURRENT = 1

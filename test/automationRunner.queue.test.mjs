@@ -1,11 +1,13 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import os from 'node:os'
 import { createTask, listTasks, deleteTask } from '../server/taskRepository.mjs'
 import { listAutomationRuns } from '../server/automationRunRepository.mjs'
 import {
   triggerAutomation,
   __setRunningCountForTest,
   __setCreateAutomationRunForTest,
+  __setSpawnForTest,
   __drainQueueForTest,
   __clearQueueForTest,
 } from '../server/automationRunner.mjs'
@@ -78,41 +80,85 @@ test('triggerAutomation recovers task status when createAutomationRun throws in 
   }
 })
 
+// Task 4 修復回合（第二輪）：原本的測試只驗證 triggerAutomation 在
+// pathMissing 分支不會 reject——但 pathMissing 分支根本不會呼叫 runOne()，
+// 從來沒有遞增過 runningCount，所以那個版本完全沒有測到 runOne() 的
+// try/finally slot 釋放保證。這裡改用 __setRunningCountForTest(0) 確保
+// 任務會走「立即執行」（runOne()）路徑，並用 __setCreateAutomationRunForTest
+// 注入一個會拋錯的替身，讓例外發生在 runOne() 的 try 區塊內部（在
+// runningCount 已經 += 1 之後、finally 執行之前），藉此真正驗證
+// runOne() 的 finally 區塊會釋放 slot：驗證方式是例外拋出後，
+// runningCount 已經歸零，後續任務可以立刻被 triggerAutomation 立即執行
+// （不會被誤判成「還有任務在跑」而進了 queue）。
 test('runningCount is released even if finishing the run throws', async () => {
-  // 用一個 targetPath 不存在的任務，讓 triggerAutomation 走
-  // pathMissing 分支——這個分支目前的實作（automationRunner.mjs:216-225）
-  // 本身不會呼叫 runOne()/onSlotFreed()，不會遞增 runningCount，
-  // 所以無法用它來測試 slot 釋放。改用會真正呼叫 runOne() 的路徑：
-  // 一個 targetPath 存在但 skill 為 undefined 的任務，配合
-  // __setRunningCountForTest(0) 確保它會立即執行（不進 queue）。
-  //
-  // 讓 finishFailed/finishSuccess 內部拋錯的最簡單方式：monkey-patch
-  // taskRepository 的 updateTask，在特定 taskId 被呼叫時丟出例外，
-  // 之後立刻還原，避免影響其他測試。
   const task = await createTask({
-    title: 'will fail to finish',
+    title: 'will fail inside runOne',
     priority: 'low',
     columnId: 'in_progress',
-    targetPath: '/definitely/does/not/exist/' + Date.now(),
+    targetPath: os.tmpdir(), // 存在於磁碟上，通過 pathMissing 檢查，但不是這個 repo
     automationStatus: 'idle',
   })
 
+  const simulatedError = new Error('simulated DB failure inside runOne')
+
   try {
-    __setRunningCountForTest(0)
-    // pathMissing 分支會呼叫 createAutomationRun + updateAutomationRun +
-    // updateTask，但不經過 runOne()/onSlotFreed()——因此這條路徑本來就
-    // 不會佔用 runningCount，本測試改為直接驗證：即使 updateTask 在
-    // triggerAutomation 內部拋錯，也不會讓後續呼叫拋出未捕捉例外並卡死
-    // process（triggerAutomation 是 fire-and-forget，呼叫端用
-    // `.catch(err => console.error(...))` 吞掉錯誤，見 server/app.mjs:167-169）。
-    await assert.doesNotReject(triggerAutomation(task))
+    __setRunningCountForTest(0) // 確保這個任務走「立即執行」路徑（runOne()），不進 queue
+    __setCreateAutomationRunForTest(async () => {
+      throw simulatedError
+    })
+
+    // runOne() 在呼叫 createAutomationRun() 之前已經先 runningCount += 1，
+    // 所以這裡拋出的例外會發生在 try 區塊「內部」，讓 finally 的
+    // onSlotFreed() 有機會被驗證到。triggerAutomation() 本身是立即執行
+    // 分支（未排隊），內部呼叫 runOne(task) 沒有 catch，所以例外會往外拋。
+    await assert.rejects(() => triggerAutomation(task), simulatedError)
+
+    // 驗證 slot 真的被釋放了：一個全新的任務應該能立刻被視為「可立即執行」
+    // （不會因為 runningCount 卡在高位而被誤判進 queue）。用
+    // __setSpawnForTest 注入一個立刻模擬 child process 正常結束的假
+    // spawn，確保這個驗證用任務不會啟動任何真的子程序。
+    __setCreateAutomationRunForTest(null) // 還原成真正的實作，讓驗證任務走正常流程
+    __setSpawnForTest((_cmd, _args, _opts) => {
+      const fakeChild = {
+        stdout: { on: () => {} },
+        stderr: { on: () => {} },
+        on: (event, handler) => {
+          if (event === 'exit') {
+            setImmediate(() => handler(0))
+          }
+        },
+        kill: () => {},
+      }
+      return fakeChild
+    })
+
+    const followUpTask = await createTask({
+      title: 'should run immediately if slot was released',
+      priority: 'low',
+      columnId: 'in_progress',
+      targetPath: os.tmpdir(),
+      automationStatus: 'idle',
+    })
+
+    try {
+      await triggerAutomation(followUpTask)
+
+      const tasksAfter = await listTasks()
+      const recheckedFollowUp = tasksAfter.find((t) => t.id === followUpTask.id)
+      // 如果 slot 沒有被釋放（runningCount 仍卡在 1），這個任務會被排進
+      // queue，狀態會停在 'queued'，而不是走到 runOne() 產生的
+      // 'running'/'done'/'failed' 終態。
+      assert.notEqual(recheckedFollowUp.automationStatus, 'queued')
+    } finally {
+      await deleteTask(followUpTask.id)
+    }
   } finally {
+    __setCreateAutomationRunForTest(null) // 還原成真正的實作
+    __setSpawnForTest(null) // 還原成真正的實作
+    __setRunningCountForTest(0)
     await deleteTask(task.id)
   }
 })
-
-// （註：由於 pathMissing 分支不經過 runOne，無法在這條路徑上驗證 slot 釋放。
-// 改為在下面直接針對 runOne 做單元層級驗證——見下一個測試。）
 
 test('queue continues processing after a task fails to finish (slot not leaked)', async () => {
   // 场景：MAX_CONCURRENT=1。task B 用 __setRunningCountForTest(1) 模擬
@@ -121,24 +167,24 @@ test('queue continues processing after a task fails to finish (slot not leaked)'
   // __drainQueueForTest() 模擬 slot 釋放，驗證 task B 最終從 queue 中
   // 被取出並轉為 running 狀態。
   //
-  // targetPath 刻意設成 process.cwd()（一個保證存在的目錄），這樣
-  // triggerAutomation() 的 pathMissing 檢查不會提早短路——測試需要真的
-  // 走到 queue-drain → runOne() 這條路徑。但 runOne() 內部沒有
-  // AUTOMATION_URL 時會呼叫 runViaSpawn()，也就是 spawn('hermes', ...)：
-  // 絕對不能讓它在這個真正的 repo 目錄下啟動一個會建立 worktree 的真實
-  // hermes CLI。作法：在觸發 drain 之前，暫時把 PATH 清空，讓
-  // spawn('hermes', ...) 在系統上找不到 hermes 執行檔，保證只會收到
-  // ENOENT（child.on('error', ...)），而不是真的跑起 hermes——即使測試
-  // 環境剛好裝了可用的 hermes 也一樣。跑完立刻還原 PATH。
+  // targetPath 用 os.tmpdir()（一個保證存在、但不是這個 repo 目錄的
+  // 路徑），這樣 triggerAutomation() 的 pathMissing 檢查不會提早短路
+  // ——測試需要真的走到 queue-drain → runOne() 這條路徑。runOne()
+  // 內部沒有 AUTOMATION_URL 時會呼叫 runViaSpawn()，也就是
+  // spawn('hermes', ...)：絕對不能讓它在真的檔案系統上啟動一個會建立
+  // worktree 的真實 hermes CLI。作法：用 __setSpawnForTest() 注入一個
+  // 假的 spawn 實作，這個假實作只會透過 setImmediate 模擬 child process
+  // 正常 exit(0)，永遠不會呼叫 node:child_process 的真正 spawn——不論
+  // 測試環境的 PATH 上有沒有 hermes 執行檔、也不論 cwd 是哪裡，都保證
+  // 不會有真實子程序被啟動。
   const taskB = await createTask({
     title: 'queued then drained',
     priority: 'low',
     columnId: 'in_progress',
-    targetPath: process.cwd(),
+    targetPath: os.tmpdir(),
     automationStatus: 'idle',
   })
 
-  const originalPath = process.env.PATH
   try {
     __setRunningCountForTest(1)
     await triggerAutomation(taskB)
@@ -149,10 +195,22 @@ test('queue continues processing after a task fails to finish (slot not leaked)'
       'queued',
     )
 
-    // 清空 PATH，確保接下來 drain 觸發的 runOne() 若真的呼叫
-    // spawn('hermes', ...)，一定找不到執行檔（ENOENT），不會啟動真的
-    // hermes CLI 或建立 worktree。
-    process.env.PATH = ''
+    // 注入假 spawn：保證接下來 drain 觸發的 runOne() 呼叫的
+    // runViaSpawn() 不會啟動真的子程序，只會透過 setImmediate 模擬一個
+    // exit code 0 的 child process。
+    __setSpawnForTest((_cmd, _args, _opts) => {
+      const fakeChild = {
+        stdout: { on: () => {} },
+        stderr: { on: () => {} },
+        on: (event, handler) => {
+          if (event === 'exit') {
+            setImmediate(() => handler(0))
+          }
+        },
+        kill: () => {},
+      }
+      return fakeChild
+    })
 
     __setRunningCountForTest(0)
     __drainQueueForTest()
@@ -161,17 +219,16 @@ test('queue continues processing after a task fails to finish (slot not leaked)'
     // updateTask({ automationStatus: 'running' }) 在 runOne() 一開始
     // 同步排入的第一個 await 之前就會被呼叫，但仍需要至少一個 microtask
     // 才會反映到 DB。用短輪詢取代單一 setImmediate tick，避免時序偶發
-    // 失敗，同時整體逾時遠短於真的等 spawn ENOENT 或 hermes 執行完畢。
+    // 失敗，同時整體逾時遠短於真的等 spawn 完成。
     //
     // 輪詢一路等到 runOne() 整個 async 流程跑完（狀態進入 'done'/'failed'
-    // 這種終態），而不是一看到脫離 'queued' 就馬上斷開——PATH 清空後
-    // spawn('hermes', ...) 的 ENOENT 仍是非同步事件，若太早跳出迴圈，
+    // 這種終態），而不是一看到脫離 'queued' 就馬上斷開——太早跳出迴圈，
     // finally 區塊的 deleteTask() 可能搶在 runOne() 完成前把
     // automation_runs 記錄一併刪掉（外鍵 cascade），導致 runOne() 之後
-    // 才執行到的 finishFailed() 在 updateAutomationRun() 找不到記錄、
-    // 拿到 null，噴出未預期的錯誤 log（雖然仍被 onSlotFreed() 的
-    // .catch() 吞掉、不會讓測試失敗，但屬於不必要的雜訊，等到終態再收尾
-    // 比較乾淨）。
+    // 才執行到的 finishSuccess()/finishFailed() 在 updateAutomationRun()
+    // 找不到記錄、拿到 null，噴出未預期的錯誤 log（雖然仍被
+    // onSlotFreed() 的 .catch() 吞掉、不會讓測試失敗，但屬於不必要的
+    // 雜訊，等到終態再收尾比較乾淨）。
     const deadlineMs = Date.now() + 5000
     let finalStatus = 'queued'
     let sawRunning = false
@@ -187,11 +244,17 @@ test('queue continues processing after a task fails to finish (slot not leaked)'
       sawRunning || ['running', 'done', 'failed'].includes(finalStatus),
       `expected task to leave queued state, got ${finalStatus}`,
     )
+
+    // 進一步驗證：drain 走的是 existingRun 續用路徑（updateAutomationRun），
+    // 而不是又呼叫了一次 createAutomationRun 建立第二筆記錄——task B 從
+    // 頭到尾應該只對應「恰好 1 筆」automation_runs 記錄（觸發排隊時建立
+    // 的那筆 'queued' 記錄，drain 後被原地更新成 'running' 再到終態）。
+    const runsAfterDrain = await listAutomationRuns(taskB.id)
+    assert.equal(runsAfterDrain.length, 1)
   } finally {
-    process.env.PATH = originalPath
+    __setSpawnForTest(null) // 還原成真正的實作
     __setRunningCountForTest(0)
     __clearQueueForTest()
     await deleteTask(taskB.id)
   }
 })
-
