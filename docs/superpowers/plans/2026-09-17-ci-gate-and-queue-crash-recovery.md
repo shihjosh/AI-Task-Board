@@ -28,7 +28,7 @@
 **Interfaces:**
 - 無程式碼介面變更，純 CI 設定。
 
-- [ ] **Step 1: 建立 workflow 檔案**
+- [x] **Step 1: 建立 workflow 檔案**
 
 ```yaml
 name: CI
@@ -74,7 +74,7 @@ jobs:
         run: docker build -t ai-task-board:ci .
 ```
 
-- [ ] **Step 2: 本機模擬驗證每個步驟能單獨過**
+- [x] **Step 2: 本機模擬驗證每個步驟能單獨過**
 
 Run（在專案根目錄，`dev` 分支上，依序執行，每個都應該 exit code 0）：
 
@@ -90,14 +90,14 @@ docker build -t ai-task-board:ci .
 
 Expected: 全部指令 exit code 0。若 `docker build` 因為沙箱環境限制（例如沒有 docker daemon 存取權限）失敗，記錄下失敗訊息，但仍照原計畫把 workflow 檔案寫入（GitHub Actions runner 有完整 docker 環境，這一步在本機的失敗不代表 CI 上會失敗）。
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add .github/workflows/ci.yml
 git commit -m "ci: add tsc/lint/test/build/docker-build gate on PR and push to main/dev"
 ```
 
-- [ ] **Step 4: 打勾本 Task 並 commit**
+- [x] **Step 4: 打勾本 Task 並 commit**
 
 在本檔案把 Task 1 的所有 checkbox 改成 `- [x]`，然後：
 
