@@ -432,7 +432,7 @@ git commit -m "docs: check off Task 3 in plan"
 - Consumes: `updateAutomationRun(id, { status, ... })`（`server/automationRunRepository.mjs:40`）。
 - Produces: `runOne(task, existingRun)` 新簽章（`existingRun` 為可選參數），供本 Task 內部的 `onSlotFreed()` 呼叫。
 
-- [ ] **Step 1: 寫「slot 在 DB 寫入失敗時仍會釋放」的失敗測試**
+- [x] **Step 1: 寫「slot 在 DB 寫入失敗時仍會釋放」的失敗測試**
 
 在 `test/automationRunner.queue.test.mjs` 追加測試：
 
@@ -475,7 +475,7 @@ test('runningCount is released even if finishing the run throws', async () => {
 
 （註：由於 `pathMissing` 分支不經過 `runOne`，無法在這條路徑上驗證 slot 釋放。改為在下一步直接針對 `runOne` 做單元層級驗證——見 Step 1b。）
 
-- [ ] **Step 1b: 補一個直接鎖定 `runOne` 行為的測試**
+- [x] **Step 1b: 補一個直接鎖定 `runOne` 行為的測試**
 
 由於 `finishSuccess`/`finishFailed` 是模組內未匯出的函式，無法直接單獨測試，改成端到端驗證「模擬 DB 寫入失敗不會讓佇列永久卡住」：在 `test/automationRunner.queue.test.mjs` 追加：
 
@@ -524,12 +524,12 @@ test('queue continues processing after a task fails to finish (slot not leaked)'
 })
 ```
 
-- [ ] **Step 2: 執行測試確認失敗**
+- [x] **Step 2: 執行測試確認失敗**
 
 Run: `node --test test/automationRunner.queue.test.mjs`
 Expected: FAIL（`__drainQueueForTest` 尚未存在，或即使存在，`onSlotFreed()` 目前讀取 `queue` 陣列元素當作裸 `task` 使用，會因為 Task 3 已把元素改成 `{ task, run }` 而在 `priorityRank(queue[i])` 等處存取錯誤欄位，導致行為不正確）。
 
-- [ ] **Step 3: 修改 `runOne`、`finishSuccess`、`finishFailed`、`onSlotFreed`**
+- [x] **Step 3: 修改 `runOne`、`finishSuccess`、`finishFailed`、`onSlotFreed`**
 
 `server/automationRunner.mjs:127-210` 現況：
 
@@ -689,7 +689,7 @@ function onSlotFreed() {
 3. `runOne` 新增 `existingRun` 參數：有值時用 `updateAutomationRun` 把既有的 `queued` 記錄轉成 `running`；沒有值（原本立即執行、非排隊路徑）維持 `createAutomationRun`。
 4. `onSlotFreed()` 的 `priorityRank`/`runOne` 呼叫改為讀取 `{ task, run }` 結構。
 
-- [ ] **Step 4: 新增測試專用輔助 export**
+- [x] **Step 4: 新增測試專用輔助 export**
 
 在 `server/automationRunner.mjs` 檔案末尾（`export async function triggerAutomation` 之後）新增：
 
@@ -706,24 +706,24 @@ export function __drainQueueForTest() {
 }
 ```
 
-- [ ] **Step 5: 執行測試確認通過**
+- [x] **Step 5: 執行測試確認通過**
 
 Run: `node --test "test/**/*.test.mjs"`
 Expected: 全部 PASS，含 Task 3、Task 4 新增的測試。
 
-- [ ] **Step 6: 前端 + tsc 檢查確認無回歸**
+- [x] **Step 6: 前端 + tsc 檢查確認無回歸**
 
 Run: `npx tsc -b && npx vitest run`
 Expected: 全部 PASS（本 Task 未改動前端檔案，純防呆確認）。
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add server/automationRunner.mjs test/automationRunner.queue.test.mjs
 git commit -m "fix: guarantee automation slot release via try/finally, resume queued run record on drain"
 ```
 
-- [ ] **Step 8: 打勾本 Task 並 commit**
+- [x] **Step 8: 打勾本 Task 並 commit**
 
 ```bash
 git add docs/superpowers/plans/2026-09-17-ci-gate-and-queue-crash-recovery.md
