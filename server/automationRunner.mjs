@@ -273,6 +273,9 @@ export async function triggerAutomation(task) {
   if (task.automationStatus === 'running') {
     return
   }
+  if (task.automationStatus === 'queued') {
+    return
+  }
   if (runningCount >= MAX_CONCURRENT) {
     await updateTask(task.id, { automationStatus: 'queued' })
     try {

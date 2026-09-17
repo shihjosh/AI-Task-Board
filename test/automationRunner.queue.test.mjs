@@ -1,4 +1,4 @@
-import { test } from 'node:test'
+import { test, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
 import os from 'node:os'
 import { createTask, listTasks, deleteTask } from '../server/taskRepository.mjs'
@@ -10,7 +10,20 @@ import {
   __setSpawnForTest,
   __drainQueueForTest,
   __clearQueueForTest,
+  getQueueDepth,
 } from '../server/automationRunner.mjs'
+
+// 結構性 backstop：不管個別測試自己的 try/finally 有沒有正確重置 DI hook，
+// 每個測試結束後都無條件把所有 DI hook 重置回預設值。這個檔案涉及會真的
+// spawn 子程序（hermes CLI）的危險程式碼，忘記重置 __setSpawnForTest 可能
+// 讓之後的測試意外啟動真實子程序——這一層是保底，不是取代個別測試的
+// try/finally（那些仍然保留，這裡只是額外的安全網）。
+afterEach(() => {
+  __setCreateAutomationRunForTest(null)
+  __setSpawnForTest(null)
+  __setRunningCountForTest(0)
+  __clearQueueForTest()
+})
 
 // 用 __setRunningCountForTest 直接模擬「已有一個任務在跑」的併發狀態，
 // 避免依賴真實 async 時序（setImmediate race）——確定性優先於巧妙。
@@ -256,5 +269,49 @@ test('queue continues processing after a task fails to finish (slot not leaked)'
     __setRunningCountForTest(0)
     __clearQueueForTest()
     await deleteTask(taskB.id)
+  }
+})
+
+// Final-review 修復：驗證新增的 'queued' 去重守衛。task 已經在 queue 裡
+// （automationStatus === 'queued'）時，再呼叫一次 triggerAutomation()
+// 應該立即 return，不應該再 push 第二筆 queue 項目、也不應該再建立第二筆
+// automation_runs 記錄。
+test('triggerAutomation is a no-op when called twice on an already-queued task', async () => {
+  const task = await createTask({
+    title: 'already queued, should not double-queue',
+    priority: 'low',
+    columnId: 'in_progress',
+    targetPath: os.tmpdir(),
+    automationStatus: 'idle',
+  })
+
+  try {
+    __setRunningCountForTest(1) // 強制第一次呼叫走佇列分支
+
+    await triggerAutomation(task)
+
+    const afterFirst = await listTasks()
+    assert.equal(afterFirst.find((t) => t.id === task.id).automationStatus, 'queued')
+    assert.equal(getQueueDepth(), 1)
+
+    const runsAfterFirst = await listAutomationRuns(task.id)
+    assert.equal(runsAfterFirst.length, 1)
+
+    // task.automationStatus is 'queued' now (in-memory object passed in is
+    // stale, so re-fetch to mirror how a caller would receive it via API).
+    const queuedTask = afterFirst.find((t) => t.id === task.id)
+
+    await triggerAutomation(queuedTask)
+
+    // 不應該有第二筆 queue 項目
+    assert.equal(getQueueDepth(), 1)
+
+    // 不應該有第二筆 automation_runs 記錄
+    const runsAfterSecond = await listAutomationRuns(task.id)
+    assert.equal(runsAfterSecond.length, 1)
+  } finally {
+    __setRunningCountForTest(0)
+    __clearQueueForTest()
+    await deleteTask(task.id)
   }
 })
