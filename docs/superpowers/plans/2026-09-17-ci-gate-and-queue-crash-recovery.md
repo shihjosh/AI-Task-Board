@@ -742,7 +742,7 @@ git commit -m "docs: check off Task 4 in plan"
 - Consumes: 無新介面，沿用既有的 `db.run`（`server/db/index.mjs:56`）。
 - Produces: `recoverInterruptedRuns()` 回傳值格式不變，仍是 `{ tasksRecovered, runsRecovered }`，但現在也會把 `automationStatus`/`status` 為 `'queued'` 的資料一併計入。
 
-- [ ] **Step 1: 寫失敗測試**
+- [x] **Step 1: 寫失敗測試**
 
 在 `test/taskRepository.recover.test.mjs` 追加（沿用檔案既有的 import 與清理模式）：
 
@@ -784,12 +784,12 @@ test('recoverInterruptedRuns marks queued tasks and runs as interrupted', async 
 
 （註：這個測試依賴 Task 3 的 Step 1 對 `createAutomationRun` 新增的 `status` 參數，需在 Task 3 完成後才能執行。）
 
-- [ ] **Step 2: 執行測試確認失敗**
+- [x] **Step 2: 執行測試確認失敗**
 
 Run: `node --test test/taskRepository.recover.test.mjs`
 Expected: FAIL（`recoveredQueued.automationStatus` 目前仍是 `'queued'`，因為 SQL 的 `WHERE` 子句只比對 `'running'`）。
 
-- [ ] **Step 3: 修改 `recoverInterruptedRuns` SQL**
+- [x] **Step 3: 修改 `recoverInterruptedRuns` SQL**
 
 `server/taskRepository.mjs:124-144` 現況：
 
@@ -845,12 +845,12 @@ export async function recoverInterruptedRuns() {
 
 同步更新函式上方的中文註解（第 114-123 行），把提到「偵測到 running」的敘述改成「偵測到 running 或 queued」，理由段落補充：佇列中的任務同樣只存在於記憶體 `queue` 陣列，重啟後一併歸零，因此視為同一類孤兒狀態。
 
-- [ ] **Step 4: 執行測試確認通過**
+- [x] **Step 4: 執行測試確認通過**
 
 Run: `node --test "test/**/*.test.mjs"`
 Expected: 全部 PASS。
 
-- [ ] **Step 5: 執行完整驗證套件**
+- [x] **Step 5: 執行完整驗證套件**
 
 Run 依序：
 
@@ -864,14 +864,14 @@ npm run build
 
 Expected: 全部 exit code 0。
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add server/taskRepository.mjs test/taskRepository.recover.test.mjs
 git commit -m "fix: recoverInterruptedRuns also covers queued tasks/runs after restart"
 ```
 
-- [ ] **Step 7: 打勾本 Task 並 commit**
+- [x] **Step 7: 打勾本 Task 並 commit**
 
 ```bash
 git add docs/superpowers/plans/2026-09-17-ci-gate-and-queue-crash-recovery.md
