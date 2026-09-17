@@ -889,17 +889,21 @@ git commit -m "docs: check off Task 5 in plan"
 **Interfaces:**
 - 無程式碼介面變更。
 
-- [ ] **Step 1: 檢查 README 是否列出 automationStatus 可能值**
+- [x] **Step 1: 檢查 README 是否列出 automationStatus 可能值**
 
 Run: `grep -n "automationStatus\|執行中\|已中斷\|interrupted" README.md`
 
 若找到列舉 automation 狀態的段落（例如卡片顯示「執行中」/「已中斷」的說明），在該處新增一行「排隊中」的說明，措辭比照既有段落風格（繁體中文，簡短）。若沒有找到明確列舉狀態值的段落，跳過此步驟不強行新增。
 
-- [ ] **Step 2: 若 Step 1 有修改，同步英文版**
+結果：README.md 沒有逐一列舉 automationStatus 狀態值的段落（只在第 199 行提到「其餘排隊，依優先級排序」這種概念性敘述，不是狀態值列表），故不強行新增。
+
+- [x] **Step 2: 若 Step 1 有修改，同步英文版**
 
 若 `README.md` 有實際修改，檢查 `README.en.md` 是否有對應段落，用同樣方式同步（英文措辭），維持中英文檔案內容對齊（沿用專案既有慣例，見 git log 中 `docs: sync README.en.md with docker automation service` 這類 commit）。
 
-- [ ] **Step 3: 最終完整驗證**
+結果：Step 1 未修改 README.md，此步驟跳過。
+
+- [x] **Step 3: 最終完整驗證**
 
 Run 依序：
 
@@ -914,7 +918,7 @@ docker build -t ai-task-board:ci .
 
 Expected: 全部 exit code 0（與 Task 1 Step 2 的驗證項目一致，這是整個 feature branch 完成前的最終把關）。
 
-- [ ] **Step 4: Commit（若 README 有改動）**
+- [x] **Step 4: Commit（若 README 有改動）**
 
 ```bash
 git add README.md README.en.md
@@ -923,14 +927,16 @@ git commit -m "docs: document queued automation status in README"
 
 （若 Step 1/2 判斷不需要修改 README，這個 commit 跳過。）
 
-- [ ] **Step 5: 打勾本 Task 並 commit**
+結果：Step 1/2 判斷不需要修改 README，此 commit 跳過。
+
+- [x] **Step 5: 打勾本 Task 並 commit**
 
 ```bash
 git add docs/superpowers/plans/2026-09-17-ci-gate-and-queue-crash-recovery.md
 git commit -m "docs: mark all tasks complete in ci-gate-and-queue-crash-recovery plan"
 ```
 
-- [ ] **Step 6: Push 分支**
+- [x] **Step 6: Push 分支**
 
 ```bash
 git push -u origin feature/ci-gate-and-queue-crash-recovery
