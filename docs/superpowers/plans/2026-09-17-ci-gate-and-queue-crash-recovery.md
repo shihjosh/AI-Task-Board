@@ -119,7 +119,7 @@ git commit -m "docs: check off Task 1 in plan"
 **Interfaces:**
 - Produces: `Task['automationStatus']` 型別新增聯集成員 `'queued'`，供 Task 3、Task 4 的後端程式碼與 API 回傳值使用。
 
-- [ ] **Step 1: 修改型別定義**
+- [x] **Step 1: 修改型別定義**
 
 `src/types/task.ts:31`，將：
 
@@ -133,7 +133,7 @@ automationStatus: 'idle' | 'running' | 'done' | 'failed' | 'interrupted'
 automationStatus: 'idle' | 'queued' | 'running' | 'done' | 'failed' | 'interrupted'
 ```
 
-- [ ] **Step 2: 寫 TaskCard 的失敗測試**
+- [x] **Step 2: 寫 TaskCard 的失敗測試**
 
 在 `src/components/TaskCard.test.tsx`，仿照既有的 `interrupted badge` 測試，新增：
 
@@ -150,12 +150,12 @@ it('shows queued badge when automationStatus is queued', () => {
 
 （若檔案內既有測試使用的是不同的 `baseTask`/render 輔助方式，沿用該檔案既有的 helper 寫法，不要引入新的測試工具函式。）
 
-- [ ] **Step 3: 執行測試確認失敗**
+- [x] **Step 3: 執行測試確認失敗**
 
 Run: `npx vitest run src/components/TaskCard.test.tsx`
 Expected: 新增的測試 FAIL（找不到「排隊中」文字）。
 
-- [ ] **Step 4: TaskCard 新增 queued 顯示**
+- [x] **Step 4: TaskCard 新增 queued 顯示**
 
 在 `src/components/TaskCard.tsx`，緊接在現有的 `interrupted` 區塊（約第 73-78 行）之後，新增：
 
@@ -170,12 +170,12 @@ Expected: 新增的測試 FAIL（找不到「排隊中」文字）。
 
 （`Loader2` 已經是該檔案第一行 import 的圖示，不需要新增 import；這裡不加 `animate-spin`，用靜態圖示跟「執行中」的旋轉動畫做視覺區分。）
 
-- [ ] **Step 5: 執行測試確認通過**
+- [x] **Step 5: 執行測試確認通過**
 
 Run: `npx vitest run src/components/TaskCard.test.tsx`
 Expected: PASS。
 
-- [ ] **Step 6: TaskDrawer 狀態文字新增 queued**
+- [x] **Step 6: TaskDrawer 狀態文字新增 queued**
 
 `src/components/TaskDrawer.tsx:307`附近，在：
 
@@ -189,7 +189,7 @@ Expected: PASS。
 {initialTask.automationStatus === 'queued' && '排隊中'}
 ```
 
-- [ ] **Step 7: TaskDrawer 執行紀錄分頁小圓點新增 queued**
+- [x] **Step 7: TaskDrawer 執行紀錄分頁小圓點新增 queued**
 
 `src/components/TaskDrawer.tsx:422-427`附近，在現有的：
 
@@ -210,24 +210,24 @@ Expected: PASS。
 )}
 ```
 
-- [ ] **Step 8: 全量跑前端測試確認沒有回歸**
+- [x] **Step 8: 全量跑前端測試確認沒有回歸**
 
 Run: `npx vitest run`
 Expected: 所有既有測試 + 新增測試皆 PASS。
 
-- [ ] **Step 9: tsc 檢查**
+- [x] **Step 9: tsc 檢查**
 
 Run: `npx tsc -b`
 Expected: 無型別錯誤（`Task['automationStatus']` 新增聯集成員後，若有其他地方對該欄位做窮盡性 switch/if 判斷但漏掉新值，此處會透過人工檢查捕捉，非型別系統會自動報錯——本 Task 的 Step 6/7 已涵蓋所有現有判斷點，故不會有遺漏）。
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add src/types/task.ts src/components/TaskCard.tsx src/components/TaskCard.test.tsx src/components/TaskDrawer.tsx
 git commit -m "feat: add queued automationStatus with TaskCard/TaskDrawer display"
 ```
 
-- [ ] **Step 11: 打勾本 Task 並 commit**
+- [x] **Step 11: 打勾本 Task 並 commit**
 
 ```bash
 git add docs/superpowers/plans/2026-09-17-ci-gate-and-queue-crash-recovery.md
