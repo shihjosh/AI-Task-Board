@@ -30,7 +30,7 @@
 - Consumes: `server/app.mjs` 匯出的 `app`（Express instance，已存在，`export default app` 見檔案結尾）
 - Produces: `GET /health` route，回應 `200 { "status": "ok" }`，供 Task 3 的 docker-compose healthcheck 呼叫，也供本任務的測試直接驗證。
 
-- [ ] **Step 1: 寫失敗測試**
+- [x] **Step 1: 寫失敗測試**
 
 建立 `test/app.health.test.mjs`：
 
@@ -71,12 +71,12 @@ test('GET /health returns 200 { status: "ok" } without auth', async () => {
 })
 ```
 
-- [ ] **Step 2: 執行測試確認失敗**
+- [x] **Step 2: 執行測試確認失敗**
 
 Run: `node --test test/app.health.test.mjs`
 Expected: FAIL — `/health` 回 404（`not_found`），因為 route 還不存在。
 
-- [ ] **Step 3: 在 `server/app.mjs` 加上 `/health` route**
+- [x] **Step 3: 在 `server/app.mjs` 加上 `/health` route**
 
 在 `const app = express()` 與 `app.use(createBasicAuthMiddleware())` 之間插入（**必須在 Basic Auth middleware 之前**，讓 healthcheck 探針不需要帶認證資訊）：
 
@@ -93,12 +93,12 @@ app.use(createBasicAuthMiddleware())
 
 （原本 `app.use(createBasicAuthMiddleware())` 那一行維持在原位置即可，只是在它之前多插入 `/health` route。）
 
-- [ ] **Step 4: 執行測試確認通過**
+- [x] **Step 4: 執行測試確認通過**
 
 Run: `node --test test/app.health.test.mjs`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add server/app.mjs test/app.health.test.mjs
