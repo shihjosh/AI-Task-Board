@@ -22,6 +22,14 @@ services:
       - "8088:8088"
     volumes:
       - taskboard-data:/app/.data
+    healthcheck:
+      # node:22-alpine 沒有 curl，用 node 內建 fetch 打自己的 /health，
+      # 避免為了 healthcheck 額外安裝套件。exit code 非 0 視為 unhealthy。
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8088/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     restart: unless-stopped
 
   # 可選：Automation 服務，接上本機的 Hermes Agent（官方 image），讓卡片
@@ -58,6 +66,14 @@ services:
     volumes:
       - /home/ubuntu:/home/ubuntu
       - ${HOME}/.hermes:/opt/data
+    healthcheck:
+      # automation/server.mjs 已內建 /health route（見該檔案）。
+      # network_mode: host，可直接用 localhost 存取。
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3100/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     restart: unless-stopped
 
   # 可選：PostgreSQL 服務。預設不會被 taskboard 使用，僅供想切換到
