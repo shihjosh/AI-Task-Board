@@ -371,21 +371,21 @@ git commit -m "feat: add healthcheck to taskboard and automation compose service
 - Consumes: Task 1-3 的所有變更。
 - Produces: 無新程式介面，此任務是驗證與收尾。
 
-- [ ] **Step 1: 跑完整後端測試**
+- [x] **Step 1: 跑完整後端測試**
 
 Run: `node --test "test/**/*.test.mjs"`
 Expected: 全部 PASS，包含 Task 1、2 新增的測試與既有測試。
 
-- [ ] **Step 2: 跑 lint**
+- [x] **Step 2: 跑 lint**
 
 Run: `npx oxlint server/ test/`
 Expected: 無新增的 lint 錯誤。
 
-- [ ] **Step 3: 檢查 README 是否需要更新**
+- [x] **Step 3: 檢查 README 是否需要更新**
 
 搜尋 README 是否有提到「graceful shutdown」「healthcheck」相關的已知限制敘述，若有則更新為已解決；若無相關段落則跳過，不需要新增。
 
-- [ ] **Step 4: Commit（若有 README 變更）**
+- [x] **Step 4: Commit（若有 README 變更）**
 
 ```bash
 git add README.md
