@@ -304,6 +304,7 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
           {mode === 'edit' && initialTask?.automationStatus && initialTask.automationStatus !== 'idle' && (
             <span className="mt-1 block text-xs text-slate-400 dark:text-slate-500">
               目前自動執行狀態：
+              {initialTask.automationStatus === 'queued' && '排隊中'}
               {initialTask.automationStatus === 'running' && '執行中'}
               {initialTask.automationStatus === 'done' && '已完成'}
               {initialTask.automationStatus === 'failed' && '失敗'}
@@ -419,6 +420,9 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
                 }`}
               >
                 執行紀錄
+                {initialTask.automationStatus === 'queued' && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-slate-400 dark:bg-slate-500" />
+                )}
                 {initialTask.automationStatus === 'running' && (
                   <span className="h-1.5 w-1.5 rounded-full bg-sky-500 dark:bg-sky-400" />
                 )}

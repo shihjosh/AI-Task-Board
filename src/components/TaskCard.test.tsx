@@ -26,4 +26,9 @@ describe('TaskCard', () => {
     render(<TaskCard task={{ ...baseTask, automationStatus: 'idle' }} />)
     expect(screen.queryByText('執行中斷')).not.toBeInTheDocument()
   })
+
+  it('shows queued badge when automationStatus is queued', () => {
+    render(<TaskCard task={{ ...baseTask, automationStatus: 'queued' }} />)
+    expect(screen.getByText('排隊中')).toBeInTheDocument()
+  })
 })

@@ -1,7 +1,31 @@
 import fs from 'node:fs'
-import { spawn } from 'node:child_process'
+import { spawn as _spawn } from 'node:child_process'
 import { updateTask } from './taskRepository.mjs'
-import { createAutomationRun, updateAutomationRun, appendAutomationRunOutput } from './automationRunRepository.mjs'
+import {
+  createAutomationRun as _createAutomationRun,
+  updateAutomationRun,
+  appendAutomationRunOutput,
+} from './automationRunRepository.mjs'
+
+// 測試專用：讓測試能注入一個會拋錯的 createAutomationRun 替身，以確定性地模擬
+// DB 寫入失敗（例如驗證 triggerAutomation 佇列分支的 try/catch 復原邏輯），
+// 不需要依賴真實的 DB 層錯誤注入點（server/db/index.mjs 未暴露測試專用的失敗
+// 模擬介面）。傳入 null/undefined 會還原成真正的實作。
+let createAutomationRun = _createAutomationRun
+
+export function __setCreateAutomationRunForTest(fn) {
+  createAutomationRun = fn ?? _createAutomationRun
+}
+
+// 測試專用：讓測試能注入一個假的 spawn 實作，取代 node:child_process 的真實
+// spawn，確定性地模擬 child process 的 exit/error 事件，不需要依賴真的
+// hermes CLI 是否存在於 PATH 上，也不會有任何機會啟動真實的子程序、建立
+// worktree。傳入 null/undefined 會還原成真正的實作。
+let spawn = _spawn
+
+export function __setSpawnForTest(fn) {
+  spawn = fn ?? _spawn
+}
 
 const MAX_CONCURRENT = 1
 const TIMEOUT_MS = 15 * 60 * 1000 // 15 分鐘
@@ -18,6 +42,13 @@ const queue = []
 
 export function getQueueDepth() {
   return queue.length
+}
+
+// 測試專用：直接覆寫模組級 runningCount，讓測試能確定性地模擬「已有任務在跑」
+// 的併發狀態，不需要依賴真實 async 時序（setImmediate race）。Task 4 的測試
+// 也會用到同樣機制模擬併發，請勿改名或移除。
+export function __setRunningCountForTest(n) {
+  runningCount = n
 }
 
 const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 }
@@ -124,44 +155,57 @@ async function runViaHttp({ prompt, cwd, skill }) {
   }
 }
 
-async function runOne(task) {
+// existingRun：queue-drain 路徑（onSlotFreed()）會傳入 Task 3 在佇列進場時
+// 已建立的 'queued' automation_runs 記錄，這裡只需把它轉成 'running'，不用
+// 再 createAutomationRun 一次。未排隊、立即執行的路徑不傳這個參數，維持
+// 原本的 createAutomationRun 行為。
+async function runOne(task, existingRun) {
   runningCount += 1
-  await updateTask(task.id, { automationStatus: 'running' })
+  try {
+    await updateTask(task.id, { automationStatus: 'running' })
 
-  const prompt = buildPrompt(task)
-  const skill = task.automationSkill?.trim() || undefined
-  const run = await createAutomationRun(task.id, { prompt, skill })
+    const prompt = buildPrompt(task)
+    const skill = task.automationSkill?.trim() || undefined
+    const run = existingRun
+      ? await updateAutomationRun(existingRun.id, { status: 'running' })
+      : await createAutomationRun(task.id, { prompt, skill })
 
-  const result = AUTOMATION_URL
-    ? await runViaHttp({ prompt, cwd: task.targetPath, skill })
-    : await runViaSpawn({ prompt, cwd: task.targetPath, skill })
+    const result = AUTOMATION_URL
+      ? await runViaHttp({ prompt, cwd: task.targetPath, skill })
+      : await runViaSpawn({ prompt, cwd: task.targetPath, skill })
 
-  if (result.stdout) {
-    await appendAutomationRunOutput(run.id, result.stdout).catch((err) => {
-      console.error('appendAutomationRunOutput failed:', err)
-    })
-  }
+    if (result.stdout) {
+      await appendAutomationRunOutput(run.id, result.stdout).catch((err) => {
+        console.error('appendAutomationRunOutput failed:', err)
+      })
+    }
 
-  const worktreeInfo = extractWorktreeInfo(result.stdout ?? '')
+    const worktreeInfo = extractWorktreeInfo(result.stdout ?? '')
 
-  if (result.timedOut) {
-    await finishFailed(
-      task,
-      run,
-      `執行逾時（超過 ${TIMEOUT_MS / 60000} 分鐘），已強制中止`,
-      worktreeInfo,
-    )
-    return
-  }
-  if (result.exitCode === 0) {
-    await finishSuccess(task, run, result.stdout ?? '', worktreeInfo)
-  } else {
-    await finishFailed(
-      task,
-      run,
-      `Hermes 程序結束代碼非 0（exit code ${result.exitCode}）：\n${(result.stderr ?? '').slice(-2000)}`,
-      worktreeInfo,
-    )
+    if (result.timedOut) {
+      await finishFailed(
+        task,
+        run,
+        `執行逾時（超過 ${TIMEOUT_MS / 60000} 分鐘），已強制中止`,
+        worktreeInfo,
+      )
+      return
+    }
+    if (result.exitCode === 0) {
+      await finishSuccess(task, run, result.stdout ?? '', worktreeInfo)
+    } else {
+      await finishFailed(
+        task,
+        run,
+        `Hermes 程序結束代碼非 0（exit code ${result.exitCode}）：\n${(result.stderr ?? '').slice(-2000)}`,
+        worktreeInfo,
+      )
+    }
+  } finally {
+    // 無論上面哪一步拋出例外（updateTask/createAutomationRun/finishSuccess/
+    // finishFailed 任一步的 DB 寫入失敗），都保證釋放這個併發 slot，否則
+    // runningCount 會永久卡在偏高的值，導致佇列後續任務永遠排不到。
+    onSlotFreed()
   }
 }
 
@@ -181,30 +225,33 @@ function extractWorktreeInfo(stdout) {
   }
 }
 
+// 注意：不在這裡呼叫 onSlotFreed()——runOne() 的 finally 區塊已經統一負責
+// 釋放 slot，這裡再呼叫會造成 runningCount 重複遞減。
 async function finishSuccess(task, run, output, worktreeInfo = {}) {
   await updateAutomationRun(run.id, { status: 'done', output, ...worktreeInfo })
   await updateTask(task.id, { automationStatus: 'done', columnId: 'review' })
-  onSlotFreed()
 }
 
 async function finishFailed(task, run, reason, worktreeInfo = {}) {
   await updateAutomationRun(run.id, { status: 'failed', error: reason, ...worktreeInfo })
   await updateTask(task.id, { automationStatus: 'failed' })
-  onSlotFreed()
 }
 
 function onSlotFreed() {
   runningCount -= 1
   if (queue.length === 0) return
 
+  // Task 3 起，queue 元素是 { task, run } 而不是裸 task——run 是佇列進場時
+  // 就已經建立好的 'queued' automation_runs 記錄，priorityRank 需要讀
+  // queue[i].task，runOne() 需要拿到對應的 run 一起傳入。
   let bestIndex = 0
   for (let i = 1; i < queue.length; i += 1) {
-    if (priorityRank(queue[i]) < priorityRank(queue[bestIndex])) {
+    if (priorityRank(queue[i].task) < priorityRank(queue[bestIndex].task)) {
       bestIndex = i
     }
   }
   const [next] = queue.splice(bestIndex, 1)
-  runOne(next).catch((err) => {
+  runOne(next.task, next.run).catch((err) => {
     console.error('runOne failed:', err)
   })
 }
@@ -226,9 +273,49 @@ export async function triggerAutomation(task) {
   if (task.automationStatus === 'running') {
     return
   }
+  if (task.automationStatus === 'queued') {
+    return
+  }
   if (runningCount >= MAX_CONCURRENT) {
-    queue.push(task)
+    await updateTask(task.id, { automationStatus: 'queued' })
+    try {
+      const run = await createAutomationRun(task.id, {
+        prompt: buildPrompt(task),
+        skill: task.automationSkill?.trim() || undefined,
+        status: 'queued',
+      })
+      queue.push({ task, run })
+    } catch (err) {
+      // createAutomationRun 失敗（例如 DB 寫入錯誤）時，task 已經被標記為
+      // 'queued' 但沒有對應的 automation_runs 紀錄、也沒有被 push 進 queue，
+      // 會永遠卡在 'queued' 狀態、UI 無法復原。這裡把它復原成 'idle'（佇列
+      // 進場失敗，不是執行失敗，語意上比 'failed' 更貼切：使用者可以重新
+      // 觸發自動化），並把錯誤往外拋，讓呼叫端既有的
+      // `.catch(err => console.error(...))`（server/app.mjs）繼續記錄。
+      await updateTask(task.id, { automationStatus: 'idle' }).catch((recoverErr) => {
+        console.error('failed to recover task automationStatus after queue-push failure:', recoverErr)
+      })
+      throw err
+    }
     return
   }
   await runOne(task)
 }
+
+// —— 測試專用輔助函式 ——
+// 僅供 test/automationRunner.queue.test.mjs 使用，模擬併發狀態與手動觸發
+// 佇列處理，避免測試依賴真實的 hermes CLI 執行或不穩定的計時器時序。
+export function __drainQueueForTest() {
+  onSlotFreed()
+}
+
+// 測試專用：直接清空模組級 queue 陣列，不觸發 runOne()。用於測試的 finally
+// 區塊收尾，避免某個測試 push 進 queue 的任務（例如被
+// triggerAutomation(...) 排入佇列、但測試本身不需要真的把它 drain 完）
+// 殘留到下一個測試，被之後某次 __drainQueueForTest() 意外挑中並執行
+// runOne()（跑到已經被 deleteTask() 刪除的 task/run，導致誤導性的錯誤
+// log，甚至排擠掉當次測試真正要 drain 的任務）。
+export function __clearQueueForTest() {
+  queue.length = 0
+}
+
