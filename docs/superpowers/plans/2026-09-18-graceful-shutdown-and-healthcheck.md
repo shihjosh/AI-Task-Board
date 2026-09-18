@@ -272,7 +272,7 @@ git commit -m "feat: add SIGTERM/SIGINT graceful shutdown to server/index.mjs"
 - Consumes: Task 1 完成後 `taskboard` 的 `GET /health`（port 8088）、既有 `automation` 的 `GET /health`（port 3100，`automation/server.mjs` 已存在，見該檔案第 83-87 行）。
 - Produces: 無程式介面（純 compose 設定變更），驗證方式為手動跑 `docker compose config` 確認語法正確 + `docker compose up` 後 `docker inspect` 確認健康狀態。
 
-- [ ] **Step 1: 在 `taskboard` service 加上 healthcheck**
+- [x] **Step 1: 在 `taskboard` service 加上 healthcheck**
 
 在 `docker-compose.yml` 的 `taskboard` service 區塊、`restart: unless-stopped` 之前插入：
 
@@ -322,7 +322,7 @@ services:
 
 （`environment:` 底下原有中文註解區塊維持不動，此處為節省篇幅省略顯示，實際編輯時保留。）
 
-- [ ] **Step 2: 在 `automation` service 加上 healthcheck**
+- [x] **Step 2: 在 `automation` service 加上 healthcheck**
 
 在 `automation` service 區塊、`restart: unless-stopped` 之前插入：
 
@@ -337,12 +337,12 @@ services:
       start_period: 10s
 ```
 
-- [ ] **Step 3: 驗證 compose 語法正確**
+- [x] **Step 3: 驗證 compose 語法正確**
 
 Run: `docker compose config`
 Expected: 無錯誤訊息，輸出完整的合併後設定，且能看到兩個 service 的 `healthcheck` 區塊。
 
-- [ ] **Step 4: 手動驗證 healthcheck 實際運作（可選但建議）**
+- [x] **Step 4: 手動驗證 healthcheck 實際運作（可選但建議）**
 
 Run: `docker compose build taskboard && docker compose up -d taskboard`
 等待 `start_period`（10s）後執行：
@@ -351,7 +351,9 @@ Expected: `"Status":"healthy"`（而非 `starting` 或 `unhealthy`）。
 
 清理：`docker compose down`
 
-- [ ] **Step 5: Commit**
+> **執行備註**：taskboard 已實機驗證 `"Status":"healthy"`。automation service 因需要完整 host `~/.hermes`/9Router 環境才能實機啟動，本次執行環境無法驗證，僅完成 Step 3 的語法驗證（見 ledger Task 3 parked 記錄）。
+
+- [x] **Step 5: Commit**
 
 ```bash
 git add docker-compose.yml
