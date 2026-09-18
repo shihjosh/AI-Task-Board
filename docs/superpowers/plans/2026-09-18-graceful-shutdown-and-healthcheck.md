@@ -117,7 +117,7 @@ git commit -m "feat: add GET /health route to taskboard server for Docker health
 - Consumes: `app.listen(port, callback)` 回傳的 `http.Server` 實例（目前 `index.mjs` 呼叫 `app.listen` 但沒有保留回傳值，需要先存到變數）
 - Produces: 無新的匯出函式（`index.mjs` 是 entrypoint script，不是可 import 的模組）；改為在程序層級註冊訊號處理。測試改用 spawn 真實子程序驗證行為，而非 import。
 
-- [ ] **Step 1: 寫失敗測試**
+- [x] **Step 1: 寫失敗測試**
 
 建立 `test/index.gracefulShutdown.test.mjs`。用 `child_process.spawn` 啟動真實的 `node server/index.mjs` 子程序（獨立 process 才能真的送 SIGTERM 並觀察程序退出行為），確認：(a) 收到 SIGTERM 後程序會在時限內正常退出（exit code 0），(b) 收到訊號當下正在處理中的 request 仍能拿到回應（不會被硬切斷）。
 
@@ -187,12 +187,12 @@ test('SIGTERM triggers graceful shutdown: in-flight request completes, process e
 })
 ```
 
-- [ ] **Step 2: 執行測試確認失敗**
+- [x] **Step 2: 執行測試確認失敗**
 
 Run: `node --test test/index.gracefulShutdown.test.mjs`
 Expected: FAIL — 目前 `index.mjs` 沒有處理 SIGTERM，Node.js 預設行為是立即終止程序（exit code 為 `null` 或非 0，視平台而定，測試會在 `assert.equal(exitCode, 0)` 失敗）。
 
-- [ ] **Step 3: 在 `server/index.mjs` 加上 graceful shutdown**
+- [x] **Step 3: 在 `server/index.mjs` 加上 graceful shutdown**
 
 把 `server/index.mjs` 改為：
 
@@ -249,12 +249,12 @@ process.on('SIGTERM', () => shutdown('SIGTERM'))
 process.on('SIGINT', () => shutdown('SIGINT'))
 ```
 
-- [ ] **Step 4: 執行測試確認通過**
+- [x] **Step 4: 執行測試確認通過**
 
 Run: `node --test test/index.gracefulShutdown.test.mjs`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add server/index.mjs test/index.gracefulShutdown.test.mjs
