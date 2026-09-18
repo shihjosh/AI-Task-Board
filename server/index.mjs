@@ -20,7 +20,7 @@ const server = app.listen(port, () => {
 // request 處理完再結束程序；設定逾時上限，避免卡住的 request 導致程序
 // 永遠無法退出（Docker 逾時後仍會送 SIGKILL 強制終止，但這裡先給正常
 // 請求一個乾淨結束的機會）。
-const SHUTDOWN_TIMEOUT_MS = 10_000
+const SHUTDOWN_TIMEOUT_MS = Number(process.env.SHUTDOWN_TIMEOUT_MS) || 10_000
 let shuttingDown = false
 
 function shutdown(signal) {
