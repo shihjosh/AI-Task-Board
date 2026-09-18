@@ -30,22 +30,22 @@
 
 **介面：** 無新增 props；同一組 `tasks`/`onTaskClick` 依斷點渲染兩種佈局。
 
-- [ ] **Step 1：抽出卡片渲染邏輯**
+- [x] **Step 1：抽出卡片渲染邏輯**
 
 在現有 `<table>` 版面（`hidden sm:block` 包起來，維持原樣）之後，新增手機版卡片列表（`sm:hidden`），每張卡片顯示：標題、欄位（column）、優先級（含現有 `priorityLabel` 對照）、負責人；卡片本身可點擊觸發 `onTaskClick(task)`，比照桌面版整列可點擊的互動方式。
 
-- [ ] **Step 2：處理空狀態**
+- [x] **Step 2：處理空狀態**
 
 確認「沒有符合條件的任務」的空狀態文案在兩種佈局下只渲染一次（不要手機/桌面各渲染一份重複的空狀態 DOM）。
 
-- [ ] **Step 3：瀏覽器手動驗證**
+- [x] **Step 3：瀏覽器手動驗證**
 
 縮小視窗至 375px（iPhone SE 等窄機型）與 390px（一般手機）：
 1. 確認不再需要橫向捲動即可看到單筆任務的標題/欄位/優先級/負責人。
 2. 點擊卡片能正常開啟 `TaskDrawer` 編輯。
 3. 切回 ≥ 640px，確認桌面版表格佈局、欄位、樣式與改動前完全一致。
 
-- [ ] **Step 4：Commit**
+- [x] **Step 4：Commit**
 
 ```bash
 git add src/components/ListView.tsx
@@ -61,19 +61,19 @@ git commit -m "feat: add mobile card layout for ListView"
 
 **介面：** 無新增 props。
 
-- [ ] **Step 1：手機寬度下以「本週待辦清單」取代時間軸格線**
+- [x] **Step 1：手機寬度下以「本週待辦清單」取代時間軸格線**
 
 甘特圖時間軸格線本質上需要較寬版面才可讀，手機版（`sm:hidden`）改為依 `dueDate` 排序的簡易清單，每筆顯示標題＋到期日期（相對表示，如「還有 2 天」／「已逾期」），點擊可開啟 `TaskDrawer`；週/月切換按鈕維持可用（影響清單的日期範圍篩選邏輯，複用既有 `rangeStart`/`dayCount`／`tasksWithDueDate` 計算，不重寫日期邏輯）。
 
-- [ ] **Step 2：桌面版時間軸格線包一層 `hidden sm:block`**
+- [x] **Step 2：桌面版時間軸格線包一層 `hidden sm:block`**
 
 確保 ≥ 640px 時渲染邏輯、樣式與改動前完全一致（函式主體不得變動，只需要包一層顯示切換的容器）。
 
-- [ ] **Step 3：瀏覽器手動驗證**
+- [x] **Step 3：瀏覽器手動驗證**
 
 在 375px/390px 寬度下確認簡易清單清楚可讀、無橫向溢出；週/月切換仍正確篩選清單內容。切回桌面寬度確認時間軸格線佈局與改動前一致。
 
-- [ ] **Step 4：Commit**
+- [x] **Step 4：Commit**
 
 ```bash
 git add src/components/GanttView.tsx
@@ -89,18 +89,18 @@ git commit -m "feat: add mobile simplified list view for GanttView"
 
 **介面：** 無新增 props。
 
-- [ ] **Step 1：實測目前手機寬度下的擁擠/溢出狀況**
+- [x] **Step 1：實測目前手機寬度下的擁擠/溢出狀況**
 
 在 375px 下逐一檢查：logo/麵包屑列、視圖切換 tabs（含 ThemeToggle）、右側「已完成」連結＋搜尋框＋標籤篩選＋新增任務按鈕，是否有裁切、換行錯位或觸控熱區過小的問題。記錄實際發現的問題清單再動手，不要臆測。
 
-- [ ] **Step 2：依實測結果調整**
+- [x] **Step 2：依實測結果調整**
 
 常見做法（依實測結果擇一或組合，不要無條件全套）：
 - 讓右側次要操作（搜尋框、標籤篩選）在手機寬度下可以換行或收進單一「更多」下拉，主要保留「新增任務」按鈕明顯可見。
 - 視圖切換 tabs 若在極窄螢幕仍擠壓，比照現有 `overflow-x-auto` + `whitespace-nowrap` + `shrink-0` 手法（已在舊計畫的 Task 4 用過的模式）。
 - 若某個既有 `sm:` 響應式設定實測下已經沒問題，記錄「無需調整」即可，不要為了改而改。
 
-- [ ] **Step 3：瀏覽器手動驗證**
+- [x] **Step 3：瀏覽器手動驗證**
 
 375px/390px 下確認新增任務按鈕與搜尋/篩選都可正常操作，無元素互相重疊或裁切；切回桌面寬度確認樣式與改動前一致。
 
@@ -121,18 +121,18 @@ git commit -m "fix: refine Toolbar layout for narrow mobile widths"
 
 **介面：** 無（純文件任務）。
 
-- [ ] **Step 1：更新 `README.md`**
+- [x] **Step 1：更新 `README.md`**
 
 在既有手機版說明附近，補充：列表視圖（ListView）手機寬度下改為卡片堆疊；甘特圖（GanttView）手機寬度下改為依到期日排序的簡易清單；Toolbar 依實測結果的調整（若有）。
 
-- [ ] **Step 2：最終整分支 review**
+- [x] **Step 2：最終整分支 review**
 
 - 執行 `npx tsc -b` 與 `npm run lint`，確認皆乾淨，無新增錯誤/警告。
 - 執行 `npm test`（vitest），確認既有測試全數通過，未破壞既有元件測試。
 - 確認桌面版（`≥ 640px`）三個元件的既有渲染邏輯字元級未被改動（`git diff main -- src/components/ListView.tsx src/components/GanttView.tsx src/components/Toolbar.tsx` 中桌面版分支僅被包裹容器，內部 JSX 與樣式未變動）。
 - 用瀏覽器分別在 375px、390px、768px、1280px 四個寬度下走一輪三個視圖，確認無回歸。
 
-- [ ] **Step 3：Commit**
+- [x] **Step 3：Commit**
 
 ```bash
 git add README.md docs/superpowers/plans/2026-09-18-mobile-responsive-views-and-toolbar.md
