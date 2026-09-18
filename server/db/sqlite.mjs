@@ -28,6 +28,13 @@ function addColumnIfMissing(conn, table, columnDefinition) {
 function initDb() {
   fs.mkdirSync(dataDir, { recursive: true })
   const conn = new Database(dbPath)
+  // node --test 把每個測試檔 spawn 成獨立 process 平行執行，多個 process 可能
+  // 同時對同一份全新 SQLite 檔案開連線並嘗試寫入（建表、開啟 WAL 模式等），
+  // better-sqlite3 預設遇到 SQLITE_BUSY（檔案被其他連線鎖住）會立刻拋錯，不會
+  // 重試等待。設定 busy timeout 讓它在鎖定時等待、輪詢重試，而不是馬上失敗，
+  // 一次性涵蓋所有 initDb() 階段可能撞到的鎖定衝突（不只是欄位新增，包含
+  // journal_mode 切換、CREATE TABLE 等所有寫入語句）。
+  conn.pragma('busy_timeout = 5000')
   conn.pragma('journal_mode = WAL')
 
   conn.exec(`
