@@ -25,13 +25,13 @@ export async function listAutomationRuns(taskId) {
   return rows.map(rowToRun)
 }
 
-export async function createAutomationRun(taskId, { prompt, skill }) {
+export async function createAutomationRun(taskId, { prompt, skill, status = 'running' }) {
   const id = randomUUID()
   const startedAt = new Date().toISOString()
   await db.run(
     `INSERT INTO automation_runs (id, task_id, status, prompt, output, error, started_at, finished_at, skill, worktree_path, worktree_branch)
-     VALUES (?, ?, 'running', ?, '', NULL, ?, NULL, ?, '', '')`,
-    [id, taskId, prompt, startedAt, skill ?? ''],
+     VALUES (?, ?, ?, ?, '', NULL, ?, NULL, ?, '', '')`,
+    [id, taskId, status, prompt, startedAt, skill ?? ''],
   )
   const row = await db.get('SELECT * FROM automation_runs WHERE id = ?', [id])
   return rowToRun(row)

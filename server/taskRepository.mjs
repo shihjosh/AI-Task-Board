@@ -111,11 +111,13 @@ export async function deleteTask(id) {
   return result.changes > 0
 }
 
-// Server 啟動時呼叫一次：把資料庫裡殘留的 automation_status='running' 標記為
-// interrupted。這個併發控制（automationRunner.mjs 的 runningCount/queue）只存在
-// 單一 Node process 記憶體中，server 重啟後這些記憶體狀態全部歸零，但資料庫裡
-// 對應的 automation_status 仍停留在 running，永遠不會自己更新——因此只要偵測到
-// running，就一定是舊 process 遺留下來的孤兒，不需要額外確認該 process 是否還活著。
+// Server 啟動時呼叫一次：把資料庫裡殘留的 automation_status='running' 或
+// 'queued' 標記為 interrupted。這個併發控制（automationRunner.mjs 的
+// runningCount/queue）只存在單一 Node process 記憶體中，server 重啟後這些記憶體
+// 狀態全部歸零，但資料庫裡對應的 automation_status 仍停留在 running 或
+// queued，永遠不會自己更新——因此只要偵測到 running 或 queued，就一定是舊
+// process 遺留下來的孤兒，不需要額外確認該 process 是否還活著。佇列中的任務
+// 同樣只存在於記憶體 queue 陣列，重啟後一併歸零，因此視為同一類孤兒狀態。
 //
 // 兩個 UPDATE（automation_runs 與 tasks）各自獨立執行、不包在同一個 transaction
 // 裡：server/db/index.mjs 的統一介面（all/get/run）同時支援 sqlite 與 postgres
@@ -127,14 +129,14 @@ export async function recoverInterruptedRuns() {
   const runsResult = await db.run(
     `UPDATE automation_runs
      SET status = 'interrupted',
-         error = '伺服器重啟或程序中斷，執行狀態不明（原本狀態：running）',
+         error = '伺服器重啟或程序中斷，執行狀態不明（原本狀態：running 或 queued）',
          finished_at = ?
-     WHERE status = 'running'`,
+     WHERE status IN ('running', 'queued')`,
     [now],
   )
 
   const tasksResult = await db.run(
-    `UPDATE tasks SET automation_status = 'interrupted' WHERE automation_status = 'running'`,
+    `UPDATE tasks SET automation_status = 'interrupted' WHERE automation_status IN ('running', 'queued')`,
   )
 
   return {

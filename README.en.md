@@ -210,9 +210,11 @@ This is the project's core differentiator: hand a task card to an AI agent to ac
 1. When editing a task, fill in **"Automation directory"** (`targetPath`, an absolute path to a local git repo), and optionally **"Automation skill"** (a specific Hermes skill for the agent to load).
 2. Drag the card to (or PATCH it into) the **"In Progress"** column to trigger automation.
 3. The backend spawns `hermes chat` inside that directory using an isolated **git worktree** — the agent actually edits code, runs commands, then commits and pushes its branch to `origin` when done (**it does not open a PR automatically** — opening a PR and merging is always done by you on GitHub).
-4. Output streams live to the **"Runs"** tab in task details, auto-refreshing every 2 seconds while running. On completion the card automatically moves to "Review" (success) or stays in place (failure).
+4. Output streams live to the **"Runs"** tab in task details, auto-refreshing every 2 seconds while running. On completion the card automatically moves to "Review" (success) or stays in place (failure). If another task is already running, the card first shows **"Queued"** and only actually starts once the current run finishes.
 
 **Limits**: Only 1 automation run executes system-wide at a time (others queue, sorted by priority); each run is capped at 15 minutes; and the `hermes` CLI must be reachable — either installed locally (`npm run dev` / `npm start`) or via the `automation` service in Docker mode (see "Enabling automation in Docker mode" above).
+
+**Crash/restart recovery**: On server restart, any task left in "Running" or "Queued" state (stuck mid-flight because the server restarted or the process was interrupted, with unknown outcome) is automatically marked **"Interrupted"**, with "Retry" / "Abandon" buttons available in task details — so a card never stays stuck looking like it's running when nothing is actually executing anymore.
 
 For full details and walkthroughs, see **[docs/USER_GUIDE.en.md](docs/USER_GUIDE.en.md)**.
 
