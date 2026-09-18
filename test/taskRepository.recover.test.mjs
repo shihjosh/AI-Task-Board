@@ -85,7 +85,16 @@ test('recoverInterruptedRuns marks queued tasks and runs as interrupted', async 
   }
 })
 
-test('recoverInterruptedRuns is a no-op when nothing is running', async () => {
+// 註：這個測試檔（以及 index.retryAutomation.test.mjs、
+// automationRunner.queue.test.mjs）在 `node --test` 底下各自被 spawn 成獨立
+// process，但共用同一份真實的 SQLite 檔案（server/db/index.mjs 的單例連線，
+// 沒有測試專用的隔離 DB）。因此不能斷言 recoverInterruptedRuns() 回傳的
+// tasksRecovered/runsRecovered 全域計數為 0——若這個測試執行的瞬間，另一個
+// 測試檔案建立的任務剛好還殘留在 running/queued 狀態（例如清理用的 finally
+// 還沒跑到），會撈到別人的殘留資料，讓計數斷言變成天生不穩定的測試（flaky）。
+// 改為只檢查這個測試自己建立的 idle 任務沒有被誤動到，跟同檔案另外兩個測試
+// 用 .find(id) 只檢查自身建立資料的做法一致。
+test('recoverInterruptedRuns does not touch an idle task', async () => {
   const idleTask = await createTask({
     title: 'idle task for no-op check',
     priority: 'low',
@@ -94,9 +103,11 @@ test('recoverInterruptedRuns is a no-op when nothing is running', async () => {
   })
 
   try {
-    const result = await recoverInterruptedRuns()
-    assert.equal(result.tasksRecovered, 0)
-    assert.equal(result.runsRecovered, 0)
+    await recoverInterruptedRuns()
+
+    const tasks = await listTasks()
+    const untouchedIdle = tasks.find((t) => t.id === idleTask.id)
+    assert.equal(untouchedIdle.automationStatus, 'idle')
   } finally {
     await deleteTask(idleTask.id)
   }
