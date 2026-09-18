@@ -122,6 +122,11 @@ function createBasicAuthMiddleware() {
 
 const app = express()
 app.use(express.json({ limit: '1mb' }))
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' })
+})
+
 app.use(createBasicAuthMiddleware())
 
 app.get('/api/tasks', async (req, res, next) => {
