@@ -133,6 +133,10 @@ docker compose up -d --build
 **注意事項與限制**：
 - 僅限本機開發機使用。`automation` service 掛載整個 `/home/ubuntu` 目錄，
   容器內能看到宿主機 home 目錄下的所有檔案，不建議部署到共用主機或正式環境。
+- 為降低風險，`.docker`／`.gnupg`／`.pki` 這幾個跟自動化任務無關但敏感的
+  目錄用 tmpfs 覆蓋，容器內看到的是空目錄（不影響 `.ssh`，git push 仍需要
+  它讀取 SSH key）。其餘 `/home/ubuntu` 底下的內容仍完整可見，這不是完整
+  的隔離機制，僅降低最明顯的憑證外洩面。
 - 卡片的 `targetPath` 欄位填入的路徑，必須是 `/home/ubuntu` 底下、容器內外
   都存在的絕對路徑（因為掛載方式是把整個 `/home/ubuntu` bind mount 到容器內
   相同路徑，例如 `/home/ubuntu/AI-Task-Board`）。

@@ -69,6 +69,18 @@ services:
     volumes:
       - /home/ubuntu:/home/ubuntu
       - ${HOME}/.hermes:/opt/data
+    tmpfs:
+      # 掛載整個 /home/ubuntu 是為了讓 targetPath 能彈性指向 home 下任意
+      # git repo，但這也讓容器內看得到宿主機幾個跟自動化任務無關、且敏感的
+      # 目錄。用 tmpfs 疊加在同一路徑上（compose 依 volumes/tmpfs 宣告順序
+      # 疊加掛載，後面的蓋掉前面的），讓容器內這幾個路徑變成空的、與宿主機
+      # 內容無關的暫存檔案系統，不影響其他路徑（含 ~/.ssh，git push 需要它）：
+      #   ~/.docker：docker buildx/認證 token
+      #   ~/.gnupg：GPG private key
+      #   ~/.pki：NSS 憑證庫（含瀏覽器/系統憑證私鑰材料）
+      - /home/ubuntu/.docker
+      - /home/ubuntu/.gnupg
+      - /home/ubuntu/.pki
     healthcheck:
       # automation/server.mjs 已內建 /health route（見該檔案）。
       # network_mode: host，可直接用 localhost 存取。

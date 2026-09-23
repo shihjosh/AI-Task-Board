@@ -178,6 +178,12 @@ only `taskboard`: `docker compose up -d --build taskboard`.
 - Local dev machines only. The `automation` service mounts the entire
   `/home/ubuntu` directory, so the container can see everything under the
   host's home directory — not recommended for shared hosts or production.
+- To reduce risk, `.docker`, `.gnupg`, and `.pki` — directories unrelated to
+  automation but sensitive — are overridden with tmpfs, so the container
+  sees them as empty (this doesn't affect `.ssh`, which git push still
+  needs). Everything else under `/home/ubuntu` remains fully visible; this
+  is not a full isolation mechanism, just a reduction of the most obvious
+  credential exposure.
 - A card's `targetPath` must be an absolute path under `/home/ubuntu` that
   exists both inside and outside the container (the mount is a bind mount
   of the whole `/home/ubuntu` to the same path in the container, e.g.
