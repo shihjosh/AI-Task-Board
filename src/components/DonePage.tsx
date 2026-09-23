@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import TaskCard from './TaskCard'
-import TaskDrawer from './TaskDrawer'
 import { fetchTasks } from '../lib/api'
 import type { Task } from '../types/task'
+
+const TaskDrawer = lazy(() => import('./TaskDrawer'))
 
 export default function DonePage() {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -76,13 +77,17 @@ export default function DonePage() {
           ))}
         </div>
       )}
-      <TaskDrawer
-        isOpen={isDrawerOpen}
-        mode="edit"
-        initialTask={editingTask ?? undefined}
-        onClose={closeDrawer}
-        onSaved={reload}
-      />
+      {isDrawerOpen && (
+        <Suspense fallback={null}>
+          <TaskDrawer
+            isOpen={isDrawerOpen}
+            mode="edit"
+            initialTask={editingTask ?? undefined}
+            onClose={closeDrawer}
+            onSaved={reload}
+          />
+        </Suspense>
+      )}
     </div>
   )
 }

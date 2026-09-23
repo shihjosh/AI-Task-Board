@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import {
   DndContext,
@@ -16,8 +16,12 @@ import { arrayMove } from '@dnd-kit/sortable'
 import Toolbar from './components/Toolbar'
 import BoardColumn from './components/BoardColumn'
 import TaskCard from './components/TaskCard'
-import TaskDrawer from './components/TaskDrawer'
 import DonePage from './components/DonePage'
+
+// TaskDrawer 拉入了 react-markdown + remark-gfm，是目前 bundle 中最重的部分，
+// 但只有使用者實際點開任務卡片時才需要，故改用 lazy import 拆成獨立 chunk，
+// 讓看板首屏不用等 markdown parser 一起載入。
+const TaskDrawer = lazy(() => import('./components/TaskDrawer'))
 import DoneDropZone from './components/DoneDropZone'
 import ListView from './components/ListView'
 import GanttView from './components/GanttView'
@@ -280,13 +284,17 @@ function Board() {
           <GanttView tasks={filteredTasks} onTaskClick={openEditDrawer} />
         )}
       </main>
-      <TaskDrawer
-        isOpen={isDrawerOpen}
-        mode={drawerMode}
-        initialTask={editingTask ?? undefined}
-        onClose={closeDrawer}
-        onSaved={reloadTasks}
-      />
+      {isDrawerOpen && (
+        <Suspense fallback={null}>
+          <TaskDrawer
+            isOpen={isDrawerOpen}
+            mode={drawerMode}
+            initialTask={editingTask ?? undefined}
+            onClose={closeDrawer}
+            onSaved={reloadTasks}
+          />
+        </Suspense>
+      )}
     </div>
   )
 }
