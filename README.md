@@ -133,6 +133,10 @@ docker compose up -d --build
 **注意事項與限制**：
 - 僅限本機開發機使用。`automation` service 掛載整個 `/home/ubuntu` 目錄，
   容器內能看到宿主機 home 目錄下的所有檔案，不建議部署到共用主機或正式環境。
+- 為降低風險，`.docker`／`.gnupg`／`.pki` 這幾個跟自動化任務無關但敏感的
+  目錄用 tmpfs 覆蓋，容器內看到的是空目錄（不影響 `.ssh`，git push 仍需要
+  它讀取 SSH key）。其餘 `/home/ubuntu` 底下的內容仍完整可見，這不是完整
+  的隔離機制，僅降低最明顯的憑證外洩面。
 - 卡片的 `targetPath` 欄位填入的路徑，必須是 `/home/ubuntu` 底下、容器內外
   都存在的絕對路徑（因為掛載方式是把整個 `/home/ubuntu` bind mount 到容器內
   相同路徑，例如 `/home/ubuntu/AI-Task-Board`）。
@@ -236,7 +240,7 @@ GET    /api/skills                          取得可用的 Hermes skill 名稱�
 
 **前端**：React + Vite + TypeScript + Tailwind CSS、react-router-dom、@dnd-kit/core（拖拉）、lucide-react（圖示）、react-markdown + remark-gfm（Markdown 渲染）
 
-**後端**：Node.js + Express（`/api/*` REST + serve 前端靜態檔，單一 server）、SQLite（better-sqlite3），資料庫檔案於 `.data/taskboard.sqlite`
+**後端**：Node.js + Express（`/api/*` REST + serve 前端靜態檔，單一 server）；資料庫預設 SQLite（better-sqlite3，檔案於 `.data/taskboard.sqlite`），亦可選用 PostgreSQL（`pg`，見上方「切換到 PostgreSQL」章節），透過統一的 async 資料層（`server/db/`）切換
 
 ## 專案結構
 
@@ -249,7 +253,10 @@ AI-Task-Board/
 │   └── superpowers/            開發過程的 spec/plan 存檔
 ├── server/
 │   ├── index.mjs               Express app 與所有 route
-│   ├── db.mjs                  SQLite schema 與 migration
+│   ├── db/
+│   │   ├── index.mjs            依 DB_DRIVER 選擇驅動的統一 async 查詢介面
+│   │   ├── sqlite.mjs           SQLite schema 與 migration（預設驅動）
+│   │   └── postgres.mjs         PostgreSQL schema 與 migration（選用驅動）
 │   ├── taskRepository.mjs
 │   ├── commentRepository.mjs
 │   ├── automationRunner.mjs    Hermes agent spawn 邏輯

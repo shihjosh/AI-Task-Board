@@ -178,6 +178,12 @@ only `taskboard`: `docker compose up -d --build taskboard`.
 - Local dev machines only. The `automation` service mounts the entire
   `/home/ubuntu` directory, so the container can see everything under the
   host's home directory — not recommended for shared hosts or production.
+- To reduce risk, `.docker`, `.gnupg`, and `.pki` — directories unrelated to
+  automation but sensitive — are overridden with tmpfs, so the container
+  sees them as empty (this doesn't affect `.ssh`, which git push still
+  needs). Everything else under `/home/ubuntu` remains fully visible; this
+  is not a full isolation mechanism, just a reduction of the most obvious
+  credential exposure.
 - A card's `targetPath` must be an absolute path under `/home/ubuntu` that
   exists both inside and outside the container (the mount is a bind mount
   of the whole `/home/ubuntu` to the same path in the container, e.g.
@@ -251,7 +257,7 @@ GET    /api/skills                          List available Hermes skill names
 
 **Frontend**: React + Vite + TypeScript + Tailwind CSS, react-router-dom, @dnd-kit/core (drag-and-drop), lucide-react (icons), react-markdown + remark-gfm (Markdown rendering)
 
-**Backend**: Node.js + Express (`/api/*` REST + serves frontend static files from a single server), SQLite (better-sqlite3), database file at `.data/taskboard.sqlite`
+**Backend**: Node.js + Express (`/api/*` REST + serves frontend static files from a single server); database defaults to SQLite (better-sqlite3, file at `.data/taskboard.sqlite`), with PostgreSQL (`pg`) also supported (see "Switching to PostgreSQL" above) via a unified async data layer (`server/db/`)
 
 ## Project Structure
 
@@ -263,7 +269,10 @@ AI-Task-Board/
 │   └── superpowers/            Development spec/plan archive
 ├── server/
 │   ├── index.mjs               Express app and all routes
-│   ├── db.mjs                  SQLite schema and migrations
+│   ├── db/
+│   │   ├── index.mjs            Unified async query interface, driver chosen via DB_DRIVER
+│   │   ├── sqlite.mjs           SQLite schema and migrations (default driver)
+│   │   └── postgres.mjs         PostgreSQL schema and migrations (optional driver)
 │   ├── taskRepository.mjs
 │   ├── commentRepository.mjs
 │   ├── automationRunner.mjs    Hermes agent spawn logic
