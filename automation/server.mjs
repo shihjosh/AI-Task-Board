@@ -3,7 +3,8 @@ import fs from 'node:fs'
 import { spawn } from 'node:child_process'
 
 const PORT = process.env.PORT ?? 3100
-const TIMEOUT_MS = 15 * 60 * 1000 // 15 分鐘，與 automationRunner.mjs 的逾時策略一致
+// 與 automationRunner.mjs 的逾時策略一致，同樣可用 AUTOMATION_TIMEOUT_MS 覆寫。
+const TIMEOUT_MS = Number(process.env.AUTOMATION_TIMEOUT_MS) || 15 * 60 * 1000 // 預設 15 分鐘
 
 function readJsonBody(req) {
   return new Promise((resolve, reject) => {
