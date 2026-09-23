@@ -315,3 +315,40 @@ test('triggerAutomation is a no-op when called twice on an already-queued task',
     await deleteTask(task.id)
   }
 })
+
+// 使用者需求：TaskDrawer 新增「不讓 AI 執行任務」checkbox（automationDisabled）。
+// 勾選後即使拖到「處理中」或呼叫 retry-automation，也完全不應該觸發自動化、
+// 不應該進入排隊、也不應該建立 automation_runs 記錄——這是比 pathMissing/
+// runningCount 更早的短路守衛，triggerAutomation() 本身就要擋下，不能只靠
+// 呼叫端（app.mjs）各自判斷，避免遺漏任何一個觸發點。
+test('triggerAutomation is a no-op when task.automationDisabled is true, even under contention', async () => {
+  const task = await createTask({
+    title: 'automation disabled by user',
+    priority: 'high',
+    columnId: 'in_progress',
+    targetPath: process.cwd(), // 存在的路徑，確保不是被 pathMissing 擋下而是被 automationDisabled 擋下
+    automationStatus: 'idle',
+    automationDisabled: true,
+  })
+
+  try {
+    // 併發已滿（強制走佇列分支）也不該進佇列——automationDisabled 的短路要在
+    // pathMissing/runningCount 判斷之前生效。
+    __setRunningCountForTest(1)
+
+    await triggerAutomation(task)
+
+    const tasks = await listTasks()
+    const rechecked = tasks.find((t) => t.id === task.id)
+    // 狀態應完全不變（仍是 idle），不是 queued，也不是 failed。
+    assert.equal(rechecked.automationStatus, 'idle')
+    assert.equal(getQueueDepth(), 0)
+
+    const runs = await listAutomationRuns(task.id)
+    assert.equal(runs.length, 0)
+  } finally {
+    __setRunningCountForTest(0)
+    __clearQueueForTest()
+    await deleteTask(task.id)
+  }
+})

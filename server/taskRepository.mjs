@@ -19,6 +19,7 @@ function rowToTask(row) {
     automationStatus: row.automation_status,
     dueDate: row.due_date ?? undefined,
     automationSkill: row.automation_skill || undefined,
+    automationDisabled: !!row.automation_disabled,
   }
 }
 
@@ -32,8 +33,8 @@ export async function createTask(input) {
   const id = input.id ?? randomUUID()
 
   await db.run(
-    `INSERT INTO tasks (id, title, description, priority, tags, assignees, progress, comment_count, has_unread, column_id, created_at, updated_at, target_path, automation_status, due_date, automation_skill)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO tasks (id, title, description, priority, tags, assignees, progress, comment_count, has_unread, column_id, created_at, updated_at, target_path, automation_status, due_date, automation_skill, automation_disabled)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       input.title,
@@ -51,6 +52,7 @@ export async function createTask(input) {
       input.automationStatus ?? 'idle',
       input.dueDate ?? null,
       input.automationSkill ?? '',
+      input.automationDisabled ? 1 : 0,
     ],
   )
 
@@ -77,12 +79,16 @@ export async function updateTask(id, patch) {
     automationStatus: patch.automationStatus ?? existing.automation_status,
     dueDate: patch.dueDate !== undefined ? patch.dueDate : existing.due_date,
     automationSkill: patch.automationSkill ?? existing.automation_skill,
+    automationDisabled:
+      patch.automationDisabled !== undefined
+        ? (patch.automationDisabled ? 1 : 0)
+        : existing.automation_disabled,
   }
 
   await db.run(
     `UPDATE tasks SET title=?, description=?, priority=?, tags=?, assignees=?,
      progress=?, comment_count=?, has_unread=?,
-     column_id=?, updated_at=?, target_path=?, automation_status=?, due_date=?, automation_skill=? WHERE id=?`,
+     column_id=?, updated_at=?, target_path=?, automation_status=?, due_date=?, automation_skill=?, automation_disabled=? WHERE id=?`,
     [
       merged.title,
       merged.description,
@@ -98,6 +104,7 @@ export async function updateTask(id, patch) {
       merged.automationStatus,
       merged.dueDate,
       merged.automationSkill,
+      merged.automationDisabled,
       id,
     ],
   )

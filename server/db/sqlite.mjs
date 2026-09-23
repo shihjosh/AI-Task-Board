@@ -82,6 +82,11 @@ function initDb() {
     addColumnIfMissing(conn, 'tasks', `automation_skill TEXT NOT NULL DEFAULT ''`)
   }
 
+  const hasAutomationDisabled = taskColumns.some((col) => col.name === 'automation_disabled')
+  if (!hasAutomationDisabled) {
+    addColumnIfMissing(conn, 'tasks', `automation_disabled INTEGER NOT NULL DEFAULT 0`)
+  }
+
   conn.exec(`
     CREATE TABLE IF NOT EXISTS comments (
       id TEXT PRIMARY KEY,

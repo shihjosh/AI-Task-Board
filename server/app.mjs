@@ -27,6 +27,7 @@ const CREATABLE_FIELDS = [
   'targetPath',
   'automationStatus',
   'automationSkill',
+  'automationDisabled',
   'dueDate',
 ]
 
@@ -168,7 +169,7 @@ app.patch('/api/tasks/:id', async (req, res, next) => {
 
     const enteringInProgress =
       existing && existing.columnId !== 'in_progress' && task.columnId === 'in_progress'
-    if (enteringInProgress) {
+    if (enteringInProgress && !task.automationDisabled) {
       triggerAutomation(task).catch((err) => {
         console.error('triggerAutomation failed:', err)
       })
@@ -193,6 +194,9 @@ app.post('/api/tasks/:id/retry-automation', async (req, res, next) => {
     const tasks = await listTasks()
     const task = tasks.find((t) => t.id === req.params.id)
     if (!task) return res.status(404).json({ error: 'not_found' })
+    if (task.automationDisabled) {
+      return res.status(409).json({ error: 'automation_disabled' })
+    }
     triggerAutomation(task).catch((err) => {
       console.error('triggerAutomation failed:', err)
     })

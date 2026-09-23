@@ -259,6 +259,12 @@ function onSlotFreed() {
 }
 
 export async function triggerAutomation(task) {
+  // 使用者在 TaskDrawer 勾選「不讓 AI 執行任務」（automationDisabled）時，
+  // 無論是拖到「處理中」自動觸發，還是手動點擊重新執行，都應該被擋下——
+  // 這裡加一層防呆，不只依賴呼叫端（app.mjs）各自判斷。
+  if (task.automationDisabled) {
+    return
+  }
   // 本機開發模式（無 AUTOMATION_URL）：taskboard 自己直接看得到宿主機檔案系統，
   // 可以檢查路徑是否存在。Docker compose 模式：taskboard container 沒有掛載
   // 專案目錄，這個檢查交給看得到的 automation service 在 /run handler 內做。
