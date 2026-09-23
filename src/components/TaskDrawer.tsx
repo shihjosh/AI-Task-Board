@@ -28,6 +28,7 @@ const emptyFormState = {
   targetPath: '',
   dueDate: '',
   automationSkill: '' as string,
+  automationDisabled: false,
 }
 
 export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved }: TaskDrawerProps) {
@@ -52,6 +53,7 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
         targetPath: initialTask.targetPath ?? '',
         dueDate: initialTask.dueDate ?? '',
         automationSkill: initialTask.automationSkill ?? '',
+        automationDisabled: initialTask.automationDisabled ?? false,
       })
     } else {
       setForm(emptyFormState)
@@ -104,6 +106,7 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
       hasUnread: initialTask?.hasUnread ?? false,
       dueDate: form.dueDate || undefined,
       automationSkill: form.automationSkill || undefined,
+      automationDisabled: form.automationDisabled,
     }
   }
 
@@ -301,6 +304,15 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
             placeholder="/home/ubuntu/some-project"
             className="w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-sky-500 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-sky-500"
           />
+          <label className="mt-2 flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
+            <input
+              type="checkbox"
+              checked={form.automationDisabled}
+              onChange={(e) => setForm((p) => ({ ...p, automationDisabled: e.target.checked }))}
+              className="dark:accent-sky-500"
+            />
+            不讓 AI 執行任務（勾選後拖到「處理中」或按「重新執行」都不會觸發自動化，也不會進入排隊）
+          </label>
           {mode === 'edit' && initialTask?.automationStatus && initialTask.automationStatus !== 'idle' && (
             <span className="mt-1 block text-xs text-slate-400 dark:text-slate-500">
               目前自動執行狀態：
@@ -311,7 +323,7 @@ export default function TaskDrawer({ isOpen, mode, initialTask, onClose, onSaved
               {initialTask.automationStatus === 'interrupted' && '執行中斷'}
             </span>
           )}
-          {mode === 'edit' && initialTask?.automationStatus === 'interrupted' && (
+          {mode === 'edit' && initialTask?.automationStatus === 'interrupted' && !initialTask?.automationDisabled && (
             <div className="mt-2 flex gap-2">
               <button
                 type="button"

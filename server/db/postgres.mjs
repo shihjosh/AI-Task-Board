@@ -60,6 +60,11 @@ export async function init() {
   if (!(await columnExists(client, 'tasks', 'automation_skill'))) {
     await client.query(`ALTER TABLE tasks ADD COLUMN automation_skill TEXT NOT NULL DEFAULT ''`)
   }
+  if (!(await columnExists(client, 'tasks', 'automation_disabled'))) {
+    await client.query(
+      `ALTER TABLE tasks ADD COLUMN automation_disabled INTEGER NOT NULL DEFAULT 0`,
+    )
+  }
 
   await client.query(`
     CREATE TABLE IF NOT EXISTS comments (

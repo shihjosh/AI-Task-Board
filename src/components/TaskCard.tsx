@@ -1,4 +1,4 @@
-import { MessageSquare, AlertTriangle, GitPullRequest, Code2, CircleDot, Loader2 } from 'lucide-react'
+import { MessageSquare, AlertTriangle, GitPullRequest, Code2, CircleDot, Loader2, Ban } from 'lucide-react'
 import { columns } from '../data/columns'
 import type { ColumnId, Task, TagType } from '../types/task'
 
@@ -57,7 +57,18 @@ export default function TaskCard({
         <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-sky-500" />
       )}
 
-      <div className="mb-1.5 text-xs font-medium text-slate-400 dark:text-slate-500">{task.id}</div>
+      <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-slate-400 dark:text-slate-500">
+        {task.id}
+        {task.automationDisabled && (
+          <span
+            title="不讓 AI 執行任務"
+            className="inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-500 dark:bg-slate-700 dark:text-slate-400"
+          >
+            <Ban size={11} />
+            AI 已停用
+          </span>
+        )}
+      </div>
 
       <div className="mb-2 text-sm font-semibold leading-snug text-slate-800 dark:text-slate-100">
         {task.title}
