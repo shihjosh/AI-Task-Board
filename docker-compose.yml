@@ -16,6 +16,8 @@ services:
       # 的說明），因此 taskboard 要透過 host.docker.internal 呼叫它。
       AUTOMATION_URL: http://host.docker.internal:3100
       TASKBOARD_URL: http://taskboard:8088
+      AUTOMATION_MAX_CONCURRENT: ${AUTOMATION_MAX_CONCURRENT:-}
+      AUTOMATION_TIMEOUT_MS: ${AUTOMATION_TIMEOUT_MS:-}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
@@ -63,6 +65,7 @@ services:
     environment:
       PORT: "3100"
       HERMES_DOCKER_EXEC_AS_ROOT: "1"
+      AUTOMATION_TIMEOUT_MS: ${AUTOMATION_TIMEOUT_MS:-}
     volumes:
       - /home/ubuntu:/home/ubuntu
       - ${HOME}/.hermes:/opt/data

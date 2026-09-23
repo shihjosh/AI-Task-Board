@@ -27,8 +27,10 @@ export function __setSpawnForTest(fn) {
   spawn = fn ?? _spawn
 }
 
-const MAX_CONCURRENT = 1
-const TIMEOUT_MS = 15 * 60 * 1000 // 15 分鐘
+// 可用環境變數覆寫（AUTOMATION_MAX_CONCURRENT / AUTOMATION_TIMEOUT_MS），
+// 未設定時維持原本寫死的預設值（1 個併發、15 分鐘逾時）。
+const MAX_CONCURRENT = Number(process.env.AUTOMATION_MAX_CONCURRENT) || 1
+const TIMEOUT_MS = Number(process.env.AUTOMATION_TIMEOUT_MS) || 15 * 60 * 1000 // 預設 15 分鐘
 
 // 本機開發模式（npm run dev / npm start）：不設定 AUTOMATION_URL，
 // automationRunner 自己 spawn('hermes', ...)，行為與 docker 化之前完全相同。
